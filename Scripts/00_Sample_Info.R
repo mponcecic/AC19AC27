@@ -17,6 +17,10 @@
 # of the information is rescued from the pdf file with the library preparation 
 # information. 
 # 
+# In addition, a folder with the project name will be created in the path you 
+# give in BigData. All the following scripts will be saving information in this
+# folder. This is the project DEGs analysis folder.
+# 
 # Content
 #   - Named Sample_info.csv
 #   - Must have at least, the following variables:
@@ -46,7 +50,7 @@ project <- "AC58"
 
 # Pathway to the folders and files
 # Can be your personal folder in BigData
-path <- "W:/mponce/"
+path <- "W:/mponce"
 
 # Input directory
 # Must be the folder where a the library preparation pdf is found and folder 
@@ -64,7 +68,9 @@ lvl_order <- c("Control", "4", "24", "48")
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output directory
-dir_out <- paste(path, project, sep = "")
+# Create the folder which the analysis information
+dir.create(file.path(path, project))
+dir_out <- paste(path, project, sep = "/")
 
 # Set working directory
 setwd(dir_out)
