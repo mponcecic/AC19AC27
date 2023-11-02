@@ -29,6 +29,10 @@
 #       be named as you prefer but must be consisting for the following analysis
 
 
+# Folder
+# Input: W:/DATA_shared/AC-58_TotalRNAseq/
+# Output: Project folder
+
 
 ################################################################################
 #                               LOAD LIBRARIES                           
@@ -50,13 +54,18 @@ project <- "AC58"
 
 # Pathway to the folders and files
 # Can be your personal folder in BigData
-path <- "W:/mponce"
+path_rocky <- paste("/vols/GPArkaitz_bigdata/mponce/", project, sep = "")
+path <- paste("W:/mponce/", project, sep = "")
 
 # Input directory
 # Must be the folder where a the library preparation pdf is found and folder 
 # with the fastq are included 
-dir_in <- "W:/DATA_shared/AC-58_TotalRNAseq/"
+# dir_in <- "/vols/GPArkaitz_bigdata/"
+files <- "W:/DATA_shared/AC-58_TotalRNAseq/"
+files_rocky <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-58_TotalRNAseq/"
 
+dir_in <- files
+  
 # Last sample found in the Library Preparation pdf
 last_sample <- "AC-58_L16"
 
@@ -70,7 +79,7 @@ lvl_order <- c("Control", "4", "24", "48")
 # Output directory
 # Create the folder which the analysis information
 dir.create(file.path(path, project))
-dir_out <- paste(path, project, sep = "/")
+dir_out <- path
 
 # Set working directory
 setwd(dir_out)
@@ -95,7 +104,7 @@ pdf_to_tab <- function(x, last_sample){
   # 
   # Transform the table from the pdf into a data frame to select the variables of 
   # interest
-  # This can not be completely automatized because the tables differ from projects
+  # This can not be completely automatized because the tables differ from project
   
   # Create a character vector using \n as the row separator
   x <- map(x, ~ str_split(.x, "\\n") %>% unlist())
@@ -165,4 +174,28 @@ data <- data %>% mutate(Ind = sub(".*E", "E", data$Sample)) %>% arrange(Time)
 #######################################################################
 
 # Save sample information file
-write.csv(sample_info, file = paste(dir_out, "/Sample_info.csv", sep = ""), row.names = FALSE)
+write.csv(sample_info, file = paste("Sample_info.csv", sep = ""), row.names = FALSE)
+
+
+
+#######################################################################
+#                            LOG FILE                        
+#######################################################################
+
+
+# Save log file information
+logdate <- format(Sys.time(), "%Y%m%d")
+log_data <- c()
+log_data$Date <- Sys.time()
+log_data$project_name <- project
+log_data$condition <- trt
+log_data$condition_order <- paste0(lvl_ord, collapse =",")
+log_data$path <- dir_out
+log_data$pathRocky <- path_rocky
+log_data$filedir <- files
+log_data$filedirRocky <- files_rocky
+
+write.table(as.data.frame(log_data), paste(dir_out, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+
+
+

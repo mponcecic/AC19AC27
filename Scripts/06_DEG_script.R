@@ -266,7 +266,8 @@ color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0
 names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
 
 # ggplot2 theme 
-theme_set(theme_bw())
+theme_DEGs <- theme_bw()+ theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black"), panel.grid = element_blank())
+theme_set(theme_DEGs)
 
 # Data frame with summary information from all the comparisons
 # Columns are Comparison, Method, Genes, Upregulated and Downregulated
@@ -452,9 +453,16 @@ if(filter_cutoff == TRUE){
   gene_counts <- gene_counts[which(rowSums(gene_counts) != 0),]
   label <- "filtering_0"}
 
+
+a <- c("1", "1", "1", rep("2", 5))
+
+which(table(a)>3)
+which(table(sample_info[[trt]])>30)
+
 print(label)
 print(paste("Total genes in raw count: \n", dim(raw_counts)[1]))
 print(paste("Total genes in gene count: \n", dim(gene_counts)[1]))
+
 
 
 #### Annotation #### 
@@ -698,7 +706,7 @@ deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, su
 degde <- estimateGLMCommonDisp(deg, design = m_model, method = "CoxReid", verbose = FALSE)
 degde <- estimateGLMTrendedDisp(degde, design = m_model, method = "auto")
 degde <- estimateGLMTagwiseDisp(degde, design = m_model)
-  
+
 # Biological coefficient variation per each gene 
 pdf(file = paste(dir_fig_raw, "/Dispersion_BCV_EdgeR_", project,".pdf", sep = ""), height = 5 , width = 5)
 plotBCV(degde)
@@ -897,7 +905,7 @@ ggplot(data = model_m, aes(x = Mean, y = Variance))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ggsave(filename = paste("01_NB_fit_data_genecounts_", project, ".pdf", sep=""), height = 4, width = 4, plot = last_plot(), path = dir_fig_raw)
 
-  
+
 ## BARPLOT
 # Total gene counts per sample
 ggplot(bp, aes(x = factor(Samples, levels = sample_info$Sample), y = Values, fill = !!as.name(trt)))+
@@ -1153,7 +1161,7 @@ for(i in 1:length(contrast)){
   # Select the contrast levels
   color_l <- color_list
   color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% comp_lvl)]
-
+  
   # Metadata
   metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
   metadata[,trt] <- factor(metadata[,trt])
@@ -1201,41 +1209,41 @@ for(i in 1:length(contrast)){
       dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
       dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
       
-
+      
       # Log2 fold change result table for an specific comparison
       resl <- results(object = dds,                      # DESeqDataSet  
-                     contrast = contrast[[i]],          # Constrast 
-                     test = "Wald",                     # default; Wald Test
-                     minmu = 0.5,                       # default; lower bound on the estimate count while fitting the GLM
-                     
-                     ## Independent filtering  
-                     alpha = 0.1,              # default = 0.1
-                     pAdjustMethod = correction,        # default = "BH"
-                     lfcThreshold = 0,                  # default
-                     independentFiltering = TRUE,       # Independent filtering 
-                     format = "DataFrame"               # default, Result format
-                     # theta,                             # Quantiles at which to assess the number of rejections
-                     # filter,                            # default, mean of normalized counts
-                     # filterFun,                         # optional; for performing independent filtering and p-value adjustment
-                     # 
-                     # altHypothesis = "greaterAbs",     #c("greaterAbs", "lessAbs", "greater", "less"),
-                     # listValues = c(1, -1),
-                     # cooksCutoff,                      # Threshold Cook's distance
-                     # 
-                     
-                     # 
-                     # ## Not used
-                     # addMLE = FALSE,                   # default; Not used
-                     # tidy = FALSE,                     # default; Not used
-                     # saveCols = NULL,                  # default; Not used
-                     # name,                             # default; Not used
-                     # 
-                     # ## Parallelization
-                     # parallel = FALSE,                 # default; Not used
-                     # BPPARAM = bpparam(),              # default; Not used
+                      contrast = contrast[[i]],          # Constrast 
+                      test = "Wald",                     # default; Wald Test
+                      minmu = 0.5,                       # default; lower bound on the estimate count while fitting the GLM
+                      
+                      ## Independent filtering  
+                      alpha = 0.1,              # default = 0.1
+                      pAdjustMethod = correction,        # default = "BH"
+                      lfcThreshold = 0,                  # default
+                      independentFiltering = TRUE,       # Independent filtering 
+                      format = "DataFrame"               # default, Result format
+                      # theta,                             # Quantiles at which to assess the number of rejections
+                      # filter,                            # default, mean of normalized counts
+                      # filterFun,                         # optional; for performing independent filtering and p-value adjustment
+                      # 
+                      # altHypothesis = "greaterAbs",     #c("greaterAbs", "lessAbs", "greater", "less"),
+                      # listValues = c(1, -1),
+                      # cooksCutoff,                      # Threshold Cook's distance
+                      # 
+                      
+                      # 
+                      # ## Not used
+                      # addMLE = FALSE,                   # default; Not used
+                      # tidy = FALSE,                     # default; Not used
+                      # saveCols = NULL,                  # default; Not used
+                      # name,                             # default; Not used
+                      # 
+                      # ## Parallelization
+                      # parallel = FALSE,                 # default; Not used
+                      # BPPARAM = bpparam(),              # default; Not used
       )
       
-     
+      
       # MA plot 
       pdf(paste(dir_fig, "/00_MA_plot_", analysis, "_", project, "_", name ,".pdf", sep = ""), height = 4, width = 5)
       DESeq2::plotMA(resl)
@@ -1246,7 +1254,7 @@ for(i in 1:length(contrast)){
       colnames(res) <- paste(analysis, colnames(res), sep = "_")
       res_all <- res
       
-    
+      
       # Change columns names to plot data 
       colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj")
       
@@ -1281,7 +1289,7 @@ for(i in 1:length(contrast)){
       # Figures folder
       dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
       dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
-     
+      
       
       control <- contrast[[i]][3]
       experimental <- contrast[[i]][2]
@@ -1350,7 +1358,7 @@ for(i in 1:length(contrast)){
         labs(x = "log2 CPM", y = "log fold change")+
         scale_color_manual(values = c("blue", "black"),
                            labels = c("No", "Color"))+
-      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none")
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none")
       ggsave(filename = paste(dir_fig, "/00_MA_plot_", analysis, "_", project, "_", name, ".pdf", sep = ""), height = 4, width = 6, plot = last_plot())
       
     } else {
@@ -1401,7 +1409,7 @@ for(i in 1:length(contrast)){
     
     ## Threshold label
     threshold <- paste("alpha_", fdr_cutoff, "_log2FC_", lfc_cutoff, sep ="")
-        
+    
     ## Significative genes
     # Events with p-val NA are saved too
     # Based on the alpha and log2 FC thresholds  
@@ -1462,16 +1470,16 @@ for(i in 1:length(contrast)){
     ###############################################################
     #                 Statistical summary
     ###############################################################
-   
+    
     
     a <- data.frame(Comparison = name, Method = analysis, Genes = length(!is.na(res_df$padj)), DEGs = length(which(res_df$DEG == "YES")), Upregulated = length(which(res_df$Direction == "Upregulated")), Downregulated = length(which(res_df$Direction == "Downregulated")))
     out_df <- rbind(out_df, a)
     
-
+    
     ############################################################################
     #                       VISUALIZATION
     ############################################################################
-  
+    
     
     ### All genes
     # Histogram FC distribution
@@ -1485,7 +1493,7 @@ for(i in 1:length(contrast)){
       geom_histogram( fill = "#6696CC", color = "black")+
       labs(x = "Adjusted p-value", y = "Counts")+
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
+    
     ### Differentially expressed genes
     # Histogram FC distribution 
     C <- ggplot(data = df, aes(x = logFC)) +
@@ -1498,17 +1506,18 @@ for(i in 1:length(contrast)){
       geom_histogram( fill = "#6696CC", color = "black")+
       labs(x = "Adjusted p-value", y = "Counts")+
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    
     fig <- ggarrange(A, B, C, D, ncol = 2, nrow = 2, widths = 10, heights = 10)
     ggsave(filename = paste("00_Validation_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), width = 10, height = 10, plot = fig, path = dir_fig)
-      
+    
     
     
     ######################### VOLCANO PLOT #########################
-      
+    
     # Possibility of adding labels from interesting gene ids
     cont_res <- res_df
     # cont_res$labels <- ifelse(cont_res$Symbol %in% head(cont_res[order(abs(cont_res$logFC)), "Symbol"], 10), cont_res$Symbol, NA)
-      
+    
     # DEGs
     # ggplot(data = cont_res, aes(x = logFC, y = -log10(padj), col = DEG, label = labels))+
     ggplot(data = cont_res, aes(x = logFC, y = -log10(padj), col = DEG))+
@@ -1516,7 +1525,7 @@ for(i in 1:length(contrast)){
       geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
       geom_point(size = 2, alpha = 0.6)+
       scale_color_manual(values = c("grey", "blue"),
-                          labels = c("Not significant", "Significative"))+
+                         labels = c("Not significant", "Significative"))+
       labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)")+
       # geom_text_repel(size=2.5, max.overlaps = Inf)+
       theme(text = element_text(size = 8),
@@ -1526,234 +1535,234 @@ for(i in 1:length(contrast)){
             panel.grid.minor = element_blank(),
             legend.position = "none")
     ggsave(paste("Volcano_DEGs_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 5, width = 5, plot = last_plot(), path = dir_fig)
-      
+    
     ggplot(data = res, mapping = aes(x = pvalue))+ 
       geom_histogram(aes(y = ..density..), colour = "black", fill = "white")+
       geom_density(alpha = .2, fill = "blue", linewidth = 0.7)
     
     # DEGs with up and down information
     # ggplot(data = cont_res, aes(x = logFC, y = -log10(padj), col = Direction, label = labels))+
-      ggplot(data = cont_res, aes(x = logFC, y = -log10(padj), col = Direction))+
-        geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
-        geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
-        geom_point(size = 2, alpha = 0.6)+
-        scale_color_manual(values = as.vector(color_list$Direction))+
-        labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
-        # geom_text_repel(size=2.5, max.overlaps = Inf)+
-        theme(text = element_text(size = 8),
-              plot.title = element_text(size = rel(1.5), hjust = 0.5),
-              axis.title = element_text(size = rel(1.25)),
-              panel.grid.major = element_blank(),
-              panel.grid.minor = element_blank(),
-              legend.position = "none")
-      ggsave(paste("Volcano_DEGs_Direction_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 5, width = 5, plot = last_plot(), path = dir_fig)
-      
-      
-      ######################### WATERFALL PLOT #########################
-      
-      dt_wf <- df[which(!(duplicated(df$GeneID))),]
-      dt_wf$GeneID <- factor(dt_wf$GeneID, levels = dt_wf$GeneID[order(dt_wf$logFC, decreasing = FALSE)])
-      
-      ggplot(dt_wf, aes(x = GeneID, y = logFC, fill = Direction)) +
-        geom_bar(stat = "identity")+
-        scale_fill_manual(values = as.vector(color_l$Direction)[-2])+
-        xlab("Differentially expressed genes")+
-        ylab("Log2 Fold Change")+
-        theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "none")
-      ggsave(paste("Waterfall_DEGs_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 5, width = 5, plot = last_plot(), path = dir_fig)
-      
-      
-      ## PCA PLOTS
-      #
-      # To perform the PCA analysis we need a matrix with the PSI values per
-      # each sample. The samples must be place in the rows and the events in the
-      # columns. This matrix is centered and scale by using prcomp().
-      #
-      # A data frame with the original data and the metadata must be used to plot.
-      # This data is used to increase interpretation power.
-      #
-      # The principal components which explains the variability of the data should
-      # at least sum 65% of the variance of the data.
-      
-      # PCA matrix
-      m_t <- t(m)
-      print(dim(m_t))
-      m_pca <- prcomp(m_t, scale. = TRUE)
-      
-      # Save output
-      pca1 <- m_pca$x
-      pca2 <- m_pca$rotation
-      
-      # Scree plot
-      # Percentage of variances explained by each principal component
-      pca_scree <- fviz_eig(m_pca,choice = "variance", addlabels = TRUE, ggtheme = theme_classic(), main = "Screeplot")
-      
-      # Variable graphs
-      # Contributions of the events in each principal component
-      # Positive correlated variables point to the same side of the plot
-      # Negative correlated variables point to opposite sides of the graph.
-      pca_var <- fviz_pca_var(m_pca, col.var = "contrib", gradient.cols = c("blue", "yellow", "red"))+
-        theme_classic()+ 
-        labs(title = "Variance Contribution")
-      
-      fig <- ggarrange(pca_scree, pca_var, ncol = 2, nrow = 1, widths = 10, heights = 4)
-      ggsave(filename = paste("PCA_params_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), width = 10, height = 4, plot = fig, path = dir_fig)
-      
-      
-      # PC1 vs PC2
-      pca_1vs2 <- fviz_pca_ind(m_pca, axes = c(1,2),
-                               geom.ind = "text", repel = TRUE, labelsize = 4,
-                               col.ind = metadata[[trt]],
-                               addEllipses = TRUE, ellipse.level = 0.95,
-                               title = "")+
-        scale_color_manual(values = color_l[[trt]])+
-        scale_fill_manual(values = color_l[[trt]])+
-        theme(legend.position = "none")
-      
-      # PC1 vs PC3
-      pca_1vs3 <- fviz_pca_ind(m_pca, axes = c(1,3),
-                               geom.ind = "text", repel = TRUE, labelsize = 4,
-                               col.ind = metadata[[trt]],
-                               addEllipses = TRUE, ellipse.level = 0.95,
-                               legend.title = "Treatment", title = "")+
-        scale_color_manual(values = color_l[[trt]])+
-        scale_fill_manual(values = color_l[[trt]])+
-        theme(legend.position = "none")
-      
-      # PC1 vs PC4
-      pca_1vs4 <- fviz_pca_ind(m_pca, axes = c(1,4),
-                               geom.ind = "text", repel = TRUE, labelsize = 4,
-                               col.ind = metadata[[trt]],
-                               addEllipses = TRUE, ellipse.level = 0.95,
-                               legend.title = "Treatment", title = "")+
-        scale_color_manual(values = color_l[[trt]])+
-        scale_fill_manual(values = color_l[[trt]])+
-        theme(legend.position = "none")
-      
-      # Save PCA plots
-      ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""),
-             plot = pca_1vs2, path = dir_fig,
-             height = 5, width = 6)
-      ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""),
-             plot = pca_1vs3, path = dir_fig,
-             height = 5, width = 6)
-      ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""),
-             plot = pca_1vs4, path = dir_fig,
-             height = 5, width = 6)
-      
-      
-      
-      ## DISTANCE MATRIX
-      #
-      # Execute a Euclidean distance to performed sample-to-sample analysis
-      #
-      # The results of the distance matrix must be aligned with the results
-      # in the heatmap and PCA.
-      
-      eum <- as.matrix(dist(t(m)))
-      
-      pheatmap(eum,
-               color = colorRampPalette(rev(brewer.pal(9, "Blues")))(255),
-               show_rownames = TRUE,
-               show_colnames = TRUE,
-               fontsize_row = 6,
-               fontsize_col = 6,
-               border_color = NA,
-               treeheight_row = 0,
-               filename = paste(dir_fig, "/Euclidean_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""),
-               height = 4, width = 4)
-      
-      
-      ##  CORRELATION 
-      #
-      # Execute a Pearson correlation which accept possible NAs.
-      # The acceptance of the NA should be valuable in the future in case, we accept
-      # comparisons when a sample is missing a PSI value.
-      #
-      # The results of the correlation matrix must be aligned with the results
-      # in the heatmap and PCA.
-      
-      # Pearson Correlation Matrix
-      pem <- cor(m, method = "pearson", use = "na.or.complete")
-      
-      # Plot
-      pheatmap(pem,
-               color = colorRampPalette(brewer.pal(9, "Blues"))(255),
-               cluster_rows = TRUE,
-               cluster_cols = TRUE,
-               show_rownames = TRUE,
-               show_colnames = TRUE,
-               fontsize_row = 6,
-               fontsize_col = 6,
-               border_color = NA,
-               treeheight_row = 0,
-               treeheight_col = 0,
-               filename = paste(dir_fig, "/Pearson_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""),
-               height = 4, width = 4)
-      
-      
-      ## HEATMAP
-      #
-      # Clustering of all the differentially expressed genes with different layers
-      # of information such as the treatment and the event type.
-      # The heatmap function needs a
-      #   - Matrix data (m): Samples as columns and genes as rows
-      #   - Annotation samples (sample_col): Treatment corresponding to each sample
-      #   - Annotation genes (sample_row): Event type corresponding to each genes
-      
-      # Column information
-      # Sample columns information
-      # Should only contain the samples of the tissue followed by the treatment
-      sample_col <-  metadata %>% dplyr::select(all_of(trt))
-      rownames(sample_col) <- metadata$Sample
-      sample_col[trt] <- factor(metadata[[trt]])
-      
-      # # Row information
-      # # Should only contain the differential events of the tissue
-      # # Info: Name (Gen_Event) and event type
-      # sample_row <- df_sel %>%
-      #   distinct(NAME, .keep_all = TRUE) %>%
-      #   select(NAME, which(colnames(df_sel) %in% paste("PSI_", metadata$Sample, sep = "")), EVENT_TYPE)
-      # sample_row <- data.frame(COMPLEX = sample_row$EVENT_TYPE)
-      # rownames(sample_row) <- df_sel$NAME
-      
-      
-      # Choosing heatmap font size
-      if (dim(m)[1]>=60 & dim(m)[1]<200){font_row = 2} else if (dim(m)[1]>=200){font_row = 1} else if (dim(m)[1]<=60 & dim(m)[1]>=20){font_row = 2} else {font_row = 5}
-      if (dim(m)[2] <= 10){font_col = 7} else if (dim(m)[2] > 10 & dim(m)[2] < 20){font_col = 5} else {font_col = 2}
-      
-      
-      pheatmap(m,
-               scale = "row",
-               color = color_l$Heatmap,
-               cluster_rows = TRUE,
-               cluster_cols = TRUE,
-               annotation_col = sample_col,
-               annotation_colors = color_l,
-               show_rownames = TRUE,
-               fontsize_row = font_row,
-               fontsize_col = font_col,
-               border_color = NA,
-               treeheight_row = 0,
-               clustering_callback = callback,   # Sorting dendrogram
-               filename = paste(dir_fig, "/Heatmap_Zscore_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = "")
-      )
-      
-      pheatmap(m,
-               scale = "row",
-               color = color_l$Heatmap,
-               cluster_rows = TRUE,
-               cluster_cols = TRUE,
-               annotation_col = sample_col,
-               annotation_colors = color_l,
-               show_rownames = FALSE,
-               fontsize_col = font_col,
-               border_color = NA,
-               treeheight_row = 0,
-               clustering_callback = callback,   # Sorting dendrogram
-               filename = paste(dir_fig, "/Heatmap_Zscore_nonames_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = "")
-      )
-      
+    ggplot(data = cont_res, aes(x = logFC, y = -log10(padj), col = Direction))+
+      geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
+      geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
+      geom_point(size = 2, alpha = 0.6)+
+      scale_color_manual(values = as.vector(color_list$Direction))+
+      labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
+      # geom_text_repel(size=2.5, max.overlaps = Inf)+
+      theme(text = element_text(size = 8),
+            plot.title = element_text(size = rel(1.5), hjust = 0.5),
+            axis.title = element_text(size = rel(1.25)),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.position = "none")
+    ggsave(paste("Volcano_DEGs_Direction_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 5, width = 5, plot = last_plot(), path = dir_fig)
+    
+    
+    ######################### WATERFALL PLOT #########################
+    
+    dt_wf <- df[which(!(duplicated(df$GeneID))),]
+    dt_wf$GeneID <- factor(dt_wf$GeneID, levels = dt_wf$GeneID[order(dt_wf$logFC, decreasing = FALSE)])
+    
+    ggplot(dt_wf, aes(x = GeneID, y = logFC, fill = Direction)) +
+      geom_bar(stat = "identity")+
+      scale_fill_manual(values = as.vector(color_l$Direction)[-2])+
+      xlab("Differentially expressed genes")+
+      ylab("Log2 Fold Change")+
+      theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "none")
+    ggsave(paste("Waterfall_DEGs_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 5, width = 5, plot = last_plot(), path = dir_fig)
+    
+    
+    ## PCA PLOTS
+    #
+    # To perform the PCA analysis we need a matrix with the PSI values per
+    # each sample. The samples must be place in the rows and the events in the
+    # columns. This matrix is centered and scale by using prcomp().
+    #
+    # A data frame with the original data and the metadata must be used to plot.
+    # This data is used to increase interpretation power.
+    #
+    # The principal components which explains the variability of the data should
+    # at least sum 65% of the variance of the data.
+    
+    # PCA matrix
+    m_t <- t(m)
+    print(dim(m_t))
+    m_pca <- prcomp(m_t, scale. = TRUE)
+    
+    # Save output
+    pca1 <- m_pca$x
+    pca2 <- m_pca$rotation
+    
+    # Scree plot
+    # Percentage of variances explained by each principal component
+    pca_scree <- fviz_eig(m_pca,choice = "variance", addlabels = TRUE, ggtheme = theme_classic(), main = "Screeplot")
+    
+    # Variable graphs
+    # Contributions of the events in each principal component
+    # Positive correlated variables point to the same side of the plot
+    # Negative correlated variables point to opposite sides of the graph.
+    pca_var <- fviz_pca_var(m_pca, col.var = "contrib", gradient.cols = c("blue", "yellow", "red"))+
+      theme_classic()+ 
+      labs(title = "Variance Contribution")
+    
+    fig <- ggarrange(pca_scree, pca_var, ncol = 2, nrow = 1, widths = 10, heights = 4)
+    ggsave(filename = paste("PCA_params_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), width = 10, height = 4, plot = fig, path = dir_fig)
+    
+    
+    # PC1 vs PC2
+    pca_1vs2 <- fviz_pca_ind(m_pca, axes = c(1,2),
+                             geom.ind = "text", repel = TRUE, labelsize = 4,
+                             col.ind = metadata[[trt]],
+                             addEllipses = TRUE, ellipse.level = 0.95,
+                             title = "")+
+      scale_color_manual(values = color_l[[trt]])+
+      scale_fill_manual(values = color_l[[trt]])+
+      theme(legend.position = "none")
+    
+    # PC1 vs PC3
+    pca_1vs3 <- fviz_pca_ind(m_pca, axes = c(1,3),
+                             geom.ind = "text", repel = TRUE, labelsize = 4,
+                             col.ind = metadata[[trt]],
+                             addEllipses = TRUE, ellipse.level = 0.95,
+                             legend.title = "Treatment", title = "")+
+      scale_color_manual(values = color_l[[trt]])+
+      scale_fill_manual(values = color_l[[trt]])+
+      theme(legend.position = "none")
+    
+    # PC1 vs PC4
+    pca_1vs4 <- fviz_pca_ind(m_pca, axes = c(1,4),
+                             geom.ind = "text", repel = TRUE, labelsize = 4,
+                             col.ind = metadata[[trt]],
+                             addEllipses = TRUE, ellipse.level = 0.95,
+                             legend.title = "Treatment", title = "")+
+      scale_color_manual(values = color_l[[trt]])+
+      scale_fill_manual(values = color_l[[trt]])+
+      theme(legend.position = "none")
+    
+    # Save PCA plots
+    ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""),
+           plot = pca_1vs2, path = dir_fig,
+           height = 5, width = 6)
+    ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""),
+           plot = pca_1vs3, path = dir_fig,
+           height = 5, width = 6)
+    ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""),
+           plot = pca_1vs4, path = dir_fig,
+           height = 5, width = 6)
+    
+    
+    
+    ## DISTANCE MATRIX
+    #
+    # Execute a Euclidean distance to performed sample-to-sample analysis
+    #
+    # The results of the distance matrix must be aligned with the results
+    # in the heatmap and PCA.
+    
+    eum <- as.matrix(dist(t(m)))
+    
+    pheatmap(eum,
+             color = colorRampPalette(rev(brewer.pal(9, "Blues")))(255),
+             show_rownames = TRUE,
+             show_colnames = TRUE,
+             fontsize_row = 6,
+             fontsize_col = 6,
+             border_color = NA,
+             treeheight_row = 0,
+             filename = paste(dir_fig, "/Euclidean_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""),
+             height = 4, width = 4)
+    
+    
+    ##  CORRELATION 
+    #
+    # Execute a Pearson correlation which accept possible NAs.
+    # The acceptance of the NA should be valuable in the future in case, we accept
+    # comparisons when a sample is missing a PSI value.
+    #
+    # The results of the correlation matrix must be aligned with the results
+    # in the heatmap and PCA.
+    
+    # Pearson Correlation Matrix
+    pem <- cor(m, method = "pearson", use = "na.or.complete")
+    
+    # Plot
+    pheatmap(pem,
+             color = colorRampPalette(brewer.pal(9, "Blues"))(255),
+             cluster_rows = TRUE,
+             cluster_cols = TRUE,
+             show_rownames = TRUE,
+             show_colnames = TRUE,
+             fontsize_row = 6,
+             fontsize_col = 6,
+             border_color = NA,
+             treeheight_row = 0,
+             treeheight_col = 0,
+             filename = paste(dir_fig, "/Pearson_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""),
+             height = 4, width = 4)
+    
+    
+    ## HEATMAP
+    #
+    # Clustering of all the differentially expressed genes with different layers
+    # of information such as the treatment and the event type.
+    # The heatmap function needs a
+    #   - Matrix data (m): Samples as columns and genes as rows
+    #   - Annotation samples (sample_col): Treatment corresponding to each sample
+    #   - Annotation genes (sample_row): Event type corresponding to each genes
+    
+    # Column information
+    # Sample columns information
+    # Should only contain the samples of the tissue followed by the treatment
+    sample_col <-  metadata %>% dplyr::select(all_of(trt))
+    rownames(sample_col) <- metadata$Sample
+    sample_col[trt] <- factor(metadata[[trt]])
+    
+    # # Row information
+    # # Should only contain the differential events of the tissue
+    # # Info: Name (Gen_Event) and event type
+    # sample_row <- df_sel %>%
+    #   distinct(NAME, .keep_all = TRUE) %>%
+    #   select(NAME, which(colnames(df_sel) %in% paste("PSI_", metadata$Sample, sep = "")), EVENT_TYPE)
+    # sample_row <- data.frame(COMPLEX = sample_row$EVENT_TYPE)
+    # rownames(sample_row) <- df_sel$NAME
+    
+    
+    # Choosing heatmap font size
+    if (dim(m)[1]>=60 & dim(m)[1]<200){font_row = 2} else if (dim(m)[1]>=200){font_row = 1} else if (dim(m)[1]<=60 & dim(m)[1]>=20){font_row = 2} else {font_row = 5}
+    if (dim(m)[2] <= 10){font_col = 7} else if (dim(m)[2] > 10 & dim(m)[2] < 20){font_col = 5} else {font_col = 2}
+    
+    
+    pheatmap(m,
+             scale = "row",
+             color = color_l$Heatmap,
+             cluster_rows = TRUE,
+             cluster_cols = TRUE,
+             annotation_col = sample_col,
+             annotation_colors = color_l,
+             show_rownames = TRUE,
+             fontsize_row = font_row,
+             fontsize_col = font_col,
+             border_color = NA,
+             treeheight_row = 0,
+             clustering_callback = callback,   # Sorting dendrogram
+             filename = paste(dir_fig, "/Heatmap_Zscore_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = "")
+    )
+    
+    pheatmap(m,
+             scale = "row",
+             color = color_l$Heatmap,
+             cluster_rows = TRUE,
+             cluster_cols = TRUE,
+             annotation_col = sample_col,
+             annotation_colors = color_l,
+             show_rownames = FALSE,
+             fontsize_col = font_col,
+             border_color = NA,
+             treeheight_row = 0,
+             clustering_callback = callback,   # Sorting dendrogram
+             filename = paste(dir_fig, "/Heatmap_Zscore_nonames_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = "")
+    )
+    
     
   }
   
@@ -1798,7 +1807,7 @@ for(i in 1:length(contrast)){
   
   # Selecting colors
   if(length(names(deg_list))==3) {ven_col <- color_list$Shared[-4]} else {ven_col <- color_list$Shared}
-
+  
   # Visualization of the shared genes among the different methods used
   ggvenn(deg_list,
          digits = 2,                                    # Two decimals
@@ -1840,7 +1849,7 @@ for(i in 1:length(contrast)){
   
   # Data frame of unique events
   unq_events <- deg_data[which(deg_data$GeneID %in% unq_tab$Var1),]
- 
+  
   
   ##############################################################################
   #                           UNIQUE EVENTS
@@ -1894,7 +1903,7 @@ for(i in 1:length(contrast)){
     
     
   }
-
+  
   
   ################################################################################
   #                            SAVE DATA

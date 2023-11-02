@@ -30,27 +30,41 @@ R
 # Load R libraries 
 .libPaths("/vols/GPArkaitz_bigdata/DATA_shared/NewCluster_R")
 
-
 ### General Project ###
 # Project Name 
 project_name <- "AC58"
 
+# Pathway to the folders and files
+# Can be your personal folder in BigData
+path_rocky <- paste("/vols/GPArkaitz_bigdata/mponce/", project, sep = "")
+path <- paste("W:/mponce/", project, sep = "")
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
+# Select path
+dir_main <- path
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Load log file 
+logfile <- read.table(paste(dir_main, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
 # Output and input directories SSH 
-dir_infiles <- paste("/vols/GPArkaitz_bigdata/mponce/", project_name, "/05_DEGs/01_TRIMMED", sep = "" )
-dir_outfiles <- paste("/vols/GPArkaitz_bigdata/mponce/", project_name, "/05_DEGs", sep = "")
+dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
+dir_outfiles <- dir_files
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Create output directory
-dir.create(file.path(dir_outfiles,"02_FASTQC"))
-dir_outfiles <- paste(dir_outfiles,"/02_FASTQC",sep='')
+dir.create(file.path(dir_outfiles, "00_FASTQC"))
+dir_outfiles <- paste(dir_outfiles, "/00_FASTQC",sep='')
 setwd(dir_outfiles)
 
 ### FASTQs ###
 # Instead of using the project name, here we use 
 # the files names
 # List fastq.gz files
-samples <- list.files(path=dir_infiles, pattern = "trmd.fastq.gz")
+samples <- list.files(path = dir_infiles, pattern = "fastq.gz")
 # Filter sample name 
-samples_names <- gsub("_trmd.fastq.gz", "", samples)
+samples_names <- gsub("fastq.gz", "", samples)
 
 
 ### Process information ###
