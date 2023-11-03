@@ -14,9 +14,7 @@ md5sum -c *gz
 cksum *gz
 ```
 
-In addition, there is a file name README2 in which you can include a summary of every step of the analysis. This 
-file can be set as the README in the new Github project you will create and will show in a quick view all the 
-information from the project.
+> ***Note***: There is a file name README2 in which you can include a summary of every step of the analysis, as well as, the project information. This file can be set as the README in the new Github project, it could be used as quick view to all project information, comparisons made, problems, etc.
 
 # How this scripts should be run 
 
@@ -33,10 +31,14 @@ In the verification script folder, you can find the following scripts
 - *_output* : After running jobs in Rocky, run the corresponding script to verify each job was **completed**. THIS IS A MUST FOR ADVANCING INTO ANOTHER STEP. If one job failed, you just have to consult the .err or the .out file to verify the fail and them adjust the .sh to run it again.
 - *_result_check* : This scripts produce the following outputs, one file with how the trimmed fastqs were affected, another with the results of the alignment (how good the mapping to the genome was) and one compeling the trimming results with the alignment results.  
 
-# Work done 
-
-Sample information script 
 
 # Folder
-- Analysis scripts
+- Scripts
 - Verification scripts
+
+
+
+```mermaid
+flowchart TD
+A[00_Sample] --> B[]
+```
