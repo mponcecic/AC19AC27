@@ -30,7 +30,7 @@
 
 
 # Folder
-# Input: W:/DATA_shared/AC-58_TotalRNAseq/
+# Input: W:/DATA_shared/Sequencing_name/
 # Output: Project folder
 
 
@@ -43,6 +43,7 @@ suppressMessages(library(stringr))
 suppressMessages(library(pdftools)) 
 suppressMessages(library(tidyverse)) 
 
+
 ################################################################################
 #                                 LOAD DATA                         
 ################################################################################
@@ -53,20 +54,24 @@ suppressMessages(library(tidyverse))
 project <- "AC58"
 
 # Pathway to the folders and files
-# Can be your personal folder in BigData
-path_rocky <- paste("/vols/GPArkaitz_bigdata/mponce/", project, sep = "")
-path <- paste("W:/mponce/", project, sep = "")
+# Select one option depending if you are running the script in Rocky or local
+# path <- "/vols/GPArkaitz_bigdata/mponce/"
+path <- "W:/mponce/"
+# Select the output directory
+dir_out <- path
+
 
 # Input directory
-# Must be the folder where a the library preparation pdf is found and folder 
+# Must be the folder where the library preparation pdf is found and folder 
 # with the fastq are included 
-# dir_in <- "/vols/GPArkaitz_bigdata/"
-files <- "W:/DATA_shared/AC-58_TotalRNAseq/"
 files_rocky <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-58_TotalRNAseq/"
-
+files <- "W:/DATA_shared/AC-58_TotalRNAseq/"
+# Select input directory
 dir_in <- files
   
 # Last sample found in the Library Preparation pdf
+# Add this carefully. This is a key step to generate a data frame based on the 
+# table from the data frame
 last_sample <- "AC-58_L16"
 
 # Condition
@@ -78,8 +83,7 @@ lvl_order <- c("Control", "4", "24", "48")
 
 # Output directory
 # Create the folder which the analysis information
-dir.create(file.path(path, project))
-dir_out <- path
+dir_out <- paste(dir_out, project, sep = "")
 
 # Set working directory
 setwd(dir_out)
@@ -96,43 +100,8 @@ file <- pdf_text(paste(dir_in, list.files(path = dir_in, pattern = "Library_Prep
 #                             FUNCTION                           
 ################################################################################
 
-
-# From pdf to data frame
-pdf_to_tab <- function(x, last_sample){
-  
-  # Description
-  # 
-  # Transform the table from the pdf into a data frame to select the variables of 
-  # interest
-  # This can not be completely automatized because the tables differ from project
-  
-  # Create a character vector using \n as the row separator
-  x <- map(x, ~ str_split(.x, "\\n") %>% unlist())
-  x <- reduce(x, c)
-  
-  # Select the beginning of the table
-  # Must be always the same
-  if(is.na(str_which(x, "Kibrary ID")[1])){
-    tab_start <- str_which(x, "GAP ID")[1]
-  } else {tab_start <- str_which(x, "Library ID")[1]}
-  
-  # Select the row of the end
-  tab_end <- str_which(x, last_sample)[1]
-  
-  # Select the rows of interest
-  tab <- x[(tab_start):(tab_end)]
-  
-  # Change column separator form spaces to "|" and remove the first four rows
-  tab <- str_replace_all(tab, "\\s{2,}", "|")
-  tab <- tab[-(1:4)]
-  
-  # Create a data frame of the table using "|" as a separator 
-  # Remove the first column beacuse it's empty
-  tab_df <- as.data.frame(do.call(rbind, strsplit(tab, "|", fixed = TRUE)))[,-1] 
-  
-  return(tab_df)
-}
-
+# Load function 
+source("utils/function_pdf_to_tab.R")
 
 ################################################################################
 #                             SAMPLE INFORMATION                           
@@ -191,8 +160,7 @@ log_data$project_name <- project
 log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_ord, collapse =",")
 log_data$path <- dir_out
-log_data$pathRocky <- path_rocky
-log_data$filedir <- files
+log_data$filedir <- dir_in
 log_data$filedirRocky <- files_rocky
 
 write.table(as.data.frame(log_data), paste(dir_out, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")

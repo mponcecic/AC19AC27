@@ -1,28 +1,37 @@
-##################################################
-#              MULTIFASTQC REPORT                #
-##################################################
+################################################################################
+#                         MULTIFASTQC REPORT                
+################################################################################
 
 # Summary
 #---------
 
-# Create a report with the result of the quality 
-# control performed in each fastq trimmed file per 
-# sample of AC62 project.
+# Summary report with the fastqc or quality control from the fastq files.
 
-# RUN LOCALLY IN RSTUDIO
+# Folder
+# Input: Project_folder/02_FASTQC
+# Output: Project_folder/02_FASTQC
 
 
-####################################################
-#                   LOAD LIBRARIES             
-####################################################
+################################################################################
+#                             FASTQCR VERSION
+################################################################################
+
+# Fastqcr version is the latest in Febrary 2023
+# Fastqcr v0.1.3
+# Link: https://cran.r-project.org/web/packages/fastqcr/
+
+
+################################################################################
+#                             LOAD LIBRARIES             
+################################################################################
 
 
 library(fastqcr)
 
 
-####################################################
-#           SET DIRECTORIES AND LOAD FILES             
-####################################################
+################################################################################
+#                   SET DIRECTORIES AND LOAD FILES             
+################################################################################
 
 
 ### General Project ###
@@ -42,9 +51,9 @@ samples <- list.files(path = dir_infiles, pattern = "_fastqc.zip")
 samples_names <- gsub("_fastqc.zip", "", samples)
 
 
-####################################################
-#               MULTIFASTQC REPORT               
-####################################################
+################################################################################
+#                           MULTIFASTQC REPORT               
+################################################################################
 
 qc_report(qc.path = dir_infiles, result.file = paste(dir_outfiles, "/",  project, "_MultiReport", sep=""), 
           interpret = TRUE)

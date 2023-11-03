@@ -1,57 +1,45 @@
-###############################################################
-#                   STEP 1: TRIMMING 
-###############################################################
+################################################################################
+#                             TRIMMING FASTQ  
+################################################################################
  
-# Conda version is the latest in March 2022
-# Conda 4.12.0
+
+# Summary
+# ---------
+
+# Trimmed the fastq file prior to mapping with STAR. This step is optional. 
+# In this script, we can perform a standard trimming and a more specific trimming 
+# from the projects sequenced with the SMARTer Stranded Total RNA-Seq kit v2 - 
+# Pico input Mammalian when the insert size smaller than 150 bps. Common steps 
+# are: 
 #
-# Condaconda is located in
-# /opt/ohpc/pub/apps/anaconda3/cic-env
+# The first step is to remove the adapters from both reads simultaneously which 
+# is performed using -a and -A for the first and second read, followed by the 
+# corresponding adapters. We use the Illumina universal adapter which can be seen 
+# in https://support-docs.illumina.com/SHARE/AdapterSeq/Content/SHARE/AdapterSeq/TruSeq/UDIndexes.htm
+#
+# Adapter R1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+# Adapter R2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+#
+# The second step correspond to the filtering based on the minimum read size 
+# (-m=30) and the quality (-q 10).
 # 
-# Cutadapt version 4.3 with Python 3.10.10 in environment cutadaptenv
-
-
-###############################################################
-#               Experimental Information
-###############################################################
-#
-# Project: AC35
-#
-# The raw data analyzed is contained in /vols/GPArkaitz_bigdata/DATA_shared/AC35  
-# This data is the RNAseq from 24 mice
-# The inserts size 40 - 300 bp
-# Library average size 363 bp
-# Paired-end reads
-# Library kit TruSeq Stranded mRNA
-
-
-###############################################################
-#                           Problems
-###############################################################
+# This are the steps common from both libraries. The unique step in SMARTer-Pico 
+# is the trimming the three random nucleotides present in reads is performed using 
+# -u and -U 3 after removing the adapter. 
 # 
-# Problem 1
-#-----------
-#
-# The sequencing data was produced with SMARTer Stranded Total RNA-Seq kit v2 - Pico input 
-# Mammalian which used the SMARTer Pico v2 adapter. As a result, the first three nucleotides of 
-# second read of paired-end reads are random nucleotides that must be trimmed to avoid multimapping.  
+# The differences in the steps are a consequence of how the reads looks like: 
 # 
+# Library - Truseq
+# 
+# Read 1
+# ---------------INSERT--------------- 
+# ---------------INSERT---------------Adapter  
 #
-# Problem 2
-#-----------
-#
-# According to our data, the insert size can change from 40 to  300 pbs and the adapter size 
-# is 139 pbs which means that when the  insert size is smaller than 150 pbs, the reads present 
-# adapters content. In addition, the read length is 2x150 bp sequencing what cause an unusual 
-# output when the inserts are smaller than 150 pbs. 
-#
-# Causing the transcription of the 3 random nucleotides on read 1, as well as, a partial 
-# transcription of the read 2 adapter.
-
-
-###############################################################
-#                      How do the reads look
-###############################################################
+# Read 2 
+# ---------------INSERT--------------- 
+# ---------------INSERT---------------Adapter
+# 
+# Library -  SMARTer Pico 
 # 
 # Read 1
 # ---------------INSERT--------------- 
@@ -62,69 +50,117 @@
 # XXX---------------INSERT--------------- 
 # XXX---------------INSERT---------------Adapter
 # 
-# XXX 3 nucleotides may be remove regardless of the quality
+# XXX 3 random nucleotides 
 
 
-###############################################################
-#                      Solution
-############################################################### 
+# Folder
+# Input: W:/DATA_shared/Sequencing_name/
+# Output: Project_folder/01_TRIMMED
+
+
+
+################################################################################
+#                         CUTADAPT VERSION
+################################################################################
+
+# Conda version is the latest in March 2022
+# Conda 4.12.0
 #
-# 1. Adapters trimming
-#   i. Cut the adapter corresponding to read 2 in the end (3') of the read 1***
-#   ii. Cut the adapter corresponding to read 1 in the beginning (5') of the read 2
-#
-# 2. Three random nucleotides must be trimmed prior to mapping which correspond to the SMARTer 
-# Stranded Pico v2 libraries. 
+# Condaconda is located in
+# /opt/ohpc/pub/apps/anaconda3/cic-env
 # 
-# 3. Filter reads based on the quality (q > 10) and the read size (read > 30bp) to avoid
-# poor alingment of the reads and false positive multimapping. The tendency in the quality
-# of the reads tend to decrease at the end of the reads 
-#
-# *** Insert size smaller than 150 bps
-#
-#
-# First step
-#------------
-#
-# The first step is to remove the adapters from both reads simultaniously which is performed
-# using -a and -A for the first and second read, followed by the corresponding adapters.
-# The adapter can be seen in https://support-docs.illumina.com/SHARE/AdapterSeq/Content/SHARE/AdapterSeq/TruSeq/UDIndexes.htm
-#
-# Adapter R1: 
-#           AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
-#
-# Adapter R2:
-#           AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
-#
-#
-# Second step
-#--------------
-#
-# The second step correspond to the trimming of the three nucleotides, as well as, the 
-# filtering based on the minimum read size (-m=30) and the quality (-q 10).
-# Trimming the three random nucleotides present in reads is performed using -u and -U 3. 
+# Cutadapt version 4.3 with Python 3.10.10 in environment cutadaptenv
+# 
+# Link: https://cutadapt.readthedocs.io/en/stable/index.html
+
+
+
+################################################################################
+#                             PIPELINE
+################################################################################
 
 
 ### Access R ###
 source /opt/ohpc/pub/apps/R/R-4.2.1/cic-R
 R
 # Load R libraries 
-.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/NewCluster_R")
+.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/Rocky_R/DEG_Rocky")
 
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 
-### General Project ###
-# Output and input directories SSH 
-dir_outfiles <- "/vols/GPArkaitz_bigdata/mponce/AC58" 
-dir_infiles <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-58_TotalRNAseq/FASTQs"
+# Project Name 
+project_name <- "AC58"
 
+# Pathway to the folders and files
+# Select one option depending if you are running the script in Rocky or local
+path <- "/vols/GPArkaitz_bigdata/mponce/"
+# path <- "W:/mponce/"
+
+
+# Date of the log file
+logdate <- ""
+
+
+### Process information ###
+partition <- "FAST"
+time <- c("00:40:00")
+memory <- c("1")
+cpu <- 4
+
+
+### Cutadapt parameters ###
+
+#   -a/A Adapter for the read 1 and 2, respectively. 
+#   -q Trim low-quality bases from 5' and/or 3' ends of each read before adapter 
+#     removal 
+#   -m Discard reads shorter then the length 
+#   --pair-filter=any Default option in cutadapt; Any of the reads in paired-end 
+#     read have to much a criterion
+#   -j Number of CPU cores. Set 0 to autodetect the number of cores available
+#   -u/U Remove LEN bases from each read. Applied before adapter trimming. In the 
+#     case of using SMARTer Pico, this has to be applied after the adapter trimming
+
+
+# Library preparation kit
+# Options: normal, pico (special trimming) and new (add parameter)
+seq_library <- "normal"
+
+## Adapter R1
+# Illumina universal adapter
+a <- "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+## Adapter R2
+# Illumina universal adapter
+A <- "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+
+# Quality threshold per base
+q <- 10
+# Length threshold
+# The read must present the at least this minimum length
+# m <- 20
+m <- 30
+
+# Remove 3 nucleotides in the reads 
+u <- "3"
+U <- "3"
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Output directories 
+dir_outfiles <- paste(path, project_name, sep = "")
+
+# Load log file 
+logfile <- read.table(paste(dir_outfiles, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+
+# Input directory
+dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
 
 # Create output directory
-dir.create(file.path(dir_outfiles,"05_DEGs"))
-dir_outfiles <- paste(dir_outfiles,"/05_DEGs",sep='')
 dir.create(file.path(dir_outfiles,"01_TRIMMED"))
 dir_outfiles <- paste(dir_outfiles,"/01_TRIMMED",sep='')
 setwd(dir_outfiles)
+
 
 ### FASTQs ###
 # Instead of using the project name, here we use 
@@ -134,12 +170,6 @@ samples <- list.files(path=dir_infiles, pattern = "_1.fastq.gz")
 # Filter sample name
 samples <- gsub("_1.fastq.gz", "", samples)
 
-
-### Process information ###
-partition <- "FAST"
-time <- c("00:40:00")
-memory <- c("1")
-cpu <- 4
 
 
 ###############################################################
@@ -159,41 +189,64 @@ for (i in 1:length(samples)) {
   # Output file: Adapter trimmed, q<10 and  m>30
   output1 <- paste(dir_outfiles, "/", samples[i],"_1_trmd.fastq.gz", sep="")
   output2 <- paste(dir_outfiles, "/", samples[i],"_2_trmd.fastq.gz", sep="")
-
-  # Command
-  command <- paste("cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -j 0  -q 10 -m=30 --pair-filter=any -o", output1,"-p", output2, input1, input2, sep=" ")
   
-  # SBATCH File
-  filename <- paste(job_name,".sh",sep='');
-  cat(
-    c("#!/bin/sh"),
-    paste("#SBATCH --job-name=",job_name,sep=''),
-    paste("#SBATCH --partition=",partition,sep=''),
-    paste("#SBATCH --cpus-per-task=",cpu,sep=''),
-    paste("#SBATCH --time=",time,sep=''),
-    paste("#SBATCH --mem=",memory,"GB",sep=''),
-    paste("#SBATCH -o ",job_name,".out",sep=''),
-    paste("#SBATCH -e ",job_name,".err",sep=''),
-    c("#SBATCH --mail-type=FAIL"),
-    c("#SBATCH --mail-user=mponce@cicbiogune.es"),
-    c(paste("cd ", dir_infiles)),
-    c("source /opt/ohpc/pub/apps/anaconda3/cic-env"), 
-    c("conda config --add channels defaults"),
-    c("conda config --add channels bioconda"),
-    c("conda config --add channels conda-forge"),
-    c("conda config --set channel_priority strict"),
-    #c("conda create -n cutadaptenv cutadapt"),       Download cutadapt environment
-    c("conda activate cutadaptenv"),
-    c(command),
-    file=filename,sep = "\n",append=F)
+  
+  if(seq_library == "normal"){
+    # Cutadapt command
+    command <- paste("cutadapt -a", a,"-A", A,"-j 0  -q", q,"-m=", m," --pair-filter=any -o", output1,"-p", output2, input1, input2, sep=" ")
+    
+    # SBATCH File
+    filename <- paste(job_name,".sh",sep='');
+    cat(
+      c("#!/bin/sh"),
+      paste("#SBATCH --job-name=",job_name,sep=''),
+      paste("#SBATCH --partition=",partition,sep=''),
+      paste("#SBATCH --cpus-per-task=",cpu,sep=''),
+      paste("#SBATCH --time=",time,sep=''),
+      paste("#SBATCH --mem=",memory,"GB",sep=''),
+      paste("#SBATCH -o ",job_name,".out",sep=''),
+      paste("#SBATCH -e ",job_name,".err",sep=''),
+      c(paste("cd ", dir_infiles)),
+      c("source /opt/ohpc/pub/apps/anaconda3/cic-env"),
+      c("conda activate cutadaptenv"),
+      c(command),
+      file=filename,sep = "\n",append=F)
+    
+  } else {
+    # Intermediate file to apply the u/U parameter after removing the adapter
+    outputm1 <- paste(dir_outfiles, "/", samples[i],"_1_m1.fastq.gz", sep="")
+    outputm2 <- paste(dir_outfiles, "/", samples[i],"_2_m1.fastq.gz", sep="")
+    
+    # Cutadapt command
+    command <- paste("cutadapt -a", a,"-A", A,"--pair-filter=any -o", outputm1,"-p", outputm2, input1, input2, sep=" ")
+    command2 <- paste("cutadapt -u", u,"-U", U,"-j 0 -q", q,"-m=", m," --pair-filter=any -o", output1,"-p", output2, outputm1, outputm2, sep=" ")
+    
+    # SBATCH File
+    filename <- paste(job_name,".sh",sep='');
+    cat(
+      c("#!/bin/sh"),
+      paste("#SBATCH --job-name=",job_name,sep=''),
+      paste("#SBATCH --partition=",partition,sep=''),
+      paste("#SBATCH --cpus-per-task=",cpu,sep=''),
+      paste("#SBATCH --time=",time,sep=''),
+      paste("#SBATCH --mem=",memory,"GB",sep=''),
+      paste("#SBATCH -o ",job_name,".out",sep=''),
+      paste("#SBATCH -e ",job_name,".err",sep=''),
+      c("#SBATCH --mail-type=FAIL"),
+      c("#SBATCH --mail-user=mponce@cicbiogune.es"),
+      c(paste("cd ", dir_infiles)),
+      c("source /opt/ohpc/pub/apps/anaconda3/cic-env"),
+      c("conda activate cutadaptenv"),
+      c(command),
+      c(command2),
+      file=filename,sep = "\n",append=F)
+  } 
+  
+  
   # Run PBS
   system(paste("sbatch",filename,sep=' '));
   Sys.sleep(3)
   }
-
-  # Pruebas
-  # system("sbatch CAS23_Trimmed.sh");
-  # Sys.sleep(3)
 
 q()
 

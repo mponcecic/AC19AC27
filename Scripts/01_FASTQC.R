@@ -1,59 +1,71 @@
-##################################################
-#             INTERACTIVE JOB ROCKY              #
-##################################################
+################################################################################
+#                           FASTQC RAW FASTQ              
+################################################################################
 
-# Resume 
-# ------------------------------------------------
-# PBS are generated and run in the cluster on this 
-# file. The aim of each file is to performed the 
-# Fastq Control Quality (fastqc) in the samples of
-# AC35 project.
-# 
-# Notes:
-# This files is based on the previous work of Saioa
-# 0_Saioa_CellRanger_count_Rocky_15092022
+# Summary
+# ---------
+
+# Quality control of the raw fastq files
+
+# Folder
+# Input: W:/DATA_shared/Sequencing_name/
+# Output: Project_folder/00_FASTQC
 
 
-# # In this case memory is FAST 
-# # Ask for a node and wait until it allocates one to you
-# salloc -N 1 -n 1 --mem=1G -t 00:30:00 --partition=FAST --job-name=interactive
-# # Enter the node assigned to you (gno02 or other)
-# ssh c02
-# # Jobs queues
-# squeue
-# squeue -u mponce
+################################################################################
+#                             FASTQC VERSION
+################################################################################
+
+# FastQC version is the latest in March 2023: 
+# FastQC v0.12.1
+#
+# FastQC is located in: 
+# /vols/GPArkaitz_bigdata/DATA_shared/NewCluster_Software/fastqc 
+
+# Link: https://github.com/s-andrews/FastQC
+
+
+################################################################################
+#                             PIPELINE
+################################################################################
 
 
 ### Access R ###
 source /opt/ohpc/pub/apps/R/R-4.2.1/cic-R
 R
 # Load R libraries 
-.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/NewCluster_R")
+.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/Rocky_R/DEG_Rocky")
 
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project Name 
 project_name <- "AC58"
 
-# Pathway to the folders and files
-# Can be your personal folder in BigData
-path_rocky <- paste("/vols/GPArkaitz_bigdata/mponce/", project, sep = "")
-path <- paste("W:/mponce/", project, sep = "")
 
+# Pathway to the folders and files
+# Select one option depending if you are running the script in Rocky or local
+path <- "/vols/GPArkaitz_bigdata/mponce/"
+# path <- "W:/mponce/"
+
+# Date of the log file
+logdate <- ""
+
+### Process information ###
+cluster <- "FAST"
+walltime <- c("00:10:00") 
+cpu <- 1
+memory <- c("3")
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
-# Select path
-dir_main <- path
-#-------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 # Load log file 
-logfile <- read.table(paste(dir_main, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
-#-------------------------------------------------------------------------------------------------------------------------------------------------------
-# Output and input directories SSH 
+# Input directory 
 dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
-dir_outfiles <- dir_files
-#-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Create output directory
+dir_outfiles <- paste(path, project_name, sep = "")
 dir.create(file.path(dir_outfiles, "00_FASTQC"))
 dir_outfiles <- paste(dir_outfiles, "/00_FASTQC",sep='')
 setwd(dir_outfiles)
@@ -65,39 +77,6 @@ setwd(dir_outfiles)
 samples <- list.files(path = dir_infiles, pattern = "fastq.gz")
 # Filter sample name 
 samples_names <- gsub("fastq.gz", "", samples)
-
-
-### Process information ###
-cluster <- "FAST"
-walltime <- c("00:10:00") 
-cpu <- 1
-memory <- c("3")
-
-
-####################################################
-#              FastQC info               
-####################################################
-# FastQC version is the latest in March 2023: 
-# FastQC v0.12.1
-#
-# FastQC is located in: 
-# /vols/GPArkaitz_bigdata/DATA_shared/NewCluster_Software/fastqc 
-
-
-
-####################################################
-# How to run in INDAR
-# 
-# 1. - input folder in DATA_shared
-# 
-# 2. - output folder inside my user folder in Bigdata 
-# and the save in the correspondig FastQC folder for 
-# the project
-# 
-# 3. - This script will generate a file listing all 
-# commands (one per sample) to send it to the home-made 
-# job scheduler for INDAR
-####################################################
 
 
 ### Generate PBS ###
@@ -124,7 +103,6 @@ for (i in 1:length(samples)) {
   system(paste("sbatch",filename,sep=' '));
   Sys.sleep(3)
   }
-
 
 q()
 
