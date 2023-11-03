@@ -27,3 +27,12 @@ squeue -u mponce
 source /opt/ohpc/pub/apps/R/R-4.2.1/cic-R
 R
 .libPaths("/vols/GPArkaitz_bigdata/DATA_shared/Rocky_R/DEG_Rocky")
+
+## Run you pipeline
+#.
+#.
+#.
+#.
+
+## Close R
+q()
