@@ -2,6 +2,7 @@
 #                 DIFFERENTIALLY EXPRESSED GENES SCRIPT
 ################################################################################
 
+
 # Summary 
 #------------
 
@@ -40,7 +41,7 @@
 #-------------------------------------------------------------------------------
 #                             REQUIREMENTS
 #-------------------------------------------------------------------------------
-#
+
 ## Gene count
 # -------------
 # 
@@ -50,8 +51,7 @@
 # This is the output of aligning the reads towards a reference genome. If you 
 # want to work with transcripts instead of genes, another approach should be 
 # followed.
-#
-#
+
 ## Metadata or sample information file
 # ---------------------------------------
 # 
@@ -61,13 +61,13 @@
 #   - Variable column the name must be specify in the code 
 #   - Covariates such as RIN, pv200, Age, ... This variables must be specify in 
 #     the code
-# 
+
 ## Annotation file
 # ------------------
 # 
 # The annotation file must present at least two columns being the first one the 
 # Ensembl gene annotation and the second the Symbol annotation. 
-#
+
 #-------------------------------------------------------------------------------
 
 
@@ -134,33 +134,40 @@ suppressPackageStartupMessages(library(dendsort))    # dist
 ################################################################################
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 # Project name
 project <- "AC58"
 
 # Pathway to the folders and files
-# Can be your personal folder in BigData
+# Select one option depending if you are running the script in Rocky or local
+# path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
 
+# Date of the log file
+logdate <- ""
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Load log file 
+logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+
 # Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/05_DEGs/03_STAR/RawCounts_", project,".txt", sep = "")
+dir_infiles <- paste(path, project, "/03_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
 # dir_out <- paste(path, project, sep = "")   # Default option
 dir_out <- paste(path, project, "/05_DEGs/", sep = "")
 
-
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Experimental condition
 # Choose only one condition per script
 # The name should be the same as in the metadata file or sample information file
-trt <- "Time"
+trt <- logfile$condition
 
 # Contrast levels
 # The order is important because it will be used to order the data, as well as, 
 # to create the contrast matrix, reference of the order, plot data, ...
 # 
 # The first must be the reference level
-lvl_ord <- c("Control", "4", "24", "48")
+lvl_ord <- logfile$condition_order
 
 
 # Contrast
@@ -258,12 +265,20 @@ blind <- FALSE        # Default option
 shk <- NULL
 
 # Color list
-# Better to choose the manual 
+# Better to choose colors manual but there is a function named *color_palette* 
+# which selects the colors for the condition
+
+# Optional:
+# color_list <- list(Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
+#                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
+#                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"), 
                    Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ggplot2 theme 
 theme_DEGs <- theme_bw()+ theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black"), panel.grid = element_blank())
@@ -273,24 +288,25 @@ theme_set(theme_DEGs)
 # Columns are Comparison, Method, Genes, Upregulated and Downregulated
 out_df <- data.frame()
 
+# Specie 
+specie <- logfile$Organism
 
 
 ################################################################################
 #                               LOAD FILES                       
 ################################################################################
 
-
 # Reference genome
-# Used in the mapping with STAR which was refdata-gex-GRCh38-2020-A
-genome <- read.table(paste(path, project, "/05_DEGs/03_STAR/Human_101/geneInfo.tab", sep = ""), skip = 1, 
-                     col.names = c("GeneID", "Symbol", "Biotype"))
+ref_genome <- read.table(paste(path, "/DEG_annotation/gene_annotation_20231106.txt", sep = ""),
+                     col.names = c("Symbol", "EnsemblID", "Organism"))
+genome <- ref_genome[which(ref_genome$Organism == specie), ]
 
 # Sample information/ Metadata
 data_info <- read.csv(file = paste(path, project, "/Sample_info.csv", sep = ""), header = TRUE)
 
 # Gene count matrix
 raw_counts <- read.table(file = dir_infiles, sep = "\t",  header = TRUE, stringsAsFactors = TRUE)
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 
 print(dim(raw_counts))
@@ -562,7 +578,7 @@ dev.off()
 # Step 3: Normalization 
 # ------------------------------------------------------------------------------
 # 
-# This step is also performed usin EdgeR and limma-voom but the method is 
+# This step is also performed using EdgeR and limma-voom but the method is 
 # different. Here we use the mean ratios method and in the other cases they use
 # TMM nethod (Trimmed Mean of M-values).
 # 

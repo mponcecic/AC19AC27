@@ -28,14 +28,13 @@
 #################################################################################
 
 
-# STAR version 2.7.10b
+# STAR version 2.7.10a
 
 ## Manuals used 
 
-# STAR manual 2.7.10b
+# STAR manual 2.7.10a
 # October 20, 2022
 # Link: https://github.com/alexdobin/STAR
-
 
 # STAR manual 2.7.0a
 # January 23, 2019
@@ -69,11 +68,12 @@ specie <- "Human"
 
 # Read insert
 # Remove one nucleotide
-read <- 100
+# read <- 100
+read <- 150
 
 ### Process information ###
 partition <- "FAST"
-time <- c("03:00:00")
+time <- c("00:45:00")
 memory <- c("40")
 cpu <- 8
 ram <- 30000000000 
@@ -81,13 +81,13 @@ ram <- 30000000000
 
 # Input and output directories  
 dir_infiles <- paste(path, project_name, "/01_TRIMMED", sep = "" )
-indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10b"
+indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10a"
 folder_name <- paste(specie, read+1, sep = "_")
 dir.create(file.path(indexfolder, folder_name))
 dir_outfiles <- paste(indexfolder,"/", folder_name, sep = "")
 
 # Set directory
-setwd(dir_outfiles)
+setwd(indexfolder)
 
 # Select specie annotation files
 if(specie = "Human"){
@@ -107,7 +107,7 @@ if(specie = "Human"){
 
 ### Generate PBS ###
 
-job_name <-  paste("Genome_index", read, format(Sys.time(),"%Y%m%d"), sep = "_")
+job_name <-  paste("Genome_index", specie, read, format(Sys.time(),"%Y%m%d"), sep = "_")
 
 # STAR path
 star_path <- "source /opt/ohpc/pub/apps/star/STAR-2.7.10a/cic-env"

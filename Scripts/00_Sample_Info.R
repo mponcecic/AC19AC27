@@ -60,7 +60,6 @@ path <- "W:/mponce/"
 # Select the output directory
 dir_out <- path
 
-
 # Input directory
 # Must be the folder where the library preparation pdf is found and folder 
 # with the fastq are included 
@@ -79,6 +78,13 @@ trt <- "Time"
   
 # Contrast level order 
 lvl_order <- c("Control", "4", "24", "48")
+
+# Organism
+# org <- "Mouse"
+org <- "Human"
+
+# Read length
+read <- 101
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output directory
@@ -137,6 +143,9 @@ data[trt] <- factor(c(rep("Control", 4), rep("4", 4), rep("48", 4), rep("24", 4)
 data <- data %>% mutate(Ind = sub(".*E", "E", data$Sample)) %>% arrange(Time)
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+# Save data as sample information 
+sample_info <- data
+
 
 #######################################################################
 #                             SAVE DATA                         
@@ -158,10 +167,12 @@ log_data <- c()
 log_data$Date <- Sys.time()
 log_data$project_name <- project
 log_data$condition <- trt
-log_data$condition_order <- paste0(lvl_ord, collapse =",")
+log_data$condition_order <- paste0(lvl_order, collapse =",")
 log_data$path <- dir_out
 log_data$filedir <- dir_in
 log_data$filedirRocky <- files_rocky
+log_data$Organism <- org
+log_data$read <- read
 
 write.table(as.data.frame(log_data), paste(dir_out, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 

@@ -1,46 +1,28 @@
-#######################################################################
+################################################################################
 #                             GENE COUNTS                         
-#######################################################################
+################################################################################
 
 # Summary
-#---------
+# ---------
 # 
-# The alignment output, ReadsPerGene.out.tab, is manipulated to obtain 
-# the raw counts file. To accomplish this aim we first need to decide 
-# the directionality of our reads and which one is a refflect of the 
-# coding strand.  
+# After aligning the reads with STAR, we used the output ReadsPerGene.out.tab 
+# which is manipulated to obtain the raw counts file used in the differential 
+# expressed analysis. To accomplish this aim we first need to decide the reads
+# directionality and which one is a reflect of the coding strand.  
+
+
+# Folder
+# Input: Project_folder/03_STAR
+# Output: Project_folder/03_STAR
 
 
 
-###############################################################
-#               Experimental Information
-###############################################################
-
-# Project: AC35
-
-# The raw data analyzed is contained in /vols/GPArkaitz_bigdata/DATA_shared/AC35  
-# Mouse (24 mice)
-# Bulk RNAseq paired-end
-# The inserts size 40 - 300 bp
-# Library average size 363 bp
-# Read length 101
-# Library kit TruSeq Stranded mRNA
+################################################################################
+#                       How to choose the stranded
+################################################################################
 
 
-###############################################################
-#                         R Version
-###############################################################
-
-# R version is the latest in March 2023
-# R version 4.2.3 
-
-
-###############################################################
-#                How to choose the stranded
-###############################################################
-
-
-## Gene Counts (ReadsPerGene.out.tab)
+## Gene Counts (ReadsPerGene.out.tab) 
 
 # Column 1. Gene ID
 # Column 2. counts for unstraned RNA-seq
@@ -51,46 +33,44 @@
 # First step: Stranded or unstranded?
 # ------------------------------------
 # 
-# Based on the name of the protocol, Illumina Truseq mRNA stranded, 
-# reads are stranded. The second column which corresponds to the 
-# unstranded DNA is not an option. 
-#
-#
+# Based on the name of the protocol, Illumina Truseq mRNA stranded, reads are 
+# stranded. The second column which corresponds to the unstranded DNA is not an 
+# option. 
+
+
 # Second step: Stranded or unstranded?
 # ------------------------------------
 #
-# According to SMARTer Stranded Total RNA-Seq Kit v2, we choose 
-# the fourth column (counts for 2nd read strand aligned with RNA).  
-# Because the first cDNA was synthetized using SMARTScribe Reverse 
-# Transcriptase. In our case, the second reads align with the coding
-# DNA strand were the gen is found. 
+# According to library preparation manual, we choose the fourth column 
+# (counts for 2nd read strand aligned with RNA). Because the first cDNA was 
+# synthesized using SMARTScribe Reverse Transcriptase. In our case, the second 
+# reads align with the coding DNA strand were the gen is found. 
+# 
+# In case, you don't know the strandedness of the protocol, you must select the 
+# columns with more counts. The ratio should be 1:50 or even 1:100.
 # 
 # For a deeper understanding keep reading
 # 
-# The DNA is double stranded which means the the strand can be 
-# template/antisense or coding/sense when being classified besed on 
-# the gen. The coding strand is read in the 5' -> 3' direction, meaning
-# this is the direction of the gene.
+# The DNA is double stranded which means the the strand can be template/antisense 
+# or coding/sense when being classified based on the gen. The coding strand is 
+# read in the 5' -> 3' direction, meaning this is the direction of the gene.
 # 
-# The RNA polymerase synthetizes the mRNA in the  5' -> 3' direction, 
-# which means that the mRNA presents the same information as the coding 
-# strand. Bear this idea in mind because we align the reads towards a 
-# genome and not a transcriptome.
+# The RNA polymerase synthesizes the mRNA in the  5' -> 3' direction, which means 
+# that the mRNA presents the same information as the coding strand. Bear this idea 
+# in mind because we align the reads towards a genome and not a transcriptome.
 # 
-# At this point, the Illumina kit takes part. A reverse transcriptase is 
-# used to obtain the first cDNA, after adding a primer in the 3' end. 
-# The cDNA is read in the 3' -> 5' direction which refers to the 
-# template/antisense DNA strand. 
-# Remember, the reverse transcriptase added 3 nucleotides at the end 
-# of the synthesis. 
+# At this point, the Illumina kit takes part. A reverse transcriptase is used to 
+# obtain the first cDNA, after adding a primer in the 3' end. The cDNA is read in 
+# the 3' -> 5' direction which refers to the template/antisense DNA strand. Remember, 
+# the reverse transcriptase added 3 nucleotides at the end of the synthesis. 
 # 
-# Afterwards, the 5' and 3' primers are added and the reads are synthetized.
-# As a result, the second read can be read in the  5' -> 3' direction and the
-# first read in the 3' -> 5' direction. 
+# Afterwards, the 5' and 3' primers are added and the reads are synthesized. As 
+# a result, the second read can be read in the  5' -> 3' direction and the first 
+# read in the 3' -> 5' direction. 
 # 
-# In this case, the second reads is the one presenting the reading direction 
-# of the mRNA and the first strand is form the templat strand. Being this the 
-# reason why it's chosen which is a consequence of reverse transcriptase. 
+# In this case, the second reads is the one presenting the reading direction of 
+# the mRNA and the first strand is form the template strand. Being this the reason 
+# why it's chosen which is a consequence of reverse transcriptase. 
 # 
 # 
 # Schema
@@ -117,28 +97,45 @@
 # 
 # *The 5' end is represented on the left side and the 3' end on the right
 # 
-# Following the manual SMARTer Stranded Total RNA-Seq Kit v2 that 
-# you can find in the documentation folder and different online 
-# resources such as https://github.com/alexdobin/STAR/issues/842 
-# https://www.biostars.org/p/3423/
-# https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/ref-based/tutorial.html#counting-reads-per-genes
-# https://chipster.csc.fi/manual/library-type-summary.html
 
-#######################################################################
-#                            LOAD LIBRARIES                           #
-#######################################################################
+
+# References
+# -------------------
+# https://chipster.csc.fi/manual/library-type-summary.html -- Directionality
+# https://github.com/alexdobin/STAR/issues/842 -- When to choose column 3/4
+# https://www.biostars.org/p/3423/ -- Directionality
+# https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/ref-based/tutorial.html#counting-reads-per-genes
+
+
+
+
+################################################################################
+#                            LOAD LIBRARIES                           
+################################################################################
 
 library(dplyr)
 
-#######################################################################
-#                         LOAD FILES AND DATA                           
-#######################################################################
+################################################################################
+#                             LOAD DATA                           
+################################################################################
 
+
+#------------------------------------------------------------------------------------------------------------------------
+### General Project ###
 # Project name
 project <- "AC58"
 
+# Pathway to the folders and files
+# Select one option depending if you are running the script in Rocky or local
+# path <- "/vols/GPArkaitz_bigdata/mponce/"
+path <- "W:/mponce/"
+
+# Select column to obtain the raw counts
+strand <- 4
+#------------------------------------------------------------------------------------------------------------------------
+
 # Input and output directory
-input_dir <- paste("W:/mponce/", project, "/05_DEGs/03_STAR/", sep = "") 
+input_dir <- paste(path, project, "/03_STAR/", sep = "") 
 
 # Set working directory
 setwd(input_dir)
@@ -147,9 +144,6 @@ setwd(input_dir)
 samples <- gsub(".out", "", list.files(pattern = ".out"))
 # Filter sample name 
 samples_names <- gsub("_STAR", "", samples)
-
-# Select column to obtain the raw counts
-strand <- 4
 
 
 #######################################################################

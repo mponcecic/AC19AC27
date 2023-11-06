@@ -44,4 +44,3 @@ pdf_to_tab <- function(x, last_sample){
   
   return(tab_df)
 }
-

@@ -35,11 +35,11 @@
 #################################################################################
 
 
-# STAR version 2.7.10b
+# STAR version 2.7.10a
 
 ## Manuals used 
 
-# STAR manual 2.7.10b
+# STAR manual 2.7.10a
 # October 20, 2022
 # Link: https://github.com/alexdobin/STAR
 
@@ -49,9 +49,9 @@
 
 
 
-###############################################################
-#                   Parameters selection
-###############################################################
+################################################################################
+#                         PARAMETERS SELECTION
+################################################################################
 
 
 # Run parameters
@@ -131,12 +131,14 @@
 #         all 1st pass junctions inserted into the genome indices on 
 #         the fly. 
 #
-#
-####################### CONSIDERATIONS #######################
+
+# ------------------------------------------------------------------------------
+# Considerations 
+# ------------------------------------------------------------------------------
 #
 #
 # Consideration 1
-#-----------------
+# -----------------
 # 
 # The parameter outFilterMultimapNmax only applies to genomic alignments 
 # which means that when mapping the reads towards the genome of reference
@@ -165,7 +167,7 @@
 # 
 #
 # Consideration 2
-#-----------------
+# -----------------
 # 
 # The SPLICING JUNCTIONS output files includes all reads which means 
 # that includes the uniquely mapped and the multimapping reads.
@@ -174,7 +176,7 @@
 #
 #
 # Consideration 3
-#-----------------
+# -----------------
 # 
 # Reason why we performed SAM instead of sorted by coordinates BAM format. 
 # The --limitBAMsortRAM parameter showed the following error:
@@ -193,11 +195,9 @@
 
 
 
-
-
-###############################################################
-#                       Output
-###############################################################
+################################################################################
+#                       STAR Output
+################################################################################
 
 ## Log files 
 
@@ -234,6 +234,9 @@
 
 
 ## Gene Counts (ReadsPerGene.out.tab)
+
+# This file is the file that will be used in the analysis of DEGs and will be 
+# used in the following step
 
 # Column 1. Gene ID
 # Column 2. counts for unstraned RNA-seq
@@ -298,13 +301,6 @@ trmd <- TRUE
 # Add when you want to work with raw fastqs
 logdate <- ""
 
-# Specie
-# specie <- "Mouse"
-specie <- "Human"
-
-# Read insert
-read <- 101
-
 ### Process information ###
 partition <- "FAST"
 time <- c("03:00:00")
@@ -314,6 +310,16 @@ cpu <- 6
 ram <- as.numeric(memory)*10^9
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Load log file 
+logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+
+# Specie
+specie <- logfile$Organism
+
+# Read insert
+read <- logfile$read
+
 
 # Input directories
 if(trmd == TRUE){
@@ -341,7 +347,7 @@ setwd(dir_outfiles)
 
 
 # Genome index
-indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10b"
+indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10a"
 genome_dir <- paste(indexfolder, "/", specie, "_", read, sep = "")
 
 
@@ -415,4 +421,3 @@ for (i in 1:length(samples_names)) {
 
 
 q()
-
