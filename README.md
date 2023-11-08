@@ -2,16 +2,23 @@
 
 :collision: Differential expressed genes analysis workflow from scratch for the AC lab.
 
-# Prior step
+# Contents
+
+- [Check corrupt files](#check-corrupt-files)
+- [How this scripts should be run](#how-this-scripts-should-be-run)
+- [Verification scripts](#verification-scripts)
+- [Folder and scripts](#folder-and-scripts)
+
+# Check corrupt files
 
 First things first, verify that the fastqs you will be using are not corrupt. You can run the following code
 
 ```
 cd /drives/w/DATA_shared/PROJECT_NAME/FASTQs/
 
-md5sum *gz
-md5sum -c *gz 
-cksum *gz
+md5sum *gz > check.txt
+md5sum -c *gz > check.txt 
+cksum *gz > check.txt
 ```
 
 > ***Note***: There is a file name README2 in which you can include a summary of every step of the analysis, as well as, the project information. This file can be set as the README in the new Github project, it could be used as quick view to all project information, comparisons made, problems, etc.
@@ -22,8 +29,7 @@ First, you should run the script name 00_Sample_info.R, which generates Sample_i
 This scripts involves different manual adjustments and you should have access to the library preparation pdf file. In addition, 
 this file creates a folder in BigData to save the project analysis which is name as the project.
 
-
-# Verification 
+# Verification scripts
 
 In the verification script folder, you can find the following scripts
 00_fastq_file.R, 01_fastqc_output.R, 02_trimmed_fastq_output.R, 02_trimmed_fastq_result_check.R, 03_fastqc_output.R, 04_STAR_output.R and 04_STAR_result_check.R. As you can see, we can differenciate between three types of files which include *_file*, *_output* and *_result_check*. 
@@ -32,30 +38,26 @@ In the verification script folder, you can find the following scripts
 - *_result_check* : This scripts produce the following outputs, one file with how the trimmed fastqs were affected, another with the results of the alignment (how good the mapping to the genome was) and one compeling the trimming results with the alignment results.  
 
 
-# Folder and information
+# Folder and scripts
 - Scripts
-> - 00_Sample_Info.R                           
-> - 01_FASTQC.R
-> - 01_MULTIFASTQC.R 
-> - 02_TRIMMING.R
-> - 03_FASTQC.R
-> - 03_MULTIFASTQC.R
-> - 04_STAR_genome_index.R (optional)
-> - 04_STAR_align.R
-> - 05_GeneCounts.R        
-> - 
-> - 
-> - 
-> - 
-> - 
-> - 
-
+    - 00_Sample_Info.R
+    - 01_FASTQC.R
+    - 01_MULTIFASTQC.R 
+    - 02_TRIMMING.R
+    - 03_FASTQC.R
+    - 03_MULTIFASTQC.R
+    - 04_STAR_genome_index.R (optional)
+    - 04_STAR_align.R
+    - 05_GeneCounts.R        
+    - 
+    -         
+    - 
 
 - Verification 
-> - 00_fastq_file.R              
-> - 01_fastqc_output.R
-> - 02_trimmed_fastq_output.R
-> - 02_trimmed_fastq_result_check.R
-> - 03_fastqc_output.R 
-> - 04_STAR_output.R
-> - 04_STAR_result_check.R 
+    - 00_fastq_file.R              
+    - 01_fastqc_output.R
+    - 02_trimmed_fastq_output.R
+    - 02_trimmed_fastq_result_check.R
+    - 03_fastqc_output.R 
+    - 04_STAR_output.R
+    - 04_STAR_result_check.R 
