@@ -1,6 +1,6 @@
-################################################################
-#                       FUNCTIONS
-################################################################
+################################################################################
+#                             FUNCTIONS
+################################################################################
 
 # Summary
 # ----------
@@ -12,9 +12,9 @@
 
 
 
-################################################################
-#                         CONTRAST
-################################################################
+################################################################################
+#                             CONTRAST
+################################################################################
 
 
 # Contrast matrix function
@@ -30,10 +30,9 @@ create_contrast <- function(trt, lvl_ord) {
 }
 
 
-################################################################
-#                         CALLBACK
-################################################################
-
+################################################################################
+#                               CALLBACK
+################################################################################
 
 # Reorder cluster rows
 # Control on the left and Treatment on the right size 
@@ -47,9 +46,9 @@ callback = function(hc, ...){dendsort(hc, isReverse = FALSE, type = "average")}
 
 
 
-################################################################
-#                         CONGRUENCE
-################################################################
+################################################################################
+#                               CONGRUENCE
+################################################################################
 
 
 # Congruence function
@@ -66,9 +65,9 @@ check_congruence <- function(x){
 
 
 
-################################################################
-#                      COLOR PALETTE
-################################################################
+################################################################################
+#                               COLOR PALETTE
+################################################################################
 
 
 # Color list function
@@ -106,9 +105,9 @@ color_palette <- function(color_list, trt, lvl_order, palette = "Dark2"){
 
 
 
-################################################################
-#                        WILCOXON TEST
-################################################################
+################################################################################
+#                             WILCOXON TEST
+################################################################################
 
 
 # Wilcoxon test
@@ -136,9 +135,65 @@ wilcoxon_test <- function(count_cpm, correction, metadata, trt, contrast){
 
 
 
-################################################################
-#                         PLOTS
-################################################################
+################################################################################
+#                       FILTERING GENE COUNTS
+################################################################################
+
+
+# Filter gene count matrix
+filter_genecounts <- function(counts_comp, metadata, trt, min_count = 10, min_prop = 0.7, n_large = 30, min_total = 15){
+  
+  # The filtering process differed depending on the group sample size. The group 
+  # sample size is the number of samples corresponding to one level of the 
+  # condition. When the group sample size is over the large sample size, the 
+  # filtering step will be more restrictive. The default large sample size 
+  # (n_large) is set in 30.
+  # For groups with large samples size, 
+  
+  
+  # This function is based on the function filterByExpr used in EdgeR and 
+  # limma-voom. Link: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
+  
+  
+  # minimun count (min_count)
+  # minimun total count (min_total)
+  
+  # DEGList
+  comp <- DGEList(counts = counts_comp, group = metadata[,trt])
+  lib_size <- comp$samples$lib.size
+  cpm_counts <- cpm(comp, lib.size = lib_size)
+  
+  # Group sample size over the large sample size
+  # 0 when no group is over the large sample size 
+  # >0 when a group is over the large sample size
+  sample_size <- as.vector(tabulate(metadata$Time))
+  h <- sum(sample_size >= n_large)
+  
+  # Minimum sample size
+  min_size <- sample_size[which.min(sample_size)]
+  
+  # Minimum sample size in large samples
+  if(h > 0){min_size <- n_large + (min_size - n_large)*min_prop}
+  
+  
+  # Cutoff
+  cpm_cutoff <- min_count/mean(lib_size)*1e6
+  
+  # Filtering step
+  keep_counts <- rowSums(counts_comp >= min_count) >= min_size
+  keep_counts <- rowSums(cpm_counts >= cpm_cutoff) >= (min_size - 1e-14)
+  
+  keep_total <- rowSums(counts_comp) >= min_total -1e-14
+  
+  
+  keep_total & keep_counts
+}
+
+
+
+################################################################################
+#                               PLOTS
+################################################################################
 
 
 # Alternative to function ggsave()
@@ -438,28 +493,28 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
 }
 
 
-
-
-
-
-ggsave_bg(filename = paste("00_Validation_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), width = 10, height = 10, plot = fig, path = dir_fig)
-
-pdf(paste(dir_fig, "/Heatmap_Zscore_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), height = 4, width = 4, bg = "white", compress = TRUE)
-dev.off()
-
-pdf(paste(dir_fig, "/Volcano_DEGs_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-dev.off()
-
-pdf(paste(dir_fig, "/Volcano_DEGs_Direction_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-dev.off()
-
-pdf(paste(dir_fig, "/Waterfall_DEGs_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-dev.off()
-
-pdf(paste(dir_fig, "/Waterfall_DEGs_top_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-dev.off()
-
-ggsave_bg(filename = paste("PCA_params_", analysis, "_", threshold, "_", name, "_", project, "_scree.pdf", sep = ""), plot = results[[1]], path = dir_fig, height = 5, width = 6)
-ggsave_bg(filename = paste(deparse(substitute(pca_1vs2)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[2]], path = dir_fig, height = 5, width = 6)
-ggsave_bg(filename = paste(deparse(substitute(pca_1vs3)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[3]], path = dir_fig, height = 5, width = 6)
-ggsave_bg(filename = paste(deparse(substitute(pca_1vs4)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[4]], path = dir_fig, height = 5, width = 6)
+# 
+# 
+# 
+# 
+# ggsave_bg(filename = paste("00_Validation_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), width = 10, height = 10, plot = fig, path = dir_fig)
+# 
+# pdf(paste(dir_fig, "/Heatmap_Zscore_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), height = 4, width = 4, bg = "white", compress = TRUE)
+# dev.off()
+# 
+# pdf(paste(dir_fig, "/Volcano_DEGs_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
+# dev.off()
+# 
+# pdf(paste(dir_fig, "/Volcano_DEGs_Direction_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
+# dev.off()
+# 
+# pdf(paste(dir_fig, "/Waterfall_DEGs_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
+# dev.off()
+# 
+# pdf(paste(dir_fig, "/Waterfall_DEGs_top_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
+# dev.off()
+# 
+# ggsave_bg(filename = paste("PCA_params_", analysis, "_", threshold, "_", name, "_", project, "_scree.pdf", sep = ""), plot = results[[1]], path = dir_fig, height = 5, width = 6)
+# ggsave_bg(filename = paste(deparse(substitute(pca_1vs2)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[2]], path = dir_fig, height = 5, width = 6)
+# ggsave_bg(filename = paste(deparse(substitute(pca_1vs3)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[3]], path = dir_fig, height = 5, width = 6)
+# ggsave_bg(filename = paste(deparse(substitute(pca_1vs4)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[4]], path = dir_fig, height = 5, width = 6)
