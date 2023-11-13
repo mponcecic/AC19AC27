@@ -5,10 +5,27 @@
 # Summary
 # ----------
 #
-# Contain all the functions created and run in the differentially 
-# expressed genes analysis
+# Contain all the functions created and run in the differentially expressed 
+# genes analysis scripts (06_DEG_vX.R)
+
+# List of functions
 # 
-# Script: 06_DEG_vX.R
+# - create_contrast
+# - callback
+# - check_congruence
+# - color_palette
+# - wilcoxon_test
+# - filter_genecounts
+# 
+# Plots function list
+#   - ggsave_bg
+#   - pca_plot
+#   - heatmap_plot
+#   - hist_verif 
+#   - volcano_plot
+#   - waterfall_plot
+#   - waterfall_top
+
 
 
 
@@ -28,6 +45,42 @@ create_contrast <- function(trt, lvl_ord) {
   for (i in 2:length(lvl_ord)) {for (j in 1:(i - 1)) {contrast[length(contrast) + 1] <- list(c(trt, lvl_ord[i], lvl_ord[j]))}}
   return(contrast)
 }
+
+
+
+################################################################################
+#                             DESIGN FORMULA
+################################################################################
+
+
+# This function generates the design formula for the different analysis 
+# 
+# Steps
+# 1. Check there are covariates
+# 2. Check the values of the covariate are not equal to avoid colinearity in 
+#   the model. If their values are equal the variable is not included in the 
+#   model.
+# 3. Create the design formula
+
+design_condition <- function(analysis, trt, var_exp, metadata){
+  
+  var_design <- NULL
+  # Covariates  
+  if(is.null(var_exp) == FALSE){
+    # Check if the covariates present equal values or not 
+    for (k in 1:length(var_exp)){if(length(unique(metadata[, var_exp[k]]))>1){var_design <- c(var_design, var_exp[k])}}
+    # Design model for DESeq2
+    if(analysis == "DESeq2"){
+      design_cond = ifelse(is.null(var_design) == FALSE, paste("~", paste(var_design, "_zscore", " +", sep = "", collapse = " "), trt, sep = " "), paste("~", trt, sep = " "))
+    # Design model for limma-voom and EdgeR
+    }else{design_cond <- ifelse(!is.null(var_design), paste("~ 0 +", paste0(var_design, "+", collapse = " "), trt), paste("~ 0 +", trt))}
+    
+  # No Covariate
+  } else {design_cond = ifelse(analysis == "DESeq2", paste("~", trt), paste("~ 0 +", trt))}
+  
+  return(design_cond)
+}
+
 
 
 ################################################################################
@@ -166,28 +219,80 @@ filter_genecounts <- function(counts_comp, metadata, trt, min_count = 10, min_pr
   # Group sample size over the large sample size
   # 0 when no group is over the large sample size 
   # >0 when a group is over the large sample size
-  sample_size <- as.vector(tabulate(metadata$Time))
+  sample_size <- as.vector(tabulate(metadata[[trt]]))
   h <- sum(sample_size >= n_large)
   
   # Minimum sample size
   min_size <- sample_size[which.min(sample_size)]
   
+  # Cutoff CPM
+  cpm_cutoff <- min_count/mean(lib_size)*1e6
+  
   # Minimum sample size in large samples
   if(h > 0){min_size <- n_large + (min_size - n_large)*min_prop}
   
-  
-  # Cutoff
-  cpm_cutoff <- min_count/mean(lib_size)*1e6
-  
-  # Filtering step
-  keep_counts <- rowSums(counts_comp >= min_count) >= min_size
+  # Filtering data
   keep_counts <- rowSums(cpm_counts >= cpm_cutoff) >= (min_size - 1e-14)
+  keep_total <- (rowSums(counts_comp) >= min_total -1e-14)
+
   
-  keep_total <- rowSums(counts_comp) >= min_total -1e-14
-  
-  
+  # Output
   keep_total & keep_counts
 }
+
+
+
+# Filter gene count matrix
+# filter_genecounts <- function(counts_comp, metadata, trt, min_count = 10, min_prop = 0.7, n_large = 30, min_total = 15){
+#   
+#   # The filtering process differed depending on the group sample size. The group 
+#   # sample size is the number of samples corresponding to one level of the 
+#   # condition. When the group sample size is over the large sample size, the 
+#   # filtering step will be more restrictive. The default large sample size 
+#   # (n_large) is set in 30.
+#   # For groups with large samples size, 
+#   
+#   
+#   # This function is based on the function filterByExpr used in EdgeR and 
+#   # limma-voom. Link: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
+#   
+#   
+#   # minimun count (min_count)
+#   # minimun total count (min_total)
+#   
+#   # DEGList
+#   comp <- DGEList(counts = counts_comp, group = metadata[,trt])
+#   lib_size <- comp$samples$lib.size
+#   cpm_counts <- cpm(comp, lib.size = lib_size)
+#   
+#   # Group sample size over the large sample size
+#   # 0 when no group is over the large sample size 
+#   # > 0 when a group is over the large sample size
+#   sample_size <- as.vector(tabulate(metadata[[trt]]))
+#   h <- sum(sample_size >= n_large)
+#   
+#   # Minimum sample size
+#   min_size <- sample_size[which.min(sample_size)]
+#   
+#   # Cutoff CPM
+#   cpm_cutoff <- min_count/mean(lib_size)*1e6
+#   
+#   # Modifications when sample group >  large samples size
+#   if(h > 0){
+#     # This step is done by Ivana 
+#     keep_total <- (rowSums(counts_comp > 5) >= (min_size*min_prop))
+#     
+#     # Minimum sample size in large samples
+#     min_size <- n_large + (min_size - n_large)*min_prop
+#   } else {keep_total <- (rowSums(counts_comp) >= min_total -1e-14)}
+#     
+#   # Filtering data
+#   keep_counts <- rowSums(cpm_counts >= cpm_cutoff) >= (min_size - 1e-14)
+# 
+#   
+#   # Output
+#   keep_counts & keep_total
+# }
 
 
 
@@ -211,7 +316,7 @@ ggsave_bg <- function(filename, plot, path, width, height) {ggsave(filename = fi
 #                         PCA
 ################################################################
 
-perform_pca_analysis <- function(m, trt, metadata, color_l) {
+pca_plot <- function(m, trt, metadata, color_l) {
   
   # PCA plots
   #
@@ -236,16 +341,6 @@ perform_pca_analysis <- function(m, trt, metadata, color_l) {
   # Scree plot
   # Percentage of variances explained by each principal component
   pca_scree <- fviz_eig(m_pca, choice = "variance", addlabels = TRUE, ggtheme = theme_classic(), main = "Screeplot")
-  
-  # Variable graphs
-  # Contributions of the events in each principal component
-  # Positive correlated variables point to the same side of the plot
-  # Negative correlated variables point to opposite sides of the graph.
-  pca_var <- fviz_pca_var(m_pca, col.var = "contrib", gradient.cols = c("blue", "yellow", "red")) +
-    theme_classic() + 
-    labs(title = "Variance Contribution")
-  
-  fig <- ggarrange(pca_scree, pca_var, ncol = 2, nrow = 1, widths = 10, heights = 4)
   
   # PC1 vs PC2
   pca_1vs2 <- fviz_pca_ind(m_pca, axes = c(1, 2),
@@ -278,7 +373,7 @@ perform_pca_analysis <- function(m, trt, metadata, color_l) {
     theme(legend.position = "none")
   
   # Return the plots
-  return(list(fig, pca_1vs2, pca_1vs3, pca_1vs4))
+  return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4))
 }
 
 
@@ -427,7 +522,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
           axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
   # Return the plots
-  return(list(A = A, B = B))
+  return(list(A, B))
 }
 
 
@@ -484,7 +579,7 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
   # Select the top 30 genes 
   wf_sel <- rbind(wf[1:top,], wf[(dim(wf)[1]-top):dim(wf)[1],]) 
   
-  ggplot(top_up_down, aes(x = logFC, y = GeneID, fill = Direction)) +
+  ggplot(wf_sel, aes(x = logFC, y = GeneID, fill = Direction)) +
     geom_bar( stat = "identity") +
     xlab("Log2 Fold Change") +
     ylab("Gene name") +
@@ -492,29 +587,3 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
     theme(legend.position = "none")
 }
 
-
-# 
-# 
-# 
-# 
-# ggsave_bg(filename = paste("00_Validation_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), width = 10, height = 10, plot = fig, path = dir_fig)
-# 
-# pdf(paste(dir_fig, "/Heatmap_Zscore_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Volcano_DEGs_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Volcano_DEGs_Direction_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Waterfall_DEGs_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Waterfall_DEGs_top_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# ggsave_bg(filename = paste("PCA_params_", analysis, "_", threshold, "_", name, "_", project, "_scree.pdf", sep = ""), plot = results[[1]], path = dir_fig, height = 5, width = 6)
-# ggsave_bg(filename = paste(deparse(substitute(pca_1vs2)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[2]], path = dir_fig, height = 5, width = 6)
-# ggsave_bg(filename = paste(deparse(substitute(pca_1vs3)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[3]], path = dir_fig, height = 5, width = 6)
-# ggsave_bg(filename = paste(deparse(substitute(pca_1vs4)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[4]], path = dir_fig, height = 5, width = 6)
