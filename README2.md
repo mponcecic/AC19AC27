@@ -23,7 +23,7 @@
 *Note: For a more detailed information about the parameters selection consult the scripts in the :open_file_folder: Scripts*
 
 # Experimental information
-- Cell line/ Animal model 
+- Cell line/ Animal model / Clinical sample
 - Specie: Human (*Homo sapiens*)/ Mouse (*Mus musculus*)
 - Sample number: 
 - Type of read: Paired-end
