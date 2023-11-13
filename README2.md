@@ -8,7 +8,7 @@
 - [Experimental Information](#experimental-information)
 - [Contrasts](#contrasts)
 - [Workflow](#)
-    - [Step 00. Sample information file] (#step-00-sample-information-file)
+    - [Step 00. Sample information file](#step-00-sample-information-file)
     - [Step 0. Fastq Quality Control](#step-0-fastq-quality-control)
     - [Step 1. Trimming](#step-1-trimming)
     - [Step 2. Fastq Quality Control](#step-2-fastq-quality-control)
