@@ -37,25 +37,26 @@
 # Contrasts
 
 Contrasts perform in this analysis
-- A vs B
+- [A] vs [B]
 
 
 # Workflow
 
-## Step 0. Fastq Quality Control
+## Step 00. Sample information file
 
+## Step 01. Fastq Quality Control
 
-## Step 1. Trimming
+## Step 02. Trimming
 
-## Step 2. Fastq Quality Control
+## Step 03. Fastq Quality Control
 
-
-
-## Step 3. Mapping
+## Step 04. Mapping
 
 Summary of the mapping results
 
-## Step 4. Differential expressed genes
+## Step 05. Gene count file
+
+## Step 06. Differential expressed genes
 
 Results summary, problems found, ...
 
