@@ -300,18 +300,111 @@ filter_genecounts <- function(counts_comp, metadata, trt, min_count = 10, min_pr
 #                               PLOTS
 ################################################################################
 
+################################################################
+#                         MA plot
+################################################################
 
-# Alternative to function ggsave()
-# 
-# Here we can make major modifications of the plots and adjust them 
-# 
-# Modifications made:
-# - Background set white as default option instead of transparency
-# - Units set in cm
-ggsave_bg <- function(filename, plot, path, width, height) {ggsave(filename = filename, plot = plot, path = path, width = width, height = height, bg = "white", units = "cm", scale = 1, dpi = 300)}
-
-
+MA_plot <- function(res, analysis, fdr_cutoff){
   
+  # MA plot
+  # 
+  # The MA plot visualizes the differences between measurements taken in two 
+  # samples groups, by transforming the data onto M (log ratio) and A (mean 
+  # average) scales. The significant genes, based on the adjusted p-value, are 
+  # plotted with a different color.
+  # 
+  # The aim of this function is to generate a MA plot for three of the method 
+  # used in a single function and with the same aesthetic. 
+  # 
+  # The MA plot is slightly different between DESeq2 and EdgeR/limma-voom.
+  # In DESeq2 data, we plot the log10 mean of normalized counts against the 
+  # log2 fold change. However, the  data must be scaled to log10.
+  # In EdgeR/limma-voom data, we plot the log10 counts per million against the 
+  # log2 fold change.
+  # 
+  # In both graphs, a horizontal line with the intercept in 0 is added.
+  # 
+  # Point symbols can change from a dot (16) to a triangle when they are out of 
+  # the y-axis limits, when logFC is positive the triangle point up (2) and 
+  # negative, the triangle point down (6)
+  # 
+  # This function is based on `MAplot` from DESeq2 which was dapted from 
+  # `geneplotter`. 
+  # Link to source code https://github.com/thelovelab/DESeq2/blob/devel/R/plots.R
+  
+  # Column with the adjusted p-value
+  test.col <- "padj"
+  
+  # Y axis column
+  lfc.col <- "logFC"
+  ylab <- "log fold change"
+  
+  # Select X axis column and label for the different methods and DEGs color
+  if (analysis == "DESeq2"){
+    # X axis column
+    counts.col <- "MeanExp"
+    xlab <- "Mean of normalized counts"
+    # Color DEGs
+    colSig <- "blue"
+  } else {   
+    # EdgeR and limma-voom
+    # X axis column
+    counts.col <- "logCPM"
+    xlab <- "Counts per million"
+    # Color DEGs
+    colSig <- ifelse(analysis == "EdgeR", "red4", "darkgreen")
+  } 
+  
+  # Line color
+  colLine <- "grey40"
+  # Color non-significant genes
+  colNonSig <- "gray60" 
+  
+  
+  # Plot data frame
+  # 
+  # From the input object, res, create a new data frame used to plot the data.
+  # The data frame with 3 columns named mean, lfc and sig, and the rows corresponds 
+  # to genes. In addition, all the genes with a log2FC value of 0 are not considered.
+  # 
+  #   - mean: Can be mean of normalized counts in DESeq2 or to log2 counts 
+  #     per million in EdgeR and limma-voom. It is the plot x-axis.
+  #   - lfc: Log2 fold change
+  #   - sig: Boolean variable, when TRUE is a significant gene (p-adjusted > fdr) 
+  #     and FALSE, non-significant gene
+  df <- data.frame(mean = res[[counts.col]],
+                   lfc = res[[lfc.col]],
+                   sig = ifelse(res[[test.col]] <= fdr_cutoff, TRUE, FALSE))
+  df <- subset(df, mean != 0)
+  
+  
+  # LogFC variable 
+  py <-df$lfc
+  
+  
+  # Plot
+  # Set y axis limits
+  ylim <- c(-1,1) * quantile(abs(py[is.finite(py)]), probs = 0.99) * 1.1
+  
+  cex = 0.45
+  
+  if(analysis == "DESeq2"){
+    y_axis <- pmax(ylim[1], pmin(ylim[2], py))
+    
+    # Data is transform into log10 scale to improve the interpretation in DESeq2
+    plot(df$mean, y_axis, log = "x", pch = ifelse(py<ylim[1], 6, ifelse(py>ylim[2], 2, 16)),
+         cex = cex, col = ifelse(df$sig, colSig, colNonSig), ylim = ylim,
+         xlab = xlab, ylab = ylab); abline(h = 0, lwd = 4, col = colLine)
+    
+  } else { 
+    plot(df$mean, df$lfc, pch = ifelse(py<ylim[1], 6, ifelse(py>ylim[2], 2, 16)),
+         cex = cex, col = ifelse(df$sig, colSig, colNonSig), ylim = ylim,
+         xlab = xlab, ylab = ylab); abline(h = 0, lwd = 4, col = colLine)
+  } 
+}
+
+
+
 ################################################################
 #                         PCA
 ################################################################
@@ -507,8 +600,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_point(size = 2, alpha = 0.6)+
     scale_color_manual(values = c("grey", "blue"), labels = c("Not significant", "Significative"))+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)")+
-    theme(text = element_text(size = 8), plot.title = element_text(size = rel(1.5), hjust = 0.5),
-          axis.title = element_text(size = rel(1.25)), legend.position = "none")
+    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
   # Volcano plot with the DEGs in separate in tw color for the up and downregulated 
   # genes, the non-significant in grey
@@ -518,8 +610,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_point(size = 2, alpha = 0.6)+
     scale_color_manual(values = as.vector(color_list$Direction))+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
-    theme(text = element_text(size = 8), plot.title = element_text(size = rel(1.5), hjust = 0.5), 
-          axis.title = element_text(size = rel(1.25)), legend.position = "none")
+    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
   # Return the plots
   return(list(A, B))
