@@ -116,7 +116,7 @@ theme_set(theme_DEGs)
 specie <- logfile$Organism 
 
 # Method used to study DEGs
-analysis <- "EgdeR"
+analysis <- "EdgeR"
 
 
 
@@ -171,22 +171,24 @@ for (i in 1:length(contrast)){
   ##############################################################################
   #                               Load Data
   ##############################################################################
-  
+ 
   
   # Load gene count filtered
   gene_counts <- read.table(paste(dir_output, "/GeneCount_", name, "_", project, ".txt", sep = ""))
   
+  # Load transform gene counts
+  file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
+  md <- file_trs$Transformation
+  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_", name, "_", project, ".txt", sep = ""), header = TRUE)
+  
   # Load sample information per comparison
   metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
-  metadata[,trt] <- factor(metadata[,trt])
+  metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
   
-  
-  # Comparison levels
-  comp_lvl <- c(contrast[[i]][2],  contrast[[i]][3])
   
   # Select the contrast levels
   color_l <- color_list
-  color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% comp_lvl)]
+  color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
   
   # Design formula 
   design_cond <- design_condition(analysis, trt, var_exp, metadata)
@@ -260,40 +262,77 @@ for (i in 1:length(contrast)){
   dev.off()
   
   
-  # Step 4: Contrast gene
+  # Step 4: Perform the contrast 
   # ----------------------------------------------------------------------------
-  
   # Perform contrast
   fit <- exactTest(degde, pair = c(control, experimental), dispersion = "auto", rejection.region = "doubletail")
   
-  # MA plot 
-  # In the x axis, average logCPM(counts per million) but in DESeq2 is mean of normalized counts
-  pdf(file = paste(dir_fig, "/00_MA_plot_", analysis, "_", project,".pdf", sep = ""), height = 5 , width = 5)  
-  plotSmear(fit, de.tags = labels_sig, ylab = "log fold change"); abline(h = 0, col  ="black", lty = 1, lwd = 2)
-  dev.off()
-  
-  
-  
-  
-  
-  
-  # Estimate the adjusted p-value 
+  # Estimate adjusted p-value
   res <- as.data.frame(topTags(fit, adjust.method = correction, n = dim(gene_counts)[1]))
-  res <- res[match(rownames(gene_counts), rownames(res)),]
   
   # Change columns names to plot data 
+  res <- res[match(rownames(gene_counts), rownames(res)),]
   colnames(res) <- c("logFC", "logCPM", "pvalue", "padj")
   
- 
-  # DEGs list
-  labels_sig <- rownames(res[which(res$padj <= fdr_cutoff & abs(res$logFC) > lfc_cutoff),])
+  
+  # MA plot 
+  pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
+  MA_plot(res, analysis, fdr_cutoff)
+  dev.off()
   
  
-  
   
   ##############################################################################
   #                            Data Processing
   ##############################################################################
+  
+  
+  ## Results as a data frame
+  res_df <- as.data.frame(res) 
+  res_df$GeneID <- rownames(res_df)
+  print(dim(res_df))
+  
+  ## Threshold label
+  threshold <- paste("padj_", fdr_cutoff, "_log2FC_", round(lfc_cutoff, 2), sep ="")
+  
+  ## Significative genes
+  # Events with p-val NA are saved too
+  # Based on the alpha and log2 FC thresholds  
+  res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$logFC) > lfc_cutoff] <- "YES"
+  res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$logFC) <= lfc_cutoff] <- "NO"
+  res_df$DEG[is.na(res_df$DEG)] <- "NO"
+  
+  ## Gene direction
+  # Contains if DEGs are up (Upregulated) or downregulated (Downregulated)
+  # Based on the alpha and log2 FC 
+  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC > lfc_cutoff] <- "Upregulated"
+  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC < -lfc_cutoff] <- "Downregulated"
+  res_df$Direction[res_df$padj > fdr_cutoff & res_df$logFC <= lfc_cutoff] <- "Not significant"
+  res_df$Direction[is.na(res_df$Direction)] <- "Not significant"
+  
+  
+  ## Annotated gene names in Symbol
+  res_df <- merge(res_df, gen_annot, by = "GeneID") 
+  print(head(res_df))
+  print(dim(res_df))
+  
+  ## MERGE WITH GENE COUNTS
+  # Row names to a variable
+  genes <- gene_counts[, metadata$Sample]
+  genes$GeneID <-  rownames(genes)
+  # Merge gene_counts and comparison results
+  result <- merge(x = res_df, y = genes, by = "GeneID")
+  
+  
+  ## Differential expressed genes
+  # Select differentially expressed genes
+  df <- result[which(result$DEG == "YES"),]
+  
+  
+  ## Transform matrix 
+  # Select the differentially expressed genes that overcame the test
+  # Used to plot the data 
+  m <- m_trs[which(rownames(m_trs) %in% df$GeneID),]
   
   
   
@@ -301,29 +340,97 @@ for (i in 1:length(contrast)){
   #                                 Plot
   ##############################################################################
   
-
+  
+  ## HISTOGRAMS
+  # Representation of the adjusted p-value and log2 fold-change for all and 
+  # significant genes
+  
+  plot_hist <- hist_verif(res_df, df)
+  ggsave(filename = paste("01_Histogram_verif_", ref, ".pdf", sep = ""), plot = plot_hist, path = dir_fig, height = 4, width = 4, bg = "white")
+  
+  
+  ##  CORRELATION 
+  #
+  # Execute a Pearson correlation which accept possible NAs.
+  # The acceptance of the NA should be valuable in the future in case, we accept
+  # comparisons when a sample is missing a PSI value.
+  #
+  # The results of the correlation matrix must be aligned with the results
+  # in the heatmap and PCA.
+  pem <- cor(m, method = "pearson", use = "na.or.complete")
+  plot_h <- pheatmap(pem, color = colorRampPalette(brewer.pal(9, "Blues"))(255),
+                     cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = TRUE,
+                     fontsize_row = 6, fontsize_col = 6, border_color = NA, treeheight_row = 0, treeheight_col = 0)
+  
+  pdf(paste(dir_fig, "/Cor_pearson_", ref, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
+  print(plot_h)
+  dev.off()
+  
+  
+  ## PCA PLOTS
+  plot_pcas <- pca_plot(m, trt, metadata, color_l)
+  
+  ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs2)), ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs3)), ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs4)), ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+  
+  ## HEATMAP
+  plot_heatmap <- heatmap_plot(m, metadata, trt, color_l)
+  
+  pdf(paste(dir_fig, "/Heatmap_zscore_", ref, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
+  print(plot_heatmap)
+  dev.off()
+  
+  
+  ## VOLCANO
+  
+  volcano <- volcano_plot(res_df, color_list = color_l, lfc_cutoff, fdr_cutoff)
+  
+  ggsave(filename = paste("Volcano_", ref, ".pdf", sep = ""), plot = volcano[[1]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste("Volcano_color_", ref, ".pdf", sep = ""), plot = volcano[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+  
+  
+  ## WATERFALL
+  
+  waterfall_plot <- waterfall_plot(df, color_l)
+  waterfall_plot_top <- waterfall_top(df, color_l)
+  
+  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste("Waterfall_top_genes_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
+  
+  
   
   ##############################################################################
   #                               Save data 
   ##############################################################################
   
   
+  # Summary table
+  sum_res <- c()
+  sum_res$Contrast <- name
+  sum_res$Method <- analysis
+  sum_res$Design <- design_cond
+  sum_res$Transformation <- md
+  sum_res$Genes <- dim(res_df$DEG)
+  sum_res$DEG <- sum(res_df$DEG == "YES")
+  sum_res$Up <- sum(res_df$Direction == "Upregulated")
+  sum_res$Down <- sum(res_df$Direction == "Downregulated")
+  write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, ";", ref, "_", threshold,".csv", sep = ""))
   
   # All results
-  colnames(res_log2) <- paste(mt, colnames(res_log2), sep = "_")
+  colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
   data <- cbind(res_df, res_log2)
-  write.table(data, paste(ref, ";All_", md, "blindFALSE", "_pval", threshold,".txt", sep = ""))
-  write.xlsx(data, paste(ref, ";All_", md, "blindFALSE", "_pval", threshold,".xlsx", sep = ""), overwrite = TRUE)
+  write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
+  write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALS_", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
-  colnames(m) <- paste(mt, colnames(m), sep = "_")
-  sel <- cbind(res_df, m)
-  write.table(data, paste(ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
-  write.xlsx(data, paste(ref, ";DEGs_", md, "blindFALSE", threshold,".xlsx", sep = ""), overwrite = TRUE)
+  colnames(m) <- paste(md, colnames(m), sep = "_")
+  sel <- cbind(df, m)
+  write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
+  write.xlsx(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
 }
-
-
 
 
 
@@ -336,6 +443,7 @@ for (i in 1:length(contrast)){
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
+log_data$Analysis <- analysis
 log_data$project_name <- project
 log_data$Organism <- specie
 log_data$condition <- trt
@@ -355,5 +463,5 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_v2_DESeq_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_v2_", analysis, logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 

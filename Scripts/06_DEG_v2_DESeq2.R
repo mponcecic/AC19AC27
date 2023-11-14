@@ -127,7 +127,7 @@ analysis <- "DESeq2"
 
 
 # Load annotation data 
-gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
+# gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
 
   
 ################################################################################
@@ -141,6 +141,10 @@ for (i in 1:length(contrast)){
   name <- paste(contrast[[i]][2], "vs", contrast[[i]][3], sep = "")
   print(name)
   
+  # Contrast levels 
+  control <- contrast[[i]][3]
+  experimental <- contrast[[i]][2]
+  
   
   ##############################################################################
   #                         Create working directories
@@ -151,7 +155,7 @@ for (i in 1:length(contrast)){
   # classified in Results and Figures. 
   
   # Load output directory
-  dir_outfolder <- paste(dir_out, "/", name, sep='')
+  dir_outfolder <- paste(dir_out, "/04_DEG_ANALYSIS/", name, sep='')
   setwd(dir_outfolder)
   
   # Files folder
@@ -174,15 +178,11 @@ for (i in 1:length(contrast)){
   
   # Load sample information per comparison
   metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
-  metadata[,trt] <- factor(metadata[,trt])
-  
-  
-  # Comparison levels
-  comp_lvl <- c(contrast[[i]][2],  contrast[[i]][3])
+  metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
   
   # Select the contrast levels
   color_l <- color_list
-  color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% comp_lvl)]
+  color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
   
   # DESeq2 design formula
   # Used to estimate the variance stabilization (VST) method proposed in DESeq2
@@ -251,6 +251,12 @@ for (i in 1:length(contrast)){
   )
   
   
+  # Fit of the dispersion estimates
+  pdf(file = paste(dir_fig, "/00_Dispersion_DESeq2_", project, ".pdf", sep = ""), width = 6, height = 5)
+  plotDispEsts(dds, genecol = "black", fitcol = "red", finalcol = "dodgerblue", legend = TRUE, log = "xy", cex = 0.45)
+  dev.off()
+  
+  
   # Step 3: Contrast genes with Wald test
   # ----------------------------------------------------------------------------
   
@@ -288,21 +294,19 @@ for (i in 1:length(contrast)){
   )
   
   
-  # MA plot 
-  pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
-  DESeq2::plotMA(resl)
-  dev.off()
-  
   # Results as data frame 
   res <- as.data.frame(resl)
   res <- res[match(rownames(gene_counts), rownames(res)),]
-  # colnames(res) <- paste(analysis, colnames(res), sep = "_")
-  # res_all <- res
   
   
   # Change columns names to plot data 
   colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj")
 
+  # MA plot 
+  pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
+  MA_plot(res, analysis, fdr_cutoff)
+  dev.off()
+  
   
   
   ##############################################################################
@@ -316,7 +320,7 @@ for (i in 1:length(contrast)){
   print(dim(res_df))
   
   ## Threshold label
-  threshold <- paste("padj_", fdr_cutoff, "_log2FC_", lfc_cutoff, sep ="")
+  threshold <- paste("padj_", fdr_cutoff, "_log2FC_", round(lfc_cutoff, 2), sep ="")
   
   ## Significative genes
   # Events with p-val NA are saved too
@@ -335,13 +339,13 @@ for (i in 1:length(contrast)){
   
   
   ## Annotated gene names in Symbol
-  res_df <- merge(res_df, gen_annot, by = "GeneID") 
+  # res_df <- merge(res_df, gen_annot, by = "GeneID") 
   print(head(res_df))
   print(dim(res_df))
   
   ## MERGE WITH GENE COUNTS
   # Row names to a variable
-  genes <- gene_counts[, metadata$Sample]
+  genes <- gene_counts
   genes$GeneID <-  rownames(genes)
   # Merge gene_counts and comparison results
   result <- merge(x = res_df, y = genes, by = "GeneID")
@@ -350,6 +354,7 @@ for (i in 1:length(contrast)){
   ## Differential expressed genes
   # Select differentially expressed genes
   df <- result[which(result$DEG == "YES"),]
+  dim(df)
   
   
   ## Variance stabilizing transformation
@@ -380,18 +385,20 @@ for (i in 1:length(contrast)){
   
   # Data transformation
   if(group_n < 30){
-    res_log2 <- assay(vst(dds, blind = FALSE))
+    res_log2 <- as.data.frame(assay(vst(dds, blind = FALSE)))
     md <- "VST"
   }else{
-    res_log2 <- assay(rlog(dds, blind = FALSE))
+    res_log2 <- as.data.frame(assay(rlog(dds, blind = FALSE)))
     md <- "RLOG"}
-  
+  print(md) 
   
   ## Transform matrix 
   # Select the differentially expressed genes that overcame the test
   # Used to plot the data 
   m <- res_log2[which(rownames(res_log2) %in% df$GeneID), ]
-
+  
+  if(identical(rownames(m), df$GeneID) == FALSE){m <- m[match(rownames(m), df$GeneID),]}
+  
   
   
   ##############################################################################
@@ -402,7 +409,6 @@ for (i in 1:length(contrast)){
   ## HISTOGRAMS
   # Representation of the adjusted p-value and log2 fold-change for all and 
   # significant genes
-  
   plot_hist <- hist_verif(res_df, df)
   ggsave(filename = paste("01_Histogram_verif_", ref, ".pdf", sep = ""), plot = plot_hist, path = dir_fig, height = 4, width = 4, bg = "white")
   
@@ -451,10 +457,10 @@ for (i in 1:length(contrast)){
   
   ## WATERFALL
   
-  waterfall_plot <- waterfall_plot(df, color_l)
+  waterfall_pl <- waterfall_plot(df, color_l)
   waterfall_plot_top <- waterfall_top(df, color_l)
   
-  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_pl, path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste("Waterfall_top_genes_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
   
   
@@ -463,21 +469,31 @@ for (i in 1:length(contrast)){
   ##############################################################################
   
   
+  # Summary table
+  sum_res <- c()
+  sum_res$Contrast <- name
+  sum_res$Method <- analysis
+  sum_res$Design <- design_cond
+  sum_res$Transformation <- md
+  sum_res$Genes <- dim(res_df$DEG)
+  sum_res$DEG <- sum(res_df$DEG == "YES")
+  sum_res$Up <- sum(res_df$Direction == "Upregulated")
+  sum_res$Down <- sum(res_df$Direction == "Downregulated")
+  write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, ";", ref, "_", threshold,".csv", sep = ""))
+  
   # All results
-  colnames(res_log2) <- paste(mt, colnames(res_log2), sep = "_")
+  colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
   data <- cbind(res_df, res_log2)
-  write.table(data, paste(ref, ";All_", md, "blindFALSE", "_pval", threshold,".txt", sep = ""))
-  write.xlsx(data, paste(ref, ";All_", md, "blindFALSE", "_pval", threshold,".xlsx", sep = ""), overwrite = TRUE)
+  write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
+  write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALS_", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
-  colnames(m) <- paste(mt, colnames(m), sep = "_")
-  sel <- cbind(res_df, m)
-  write.table(data, paste(ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
-  write.xlsx(data, paste(ref, ";DEGs_", md, "blindFALSE", threshold,".xlsx", sep = ""), overwrite = TRUE)
+  colnames(m) <- paste(md, colnames(m), sep = "_")
+  sel <- cbind(df, m)
+  write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
+  write.xlsx(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".xlsx", sep = ""), overwrite = TRUE)
 
     }
-
-
 
 
 
@@ -490,6 +506,7 @@ for (i in 1:length(contrast)){
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
+log_data$Analysis <- analysis
 log_data$project_name <- project
 log_data$Organism <- specie
 log_data$condition <- trt
@@ -509,5 +526,5 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_v2_DESeq_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_v2_", analysis, logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
