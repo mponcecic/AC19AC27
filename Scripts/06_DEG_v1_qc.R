@@ -543,7 +543,8 @@ for (i in 1:length(contrast)){
   # if you have many samples (e.g. 100s), the rlog function might take too long, and so the vst function will be 
   # a faster choice. The rlog and VST have similar properties, but the rlog requires fitting a shrinkage term for 
   # each sample and each gene which takes time. See the DESeq2 paper for more discussion on the differences 
-  # (Love, Huber, and Anders 2014)
+  # (Love, Huber, and Anders 2014). The rlog function is not as sensitive as vst to the size factors, which can be 
+  # an issue when size factors vary widely.
   
   # Why blind = TRUE
   # 
@@ -565,9 +566,12 @@ for (i in 1:length(contrast)){
   # Estimate the biggest group sample size
   group_n <- max(as.vector(tabulate(metadata[[trt]])))
   
-  # Data transformation
-  if(group_n < 30){dds_log2 <- vst(dds, blind = TRUE)}else{dds_log2 <- rlog(dds, blind = TRUE)}
-  m <- as.data.frame(assay(dds_log2))
+  if(group_n < 30){
+    m <- as.data.frame(assay(vst(dds, blind = FALSE)))
+    md <- "VST"
+  }else{
+    m <- as.data.frame(assay(rlog(dds, blind = FALSE)))
+    md <- "RLOG"}
   
   # Step 3: Stack matrix
   # ----------------------------------------------------------------------------
@@ -695,6 +699,11 @@ for (i in 1:length(contrast)){
   ##############################################################################
   
   
+  # Save transform data with blind = FALSE
+  # Why blind = FALSE
+  if(group_n < 30){dds_trs <- assay(vst(dds, blind = FALSE))}else{dds_trs <- assay(rlog(dds, blind = FALSE))}
+  write.table(dds_trs, paste(dir_output,"/GeneCount_", md , "_", name, "_", project, ".txt", sep = ""))
+  
   # Save filtered gene counts per comparison 
   write.table(df, paste(dir_output,"/GeneCount_", name, "_", project,".txt", sep = ""))
   
@@ -709,9 +718,8 @@ for (i in 1:length(contrast)){
   sum_contrast$Genes <- dim(counts_comp)[1]
   sum_contrast$GenesFiltered <- dim(df)[1] 
   sum_contrast$design <- design_cond
+  sum_contrast$Transformation <- md
   write.table(sum_contrast, paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""))
-  
-  
   
 }
 
@@ -723,6 +731,7 @@ for (i in 1:length(contrast)){
 
 # Save log file information
 logdate <- format(Sys.time(), "%Y%m%d")
+log_data <- c()
 log_data$Date <- Sys.time()
 log_data$project_name <- project
 log_data$Organism <- specie
@@ -741,7 +750,6 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-
 write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 
@@ -752,9 +760,9 @@ write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_qc_", logdate,
 
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-source(paste(path, project, "/Scripts/06_DEG_v2_DESeq2.R", sep = ""))
-source(paste(path, project, "/Scripts/06_DEG_v2_EdgeR.R", sep = ""))
-source(paste(path, project, "/Scripts/06_DEG_v2_limma.R", sep = ""))
+# source(paste(path, project, "/Scripts/06_DEG_v2_DESeq2.R", sep = ""))
+# source(paste(path, project, "/Scripts/06_DEG_v2_EdgeR.R", sep = ""))
+# source(paste(path, project, "/Scripts/06_DEG_v2_limma.R", sep = ""))
 # source(paste(path, project, "/Script/06_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
