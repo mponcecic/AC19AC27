@@ -26,12 +26,12 @@
 #   - Must have at least, the following variables:
 #     - Sample: Variable with the samples names. MUST NAME Sample
 #     - Treatment: Specific treatment per sample. Must be a factor variable, can 
-#       be named as you prefer but must be consisting for the following analysis
+#       be named as you prefer but must be consistent for the following analysis
 
 
 # Folder
-# Input: W:/DATA_shared/Sequencing_name/
-# Output: Project folder
+# Input: W:/DATA_shared/Sequencing_data_folder{ACXX}/
+# Output: W:/PersonalFolder/Project folder
 
 
 ################################################################################
