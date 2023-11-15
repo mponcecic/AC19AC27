@@ -390,10 +390,10 @@ for (i in 1:length(contrast)){
   
   ## WATERFALL
   
-  waterfall_plot <- waterfall_plot(df, color_l)
+  waterfall_p <- waterfall_plot(df, color_l)
   waterfall_plot_top <- waterfall_top(df, color_l)
   
-  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_p, path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste("Waterfall_top_genes_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
   
   
