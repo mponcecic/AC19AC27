@@ -66,8 +66,8 @@ dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
 
 # Create output directory
 dir_outfiles <- paste(path, project_name, sep = "")
-dir.create(file.path(dir_outfiles, "00_FASTQC"))
-dir_outfiles <- paste(dir_outfiles, "/00_FASTQC",sep='')
+dir.create(file.path(dir_outfiles, "01_FASTQC"))
+dir_outfiles <- paste(dir_outfiles, "/01_FASTQC",sep='')
 setwd(dir_outfiles)
 
 ### FASTQs ###
