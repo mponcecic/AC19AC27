@@ -68,9 +68,10 @@ files <- "W:/DATA_shared/AC-58_TotalRNAseq/"
 # Select input directory
 dir_in <- files
   
-# Last sample found in the Library Preparation pdf
+# First and last sample found in the Library Preparation pdf
 # Add this carefully. This is a key step to generate a data frame based on the 
 # table from the data frame
+first_sample <- "AC-58_L01"
 last_sample <- "AC-58_L16"
 
 # Condition
