@@ -15,11 +15,9 @@
 # 
 # This file must be MANUALLY adjusted for the different projects. However, part 
 # of the information is rescued from the pdf file with the library preparation 
-# information. 
-# 
-# In addition, a folder with the project name will be created in the path you 
-# give in BigData. All the following scripts will be saving information in this
-# folder. This is the project DEGs analysis folder.
+# information (MUST HAVE THE PATTERN Library_Preparation). You should look for 
+# the table with the information and save the first and last sample from the 
+# table.
 # 
 # Content
 #   - Named Sample_info.csv
@@ -35,16 +33,6 @@
 
 
 ################################################################################
-#                               LOAD LIBRARIES                           
-################################################################################
-
-
-suppressMessages(library(stringr)) 
-suppressMessages(library(pdftools)) 
-suppressMessages(library(tidyverse)) 
-
-
-################################################################################
 #                                 LOAD DATA                         
 ################################################################################
 
@@ -57,8 +45,11 @@ project <- "AC58"
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
-# Select the output directory
-dir_out <- path
+
+
+# Local directory with Git folders 
+local_dir <- "C:/Users/mponce/CIC bioGUNE/Arkaitz group - Maria Ponce/Projects/00_DEG_Reference"
+
 
 # Input directory
 # Must be the folder where the library preparation pdf is found and folder 
@@ -72,6 +63,7 @@ dir_in <- files
 # Add this carefully. This is a key step to generate a data frame based on the 
 # table from the data frame
 first_sample <- "AC-58_L01"
+
 last_sample <- "AC-58_L16"
 
 # Condition
@@ -88,12 +80,52 @@ org <- "Human"
 read <- 101
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Output directory
-# Create the folder which the analysis information
-dir_out <- paste(dir_out, project, sep = "")
 
-# Set working directory
+################################################################################
+#                         PROJECT CONFIGURATION
+################################################################################
+
+
+
+## Create folders BigData folders
+# Create project folder in BigData
+dir.create(file.path(path, project))
+dir_out <- paste(path, project, sep = "")
 setwd(dir_out)
+
+# Create utils folder in BigData
+dir.create(file.path(dir_out, "utils"))
+dir_utils <- paste(dir_out, "/utils", sep = "")
+
+
+## Utils folder transfer files 
+# utils folder in local directory
+local_dir <- paste(local_dir, "/utils", sep = "")
+
+# List file names from utils
+file_list <- list.files(local_dir)
+
+# Copy the files
+file.copy(from = file.path(local_dir, file_list), to = dir_utils)
+
+
+
+################################################################################
+#                     LOAD LIBRARIES AND FUNCTIONS                           
+################################################################################
+
+
+# Load libraries
+source(paste(path, project, "/utils/Libraries.R", sep = ""))
+# Load functions 
+source(paste(path, project, "/utils/function_pdf_to_tab.R", sep = ""))
+
+
+
+################################################################################
+#                         SAMPLE INFORMATION FILE
+################################################################################
+
 
 # List of samples names
 samples <- unique(gsub("_1.fastq.gz","", list.files(path = paste(dir_in, "FASTQs/", sep = ""), pattern = "_1.fastq.gz")))
@@ -104,19 +136,12 @@ file <- pdf_text(paste(dir_in, list.files(path = dir_in, pattern = "Library_Prep
 
 
 ################################################################################
-#                             FUNCTION                           
-################################################################################
-
-# Load function 
-source("utils/function_pdf_to_tab.R")
-
-################################################################################
 #                             SAMPLE INFORMATION                           
 ################################################################################
 
 
 # Run the function
-data <- pdf_to_tab(file, last_sample)
+data <- pdf_to_tab(file, first_sample, last_sample)
 print(head(data))
 
 # Number of samples

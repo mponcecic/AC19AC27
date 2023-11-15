@@ -5,10 +5,27 @@
 # Summary
 # ----------
 #
-# Contain all the functions created and run in the differentially 
-# expressed genes analysis
+# Contain all the functions created and run in the differentially expressed 
+# genes analysis scripts (06_DEG_vX.R)
+
+# List of functions
 # 
-# Script: 06_DEG_vX.R
+# - create_contrast
+# - callback
+# - check_congruence
+# - color_palette
+# - wilcoxon_test
+# - filter_genecounts
+# 
+# Plots function list
+#   - ggsave_bg
+#   - pca_plot
+#   - heatmap_plot
+#   - hist_verif 
+#   - volcano_plot
+#   - waterfall_plot
+#   - waterfall_top
+
 
 
 
@@ -28,6 +45,42 @@ create_contrast <- function(trt, lvl_ord) {
   for (i in 2:length(lvl_ord)) {for (j in 1:(i - 1)) {contrast[length(contrast) + 1] <- list(c(trt, lvl_ord[i], lvl_ord[j]))}}
   return(contrast)
 }
+
+
+
+################################################################################
+#                             DESIGN FORMULA
+################################################################################
+
+
+# This function generates the design formula for the different analysis 
+# 
+# Steps
+# 1. Check there are covariates
+# 2. Check the values of the covariate are not equal to avoid colinearity in 
+#   the model. If their values are equal the variable is not included in the 
+#   model.
+# 3. Create the design formula
+
+design_condition <- function(analysis, trt, var_exp, metadata){
+  
+  var_design <- NULL
+  # Covariates  
+  if(is.null(var_exp) == FALSE){
+    # Check if the covariates present equal values or not 
+    for (k in 1:length(var_exp)){if(length(unique(metadata[, var_exp[k]]))>1){var_design <- c(var_design, var_exp[k])}}
+    # Design model for DESeq2
+    if(analysis == "DESeq2"){
+      design_cond = ifelse(is.null(var_design) == FALSE, paste("~", paste(var_design, "_zscore", " +", sep = "", collapse = " "), trt, sep = " "), paste("~", trt, sep = " "))
+    # Design model for limma-voom and EdgeR
+    }else{design_cond <- ifelse(!is.null(var_design), paste("~ 0 +", paste0(var_design, "+", collapse = " "), trt), paste("~ 0 +", trt))}
+    
+  # No Covariate
+  } else {design_cond = ifelse(analysis == "DESeq2", paste("~", trt), paste("~ 0 +", trt))}
+  
+  return(design_cond)
+}
+
 
 
 ################################################################################
@@ -166,28 +219,80 @@ filter_genecounts <- function(counts_comp, metadata, trt, min_count = 10, min_pr
   # Group sample size over the large sample size
   # 0 when no group is over the large sample size 
   # >0 when a group is over the large sample size
-  sample_size <- as.vector(tabulate(metadata$Time))
+  sample_size <- as.vector(tabulate(metadata[[trt]]))
   h <- sum(sample_size >= n_large)
   
   # Minimum sample size
   min_size <- sample_size[which.min(sample_size)]
   
+  # Cutoff CPM
+  cpm_cutoff <- min_count/mean(lib_size)*1e6
+  
   # Minimum sample size in large samples
   if(h > 0){min_size <- n_large + (min_size - n_large)*min_prop}
   
-  
-  # Cutoff
-  cpm_cutoff <- min_count/mean(lib_size)*1e6
-  
-  # Filtering step
-  keep_counts <- rowSums(counts_comp >= min_count) >= min_size
+  # Filtering data
   keep_counts <- rowSums(cpm_counts >= cpm_cutoff) >= (min_size - 1e-14)
+  keep_total <- (rowSums(counts_comp) >= min_total -1e-14)
+
   
-  keep_total <- rowSums(counts_comp) >= min_total -1e-14
-  
-  
+  # Output
   keep_total & keep_counts
 }
+
+
+
+# Filter gene count matrix
+# filter_genecounts <- function(counts_comp, metadata, trt, min_count = 10, min_prop = 0.7, n_large = 30, min_total = 15){
+#   
+#   # The filtering process differed depending on the group sample size. The group 
+#   # sample size is the number of samples corresponding to one level of the 
+#   # condition. When the group sample size is over the large sample size, the 
+#   # filtering step will be more restrictive. The default large sample size 
+#   # (n_large) is set in 30.
+#   # For groups with large samples size, 
+#   
+#   
+#   # This function is based on the function filterByExpr used in EdgeR and 
+#   # limma-voom. Link: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
+#   
+#   
+#   # minimun count (min_count)
+#   # minimun total count (min_total)
+#   
+#   # DEGList
+#   comp <- DGEList(counts = counts_comp, group = metadata[,trt])
+#   lib_size <- comp$samples$lib.size
+#   cpm_counts <- cpm(comp, lib.size = lib_size)
+#   
+#   # Group sample size over the large sample size
+#   # 0 when no group is over the large sample size 
+#   # > 0 when a group is over the large sample size
+#   sample_size <- as.vector(tabulate(metadata[[trt]]))
+#   h <- sum(sample_size >= n_large)
+#   
+#   # Minimum sample size
+#   min_size <- sample_size[which.min(sample_size)]
+#   
+#   # Cutoff CPM
+#   cpm_cutoff <- min_count/mean(lib_size)*1e6
+#   
+#   # Modifications when sample group >  large samples size
+#   if(h > 0){
+#     # This step is done by Ivana 
+#     keep_total <- (rowSums(counts_comp > 5) >= (min_size*min_prop))
+#     
+#     # Minimum sample size in large samples
+#     min_size <- n_large + (min_size - n_large)*min_prop
+#   } else {keep_total <- (rowSums(counts_comp) >= min_total -1e-14)}
+#     
+#   # Filtering data
+#   keep_counts <- rowSums(cpm_counts >= cpm_cutoff) >= (min_size - 1e-14)
+# 
+#   
+#   # Output
+#   keep_counts & keep_total
+# }
 
 
 
@@ -195,23 +300,116 @@ filter_genecounts <- function(counts_comp, metadata, trt, min_count = 10, min_pr
 #                               PLOTS
 ################################################################################
 
+################################################################
+#                         MA plot
+################################################################
 
-# Alternative to function ggsave()
-# 
-# Here we can make major modifications of the plots and adjust them 
-# 
-# Modifications made:
-# - Background set white as default option instead of transparency
-# - Units set in cm
-ggsave_bg <- function(filename, plot, path, width, height) {ggsave(filename = filename, plot = plot, path = path, width = width, height = height, bg = "white", units = "cm", scale = 1, dpi = 300)}
-
-
+MA_plot <- function(res, analysis, fdr_cutoff){
   
+  # MA plot
+  # 
+  # The MA plot visualizes the differences between measurements taken in two 
+  # samples groups, by transforming the data onto M (log ratio) and A (mean 
+  # average) scales. The significant genes, based on the adjusted p-value, are 
+  # plotted with a different color.
+  # 
+  # The aim of this function is to generate a MA plot for three of the method 
+  # used in a single function and with the same aesthetic. 
+  # 
+  # The MA plot is slightly different between DESeq2 and EdgeR/limma-voom.
+  # In DESeq2 data, we plot the log10 mean of normalized counts against the 
+  # log2 fold change. However, the  data must be scaled to log10.
+  # In EdgeR/limma-voom data, we plot the log10 counts per million against the 
+  # log2 fold change.
+  # 
+  # In both graphs, a horizontal line with the intercept in 0 is added.
+  # 
+  # Point symbols can change from a dot (16) to a triangle when they are out of 
+  # the y-axis limits, when logFC is positive the triangle point up (2) and 
+  # negative, the triangle point down (6)
+  # 
+  # This function is based on `MAplot` from DESeq2 which was dapted from 
+  # `geneplotter`. 
+  # Link to source code https://github.com/thelovelab/DESeq2/blob/devel/R/plots.R
+  
+  # Column with the adjusted p-value
+  test.col <- "padj"
+  
+  # Y axis column
+  lfc.col <- "logFC"
+  ylab <- "log fold change"
+  
+  # Select X axis column and label for the different methods and DEGs color
+  if (analysis == "DESeq2"){
+    # X axis column
+    counts.col <- "MeanExp"
+    xlab <- "Mean of normalized counts"
+    # Color DEGs
+    colSig <- "blue"
+  } else {   
+    # EdgeR and limma-voom
+    # X axis column
+    counts.col <- "logCPM"
+    xlab <- "Counts per million"
+    # Color DEGs
+    colSig <- ifelse(analysis == "EdgeR", "red4", "darkgreen")
+  } 
+  
+  # Line color
+  colLine <- "grey40"
+  # Color non-significant genes
+  colNonSig <- "gray60" 
+  
+  
+  # Plot data frame
+  # 
+  # From the input object, res, create a new data frame used to plot the data.
+  # The data frame with 3 columns named mean, lfc and sig, and the rows corresponds 
+  # to genes. In addition, all the genes with a log2FC value of 0 are not considered.
+  # 
+  #   - mean: Can be mean of normalized counts in DESeq2 or to log2 counts 
+  #     per million in EdgeR and limma-voom. It is the plot x-axis.
+  #   - lfc: Log2 fold change
+  #   - sig: Boolean variable, when TRUE is a significant gene (p-adjusted > fdr) 
+  #     and FALSE, non-significant gene
+  df <- data.frame(mean = res[[counts.col]],
+                   lfc = res[[lfc.col]],
+                   sig = ifelse(res[[test.col]] <= fdr_cutoff, TRUE, FALSE))
+  df <- subset(df, mean != 0)
+  
+  
+  # LogFC variable 
+  py <-df$lfc
+  
+  
+  # Plot
+  # Set y axis limits
+  ylim <- c(-1,1) * quantile(abs(py[is.finite(py)]), probs = 0.99) * 1.1
+  
+  cex = 0.45
+  
+  if(analysis == "DESeq2"){
+    y_axis <- pmax(ylim[1], pmin(ylim[2], py))
+    
+    # Data is transform into log10 scale to improve the interpretation in DESeq2
+    plot(df$mean, y_axis, log = "x", pch = ifelse(py<ylim[1], 6, ifelse(py>ylim[2], 2, 16)),
+         cex = cex, col = ifelse(df$sig, colSig, colNonSig), ylim = ylim,
+         xlab = xlab, ylab = ylab); abline(h = 0, lwd = 4, col = colLine)
+    
+  } else { 
+    plot(df$mean, df$lfc, pch = ifelse(py<ylim[1], 6, ifelse(py>ylim[2], 2, 16)),
+         cex = cex, col = ifelse(df$sig, colSig, colNonSig), ylim = ylim,
+         xlab = xlab, ylab = ylab); abline(h = 0, lwd = 4, col = colLine)
+  } 
+}
+
+
+
 ################################################################
 #                         PCA
 ################################################################
 
-perform_pca_analysis <- function(m, trt, metadata, color_l) {
+pca_plot <- function(m, trt, metadata, color_l) {
   
   # PCA plots
   #
@@ -236,16 +434,6 @@ perform_pca_analysis <- function(m, trt, metadata, color_l) {
   # Scree plot
   # Percentage of variances explained by each principal component
   pca_scree <- fviz_eig(m_pca, choice = "variance", addlabels = TRUE, ggtheme = theme_classic(), main = "Screeplot")
-  
-  # Variable graphs
-  # Contributions of the events in each principal component
-  # Positive correlated variables point to the same side of the plot
-  # Negative correlated variables point to opposite sides of the graph.
-  pca_var <- fviz_pca_var(m_pca, col.var = "contrib", gradient.cols = c("blue", "yellow", "red")) +
-    theme_classic() + 
-    labs(title = "Variance Contribution")
-  
-  fig <- ggarrange(pca_scree, pca_var, ncol = 2, nrow = 1, widths = 10, heights = 4)
   
   # PC1 vs PC2
   pca_1vs2 <- fviz_pca_ind(m_pca, axes = c(1, 2),
@@ -278,7 +466,7 @@ perform_pca_analysis <- function(m, trt, metadata, color_l) {
     theme(legend.position = "none")
   
   # Return the plots
-  return(list(fig, pca_1vs2, pca_1vs3, pca_1vs4))
+  return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4))
 }
 
 
@@ -412,8 +600,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_point(size = 2, alpha = 0.6)+
     scale_color_manual(values = c("grey", "blue"), labels = c("Not significant", "Significative"))+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)")+
-    theme(text = element_text(size = 8), plot.title = element_text(size = rel(1.5), hjust = 0.5),
-          axis.title = element_text(size = rel(1.25)), legend.position = "none")
+    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
   # Volcano plot with the DEGs in separate in tw color for the up and downregulated 
   # genes, the non-significant in grey
@@ -423,11 +610,10 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_point(size = 2, alpha = 0.6)+
     scale_color_manual(values = as.vector(color_list$Direction))+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
-    theme(text = element_text(size = 8), plot.title = element_text(size = rel(1.5), hjust = 0.5), 
-          axis.title = element_text(size = rel(1.25)), legend.position = "none")
+    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
   # Return the plots
-  return(list(A = A, B = B))
+  return(list(A, B))
 }
 
 
@@ -484,7 +670,7 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
   # Select the top 30 genes 
   wf_sel <- rbind(wf[1:top,], wf[(dim(wf)[1]-top):dim(wf)[1],]) 
   
-  ggplot(top_up_down, aes(x = logFC, y = GeneID, fill = Direction)) +
+  ggplot(wf_sel, aes(x = logFC, y = GeneID, fill = Direction)) +
     geom_bar( stat = "identity") +
     xlab("Log2 Fold Change") +
     ylab("Gene name") +
@@ -492,29 +678,3 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
     theme(legend.position = "none")
 }
 
-
-# 
-# 
-# 
-# 
-# ggsave_bg(filename = paste("00_Validation_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), width = 10, height = 10, plot = fig, path = dir_fig)
-# 
-# pdf(paste(dir_fig, "/Heatmap_Zscore_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Volcano_DEGs_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Volcano_DEGs_Direction_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Waterfall_DEGs_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# pdf(paste(dir_fig, "/Waterfall_DEGs_top_",analysis, "_", threshold, "_", name, "_", project, ".pdf", sep =""), height = 4, width = 4, bg = "white", compress = TRUE)
-# dev.off()
-# 
-# ggsave_bg(filename = paste("PCA_params_", analysis, "_", threshold, "_", name, "_", project, "_scree.pdf", sep = ""), plot = results[[1]], path = dir_fig, height = 5, width = 6)
-# ggsave_bg(filename = paste(deparse(substitute(pca_1vs2)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[2]], path = dir_fig, height = 5, width = 6)
-# ggsave_bg(filename = paste(deparse(substitute(pca_1vs3)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[3]], path = dir_fig, height = 5, width = 6)
-# ggsave_bg(filename = paste(deparse(substitute(pca_1vs4)), "_", analysis, "_", threshold, "_", name, "_", project, ".pdf", sep = ""), plot = results[[4]], path = dir_fig, height = 5, width = 6)
