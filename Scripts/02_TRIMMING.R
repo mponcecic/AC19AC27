@@ -232,8 +232,6 @@ for (i in 1:length(samples)) {
       paste("#SBATCH --mem=",memory,"GB",sep=''),
       paste("#SBATCH -o ",job_name,".out",sep=''),
       paste("#SBATCH -e ",job_name,".err",sep=''),
-      c("#SBATCH --mail-type=FAIL"),
-      c("#SBATCH --mail-user=mponce@cicbiogune.es"),
       c(paste("cd ", dir_infiles)),
       c("source /opt/ohpc/pub/apps/anaconda3/cic-env"),
       c("conda activate cutadaptenv"),
