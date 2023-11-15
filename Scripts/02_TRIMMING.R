@@ -157,8 +157,8 @@ logfile <- read.table(paste(dir_outfiles, "/0_Sample_info_", logdate, ".log", se
 dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
 
 # Create output directory
-dir.create(file.path(dir_outfiles,"01_TRIMMED"))
-dir_outfiles <- paste(dir_outfiles,"/01_TRIMMED",sep='')
+dir.create(file.path(dir_outfiles,"02_TRIMMED"))
+dir_outfiles <- paste(dir_outfiles,"/02_TRIMMED",sep='')
 setwd(dir_outfiles)
 
 
