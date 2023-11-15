@@ -33,7 +33,7 @@
 - Library average size:  bp
 - Library preparation: Illumina TruSeq Stranded mRNA (e.g.)
 - Type of sequencer: NovaSeq 600 (e.g.)
-- Treatment levels: 
+- Treatment levels: 0 - mHNPC | 1- Localized
 
 # Contrasts
 
