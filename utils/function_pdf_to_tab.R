@@ -10,7 +10,7 @@
 
 
 # From pdf to data frame
-pdf_to_tab <- function(x, last_sample){
+pdf_to_tab <- function(x, first_sample, last_sample){
   
   # Description
   # 
@@ -24,9 +24,7 @@ pdf_to_tab <- function(x, last_sample){
   
   # Select the beginning of the table
   # Must be always the same
-  if(is.na(str_which(x, "Kibrary ID")[1])){
-    tab_start <- str_which(x, "GAP ID")[1]
-  } else {tab_start <- str_which(x, "Library ID")[1]}
+  tab_start <- str_which(x, first_sample)[1]
   
   # Select the row of the end
   tab_end <- str_which(x, last_sample)[1]
@@ -36,7 +34,6 @@ pdf_to_tab <- function(x, last_sample){
   
   # Change column separator form spaces to "|" and remove the first four rows
   tab <- str_replace_all(tab, "\\s{2,}", "|")
-  tab <- tab[-(1:4)]
   
   # Create a data frame of the table using "|" as a separator 
   # Remove the first column beacuse it's empty

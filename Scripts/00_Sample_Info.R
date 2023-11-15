@@ -24,12 +24,12 @@
 #   - Must have at least, the following variables:
 #     - Sample: Variable with the samples names. MUST NAME Sample
 #     - Treatment: Specific treatment per sample. Must be a factor variable, can 
-#       be named as you prefer but must be consisting for the following analysis
+#       be named as you prefer but must be consistent for the following analysis
 
 
 # Folder
-# Input: W:/DATA_shared/Sequencing_name/
-# Output: Project folder
+# Input: W:/DATA_shared/Sequencing_data_folder{ACXX}/
+# Output: W:/PersonalFolder/Project folder
 
 
 ################################################################################
@@ -58,12 +58,12 @@ files_rocky <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-58_TotalRNAseq/"
 files <- "W:/DATA_shared/AC-58_TotalRNAseq/"
 # Select input directory
 dir_in <- files
-
-
+  
 # First and last sample found in the Library Preparation pdf
 # Add this carefully. This is a key step to generate a data frame based on the 
 # table from the data frame
-first_sample <- ""
+first_sample <- "AC-58_L01"
+
 last_sample <- "AC-58_L16"
 
 # Condition
