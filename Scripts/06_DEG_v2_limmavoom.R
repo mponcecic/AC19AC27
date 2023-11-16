@@ -156,7 +156,7 @@ for (i in 1:length(contrast)){
   # classified in Results and Figures. 
   
   # Load output directory
-  dir_outfolder <- paste(dir_out, "/04_DEG_ANALYSIS/", name, sep='')
+  dir_outfolder <- paste(dir_out, "/05_DEG_ANALYSIS/", name, sep='')
   setwd(dir_outfolder)
   
   # Files folder
