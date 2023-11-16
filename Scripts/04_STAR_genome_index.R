@@ -66,13 +66,13 @@ specie <- "Human"
 
 # Read insert
 # Remove one nucleotide
-# read <- 100
-read <- 150
+read <- 100
+# read <- 150
 
 ### Process information ###
 partition <- "FAST"
-# time <- c("00:45:00")
-time <- c("00:50:00") # Human genome
+# time <- c("00:45:00") # Mouse genome
+time <- c("02:00:00") # Human genome
 memory <- c("40")
 cpu <- 8
 ram <- 30000000000 
