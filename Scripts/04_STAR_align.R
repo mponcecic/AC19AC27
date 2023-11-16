@@ -297,7 +297,7 @@ path <- "/vols/GPArkaitz_bigdata/mponce/"
 # Trimmed fastq/ raw fastqs
 trmd <- TRUE
 
-# Log file date from 0_Sample_info
+# Log file date from 0_Sample_info {YYYYMMDD} format
 # Add when you want to work with raw fastqs
 logdate <- ""
 
@@ -324,7 +324,7 @@ read <- logfile$read
 # Input directories
 if(trmd == TRUE){
   # Input directory
-  dir_infiles <- paste(path, project_name, "/01_TRIMMED", sep = "" )
+  dir_infiles <- paste(path, project_name, "/02_TRIMMED", sep = "" )
   pattern = "_1_trmd.fastq.gz"
   pattern2 = "_2_trmd.fastq.gz"
 }else{
@@ -340,8 +340,8 @@ if(trmd == TRUE){
 # Output directory
 dir_outfiles <- paste(path, project_name, sep = "")
 # Create output directory
-dir.create(file.path(dir_outfiles,"03_STAR"))
-dir_outfiles <- paste(dir_outfiles,"/03_STAR",sep='')
+dir.create(file.path(dir_outfiles,"04_STAR"))
+dir_outfiles <- paste(dir_outfiles,"/04_STAR",sep='')
 # Set directory
 setwd(dir_outfiles)
 
