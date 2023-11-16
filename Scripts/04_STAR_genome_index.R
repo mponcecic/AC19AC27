@@ -80,7 +80,7 @@ ram <- 30000000000
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Input and output directories  
-dir_infiles <- paste(path, project_name, "/01_TRIMMED", sep = "" )
+dir_infiles <- paste(path, project_name, "/02_TRIMMED", sep = "" )
 indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10a"
 folder_name <- paste(specie, read+1, sep = "_")
 dir.create(file.path(indexfolder, folder_name))

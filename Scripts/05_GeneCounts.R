@@ -133,7 +133,7 @@ source(paste(path, project, "/utils/Libraries.R", sep = ""))
 
 
 # Input and output directory
-input_dir <- paste(path, project, "/03_STAR/", sep = "") 
+input_dir <- paste(path, project, "/04_STAR/", sep = "") 
 
 # Set working directory
 setwd(input_dir)
