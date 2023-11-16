@@ -56,12 +56,12 @@ memory <- c("3")
 
 
 # Input directories 
-dir_infiles <- paste(path, project_name, "/01_TRIMMED", sep = "" )
+dir_infiles <- paste(path, project_name, "/02_TRIMMED", sep = "" )
 
 # Create output directory
 dir_outfiles <- paste(path, project_name, sep = "")
-dir.create(file.path(dir_outfiles,"02_FASTQC"))
-dir_outfiles <- paste(dir_outfiles,"/02_FASTQC",sep='')
+dir.create(file.path(dir_outfiles,"03_FASTQC"))
+dir_outfiles <- paste(dir_outfiles,"/03_FASTQC",sep='')
 setwd(dir_outfiles)
 
 ### FASTQs ###

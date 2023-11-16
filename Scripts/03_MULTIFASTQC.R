@@ -32,7 +32,7 @@
 project_name <- "AC58"
 
 # Output and input directories SSH 
-dir_infiles <- paste("W:/mponce/", project_name, "/05_DEGs/02_FASTQC", sep = "" )
+dir_infiles <- paste("W:/mponce/", project_name, "/03_FASTQC", sep = "" )
 dir_outfiles <- dir_infiles
 setwd(dir_outfiles)
 
