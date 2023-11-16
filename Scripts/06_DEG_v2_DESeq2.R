@@ -506,6 +506,7 @@ for (i in 1:length(contrast)){
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
+log_data$Directory <- dir_out
 log_data$Analysis <- analysis
 log_data$project_name <- project
 log_data$Organism <- specie
