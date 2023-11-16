@@ -21,13 +21,6 @@
 # Link: https://cran.r-project.org/web/packages/fastqcr/
 
 
-################################################################################
-#                           LOAD LIBRARIES             
-################################################################################
-
-
-library(fastqcr)
-
 
 ################################################################################
 #                   SET DIRECTORIES AND LOAD FILES             
@@ -59,9 +52,21 @@ samples <- list.files(path = dir_infiles, pattern = "_fastqc.zip")
 samples_names <- gsub("_fastqc.zip", "", samples)
 
 
+
+################################################################################
+#                     LOAD LIBRARIES AND FUNCTIONS                           
+################################################################################
+
+
+# Load libraries
+source(paste(path, project, "/utils/Libraries.R", sep = ""))
+
+
+
 ################################################################################
 #                       MULTIFASTQC REPORT               
 ################################################################################
+
 
 qc_report(qc.path = dir_infiles, result.file = paste(dir_outfiles, "/",  project, "_MultiReport", sep = ""), 
           interpret = TRUE)

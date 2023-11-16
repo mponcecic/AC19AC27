@@ -126,7 +126,7 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 logfile <- read.table(paste(path, project, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/03_STAR/RawCounts_", project,".txt", sep = "")
+dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
 # dir_out <- paste(path, project, sep = "")   # Default option
@@ -315,8 +315,8 @@ print(head(genome))
 # classified in Results and Figures. 
 
 # Create output directory
-dir.create(file.path(dir_out,"04_DEG_ANALYSIS"))
-dir_out <- paste(dir_out,"/04_DEG_ANALYSIS", sep='')
+dir.create(file.path(dir_out,"05_DEG_ANALYSIS"))
+dir_out <- paste(dir_out,"/05_DEG_ANALYSIS", sep='')
 setwd(dir_out)
 
 

@@ -91,7 +91,7 @@ R
 ### General Project ###
 
 # Project Name 
-project_name <- "AC58"
+project_name <- "PRUEBA"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -100,7 +100,7 @@ path <- "/vols/GPArkaitz_bigdata/mponce/"
 
 
 # Date of the log file
-logdate <- ""
+logdate <- "20231106"
 
 
 ### Process information ###
@@ -154,7 +154,7 @@ dir_outfiles <- paste(path, project_name, sep = "")
 logfile <- read.table(paste(dir_outfiles, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory
-dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
+dir_infiles <- paste(logfile$filedirRocky, "FASTQs", sep = "")
 
 # Create output directory
 dir.create(file.path(dir_outfiles,"02_TRIMMED"))
@@ -169,6 +169,10 @@ setwd(dir_outfiles)
 samples <- list.files(path=dir_infiles, pattern = "_1.fastq.gz")
 # Filter sample name
 samples <- gsub("_1.fastq.gz", "", samples)
+
+# Minnimum length parameter
+min_length <- paste("-m=", m, sep = "")
+
 
 
 
@@ -193,7 +197,7 @@ for (i in 1:length(samples)) {
   
   if(seq_library == "normal"){
     # Cutadapt command
-    command <- paste("cutadapt -a", a,"-A", A,"-j 0  -q", q,"-m=", m," --pair-filter=any -o", output1,"-p", output2, input1, input2, sep=" ")
+    command <- paste("cutadapt -a", a,"-A", A,"-j 0 -q", q, min_length, " --pair-filter=any -o", output1,"-p", output2, input1, input2, sep=" ")
     
     # SBATCH File
     filename <- paste(job_name,".sh",sep='');
@@ -208,6 +212,7 @@ for (i in 1:length(samples)) {
       paste("#SBATCH -e ",job_name,".err",sep=''),
       c(paste("cd ", dir_infiles)),
       c("source /opt/ohpc/pub/apps/anaconda3/cic-env"),
+      c("conda config --set channel_priority strict"),
       c("conda activate cutadaptenv"),
       c(command),
       file=filename,sep = "\n",append=F)
@@ -216,10 +221,11 @@ for (i in 1:length(samples)) {
     # Intermediate file to apply the u/U parameter after removing the adapter
     outputm1 <- paste(dir_outfiles, "/", samples[i],"_1_m1.fastq.gz", sep="")
     outputm2 <- paste(dir_outfiles, "/", samples[i],"_2_m1.fastq.gz", sep="")
+  
     
     # Cutadapt command
-    command <- paste("cutadapt -a", a,"-A", A,"--pair-filter=any -o", outputm1,"-p", outputm2, input1, input2, sep=" ")
-    command2 <- paste("cutadapt -u", u,"-U", U,"-j 0 -q", q,"-m=", m," --pair-filter=any -o", output1,"-p", output2, outputm1, outputm2, sep=" ")
+    command <- paste("cutadapt -a", a,"-A", A,"--pair-filter=any -o", outputm1,"-p", outputm2, input1, input2, sep = " ")
+    command2 <- paste("cutadapt -u", u,"-U", U,"-j 0 -q", q, min_length, " --pair-filter=any -o", output1,"-p", output2, outputm1, outputm2, sep = " ")
     
     # SBATCH File
     filename <- paste(job_name,".sh",sep='');
@@ -232,8 +238,6 @@ for (i in 1:length(samples)) {
       paste("#SBATCH --mem=",memory,"GB",sep=''),
       paste("#SBATCH -o ",job_name,".out",sep=''),
       paste("#SBATCH -e ",job_name,".err",sep=''),
-      c("#SBATCH --mail-type=FAIL"),
-      c("#SBATCH --mail-user=mponce@cicbiogune.es"),
       c(paste("cd ", dir_infiles)),
       c("source /opt/ohpc/pub/apps/anaconda3/cic-env"),
       c("conda activate cutadaptenv"),
@@ -243,9 +247,9 @@ for (i in 1:length(samples)) {
   } 
   
   
-  # Run PBS
-  system(paste("sbatch",filename,sep=' '));
-  Sys.sleep(3)
+  # # Run PBS
+  # system(paste("sbatch",filename,sep=' '));
+  # Sys.sleep(3)
   }
 
 q()

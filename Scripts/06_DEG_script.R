@@ -150,7 +150,7 @@ logdate <- ""
 logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/03_STAR/RawCounts_", project,".txt", sep = "")
+dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
 # dir_out <- paste(path, project, sep = "")   # Default option

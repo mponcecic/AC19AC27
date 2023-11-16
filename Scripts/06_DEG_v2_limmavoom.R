@@ -38,7 +38,7 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/03_STAR/RawCounts_", project,".txt", sep = "")
+dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
 # dir_out <- paste(path, project, sep = "")   # Default option
@@ -156,7 +156,7 @@ for (i in 1:length(contrast)){
   # classified in Results and Figures. 
   
   # Load output directory
-  dir_outfolder <- paste(dir_out, "/04_DEG_ANALYSIS/", name, sep='')
+  dir_outfolder <- paste(dir_out, "/05_DEG_ANALYSIS/", name, sep='')
   setwd(dir_outfolder)
   
   # Files folder
@@ -390,10 +390,10 @@ for (i in 1:length(contrast)){
   
   ## WATERFALL
   
-  waterfall_plot <- waterfall_plot(df, color_l)
+  waterfall_p <- waterfall_plot(df, color_l)
   waterfall_plot_top <- waterfall_top(df, color_l)
   
-  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_p, path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste("Waterfall_top_genes_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
   
   
