@@ -12,8 +12,8 @@
 
 
 # Folder
-# Input: Project_folder/03_STAR
-# Output: Project_folder/03_STAR
+# Input: Project_folder/04_STAR
+# Output: Project_folder/04_STAR
 
 
 
