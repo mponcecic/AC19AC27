@@ -17,8 +17,8 @@
 # sites. 
 
 # Folder
-# Input: Project_folder/01_TRIMMED //  W:/DATA_shared/Sequencing_name/
-# Output: Project_folder/03_STAR
+# Input: Project_folder/02_TRIMMED //  W:/DATA_shared/Sequencing_name/
+# Output: Project_folder/04_STAR
 
 # Requirement
 # ---------------------
@@ -281,7 +281,7 @@
 source /opt/ohpc/pub/apps/R/R-4.2.1/cic-R
 R
 # Load R libraries 
-.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/NewCluster_R")
+.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/Rocky_R/DEG_Rocky")
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
