@@ -113,26 +113,20 @@ names(color_list[["Direction"]]) <- c("Downregulated", "Not significant", "Upreg
 names(color_list[["Shared"]]) <- c("DESeq2", "EdgeR", "limma-voom", "Wilcoxon")
 
 # ggplot2 theme 
-theme_DEGs <- theme_bw()+ theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black"), panel.grid = element_blank())
+theme_DEGs <- theme_bw()+ theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black"), panel.grid = element_blank(), plot.title = element_text(hjust = 0.5))
 theme_set(theme_DEGs)
 
 # Specie 
 # specie = "Human"
 specie <- logfile$Organism 
 
+# Summary table
+tab_cols <- c("Comparison", "Method", "Genes", "DEGs", "Upregulated", "Downregulated")
+sum_tab <- data.frame(matrix(nrow = 0, ncol = length(tab_cols))) 
 
-
-##############################################################################
-#                         SHARED EVENTS
-##############################################################################
-
-
-
-# Annotation for all the results 
-ref <- paste(analysis, "_", name, "_", project, sep = "")
-
-paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = "")
-
+# Create a list with the different possible method comparisons
+comparison <- list()
+for (p in 2:length(analysis_list)) {for (t in 1:(p - 1)) {comparison[length(comparison) + 1] <- list(c(analysis_list[t], analysis_list[p]))}}
 
 
 
@@ -159,6 +153,8 @@ for (i in 1:length(contrast)){
   
   # Data frame with all the methods information 
   data <- c() 
+  # Data frame for the correlation plot 
+  tab_cor <- c() 
   
   
   ##############################################################################
@@ -199,12 +195,59 @@ for (i in 1:length(contrast)){
     # Load results
     genes <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
     genes <- genes %>% mutate(Method = analysis) %>% select(GeneID, Method,  DEG, logFC, padj, Direction, metadata$Sample)
-    
     data <- rbind(data, genes)
+
+    # Results summary table 
+    sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(genes$DEG == "YES"), length(genes$Direction == "Upregulated"), length(genes$Direction == "Downregulated")))
+    
+    # Data frame for the correlation plot
+    gen_tab <- genes %>% mutate(paste(log_FC, analysis, sep ="_") = logFC) %>% select(GeneID, paste(log_FC, analysis, sep ="_"), paste(padj, analysis, sep ="_"))
+    tab_cor <- cbind(tab_cor, gen_tab)
   }
+  
+  # Rename columns name 
+  colnames(sum_tab) <- tab_cols
   
   # Differential expressed genes
   data_de <- data[which(data$DEG == "YES"),]
+  
+  
+  
+  ## SCATTERPLOT
+  # Select the method comparison and create a scatterplot
+  for (k in 1:length(comparison)) {
+    comp <- comparison[[k]]
+    parm <- c(paste("logFC", comp, sep = "_"), paste("padj", comp, sep = "_"))
+    
+    # Create a data frame with the following columns
+    # - logFC_analysis1
+    # - logFC_analysis2
+    # - padj_analysis1
+    # - padj_analysis2
+    # - Significance: The significance of the genes is known, possible options: 
+    #   analysis1, analysis2, analysis1_analysis2 and "-" for the non-significant
+    #   The significance is based on the logFC and adjusted p-value
+    m <- tab_cor[, which(colnames(tab_cor %in% parm))]
+    m <- m[match(colnames(m), parm),]
+    m$sig <- "-"
+    colnames(m) <- c("A", "B", "C", "D", "Significance")
+    m$Significance[which(abs(A) > lfc_cutoff & C <= fdr_cutoff)] <-  comp[1]
+    m$Significance[which(abs(B) > lfc_cutoff & D <= fdr_cutoff)] <-  comp[2]
+    m$Significance[which(abs(A) > lfc_cutoff & C <= fdr_cutoff & abs(B) > lfc_cutoff & D <= fdr_cutoff)] <-  paste(comp, collapse = "_")
+    
+    # Scatterplot
+    ggplot(m, aes(x = A, y = B))+
+      geom_point(alpha = 0.4)
+    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_",  name, "_", project, ".pdf"), plot = last_plot(), height = 4, width = 4, bg = "white")
+    
+    # Scatterplot with colors
+    ggplot(m, aes(x = A, y = B, color = Significance))+
+      geom_point(alpha = 0.4)+
+      labs(x = comp[1], y = comp[2], title = "log2 Fold Change")+ 
+      theme(legend.position = "bottom", legend.box = "horizontal")
+    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_sig_", name, "_", project, ".pdf"), plot = last_plot(), height = 4, width = 4, bg = "white")
+    
+  }
   
   
   
@@ -241,6 +284,38 @@ for (i in 1:length(contrast)){
   
   
   
+  ##############################################################################
+  #                           Unique Genes
+  ##############################################################################
+  
+  
+  # List of unique events
+  unq_tab <- dup_tab[dup_tab$Freq == 1,]
+  
+  # Data frame of unique events
+  unq_events <- deg_data[which(data_de$GeneID %in% unq_tab$Var1),]
+  
+  
+  
+  ##############################################################################
+  #                                 PLOTS
+  ##############################################################################
+  
+  
+  ## DENSITY PLOT
+  # Representation of the adjusted p-value and log2 fold-change for allS
+  A <- ggplot(data, aes(x = padj, fill = Method)) +
+    geom_density(alpha = 0.5)+
+    scale_fill_manual(values = color_l$Shared)+
+    labs(x = "adjusted p-value", y = "Counts")
+  B <- ggplot(data, aes(x = logFC, fill = Method)) +
+    geom_density(alpha = 0.5)+
+    scale_fill_manual(values = color_l$Shared)+
+    labs(x = "log2FC", y = "Counts")
+  fig <- ggarrange(A, B, ncol = 2, nrow = 1, widths = 10, heights = 5)
+  ggsave(filename = paste("00_Histogram_verif_", ref, ".pdf", sep = ""), path = dir_fig, plot = fig, width = 4, height = 2, bg = "white")
+  
+  
   ## VENN DIAGRAM
   # Visualization of the shared genes among the different methods used
   ggvenn(de_list,
@@ -271,19 +346,14 @@ for (i in 1:length(contrast)){
   dev.off()
   
   
-  
-  ##############################################################################
-  #                           Unique Genes
-  ##############################################################################
-  
-  
-  # List of unique events
-  unq_tab <- dup_tab[dup_tab$Freq == 1,]
-  
-  # Data frame of unique events
-  unq_events <- deg_data[which(data_de$GeneID %in% unq_tab$Var1),]
+ 
   
 }
+
+
+
+# Summary table 
+write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project,".csv", sep = ""), row.names = FALSE)
 
 
 
