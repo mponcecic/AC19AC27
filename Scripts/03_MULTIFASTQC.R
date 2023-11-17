@@ -60,6 +60,6 @@ source(paste(path, project, "/utils/Libraries.R", sep = ""))
 ################################################################################
 
 
-qc_report(qc.path = dir_infiles, result.file = paste(dir_outfiles, "/",  project, "_MultiReport", sep=""), 
+qc_report(qc.path = dir_infiles, result.file = paste(dir_outfiles, "/",  project_name, "_MultiReport", sep=""), 
           interpret = TRUE)
 

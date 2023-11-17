@@ -17,8 +17,8 @@
 # sites. 
 
 # Folder
-# Input: Project_folder/01_TRIMMED //  W:/DATA_shared/Sequencing_name/
-# Output: Project_folder/03_STAR
+# Input: Project_folder/02_TRIMMED //  W:/DATA_shared/Sequencing_name/
+# Output: Project_folder/04_STAR
 
 # Requirement
 # ---------------------
@@ -281,7 +281,7 @@
 source /opt/ohpc/pub/apps/R/R-4.2.1/cic-R
 R
 # Load R libraries 
-.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/NewCluster_R")
+.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/Rocky_R/DEG_Rocky")
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -297,7 +297,7 @@ path <- "/vols/GPArkaitz_bigdata/mponce/"
 # Trimmed fastq/ raw fastqs
 trmd <- TRUE
 
-# Log file date from 0_Sample_info
+# Log file date from 0_Sample_info {YYYYMMDD} format
 # Add when you want to work with raw fastqs
 logdate <- ""
 
@@ -324,7 +324,7 @@ read <- logfile$read
 # Input directories
 if(trmd == TRUE){
   # Input directory
-  dir_infiles <- paste(path, project_name, "/01_TRIMMED", sep = "" )
+  dir_infiles <- paste(path, project_name, "/02_TRIMMED", sep = "" )
   pattern = "_1_trmd.fastq.gz"
   pattern2 = "_2_trmd.fastq.gz"
 }else{
@@ -340,8 +340,8 @@ if(trmd == TRUE){
 # Output directory
 dir_outfiles <- paste(path, project_name, sep = "")
 # Create output directory
-dir.create(file.path(dir_outfiles,"03_STAR"))
-dir_outfiles <- paste(dir_outfiles,"/03_STAR",sep='')
+dir.create(file.path(dir_outfiles,"04_STAR"))
+dir_outfiles <- paste(dir_outfiles,"/04_STAR",sep='')
 # Set directory
 setwd(dir_outfiles)
 
