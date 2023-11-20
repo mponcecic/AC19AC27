@@ -66,8 +66,8 @@ specie <- "Human"
 
 # Read insert
 # Remove one nucleotide
-read <- 100
-# read <- 150
+# read <- 100
+read <- 150
 
 ### Process information ###
 partition <- "FAST"

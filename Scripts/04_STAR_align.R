@@ -24,9 +24,9 @@
 # ---------------------
 #
 # Genome index appropriate for your data in the following folder: 
-#         /vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10b
+#         /vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Indexes
 # 
-# The genome index are available for human and mouse with read length of 101
+# The genome index are available for human and mouse with read length of 51, 101
 # and 151. 
 
 
@@ -338,16 +338,16 @@ if(trmd == TRUE){
   }
 
 # Output directory
-dir_outfiles <- paste(path, project_name, sep = "")
+dir_out <- paste(path, project_name, sep = "")
 # Create output directory
-dir.create(file.path(dir_outfiles,"04_STAR"))
-dir_outfiles <- paste(dir_outfiles,"/04_STAR",sep='')
+dir.create(file.path(dir_out,"04_STAR"))
+dir_outfiles <- paste(dir_out,"/04_STAR",sep='')
 # Set directory
 setwd(dir_outfiles)
 
 
 # Genome index
-indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10a"
+indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Indexes"
 genome_dir <- paste(indexfolder, "/", specie, "_", read, sep = "")
 
 
