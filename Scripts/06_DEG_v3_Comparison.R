@@ -194,7 +194,7 @@ for (i in 1:length(contrast)){
     
     # Load results
     genes <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
-    genes <- genes %>% mutate(Method = analysis) %>% select(GeneID, Method,  DEG, logFC, padj, Direction, metadata$Sample)
+    genes <- genes %>% mutate(Method = analysis) %>% select(GeneID, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
 
     # Results summary table 
@@ -345,8 +345,6 @@ for (i in 1:length(contrast)){
   print(upset1)
   dev.off()
   
-  
- 
   
 }
 
