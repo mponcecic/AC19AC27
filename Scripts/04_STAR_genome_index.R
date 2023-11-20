@@ -49,13 +49,11 @@
 source /opt/ohpc/pub/apps/R/R-4.2.1/cic-R
 R
 # Load R libraries 
-.libPaths("/vols/GPArkaitz_bigdata/DATA_shared/NewCluster_R")
+.libPaths("/vols/GPArkaitz_bigdata/Rocky_R/DEG_Rocky")
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
-# Project Name 
-project_name <- "AC58"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -68,20 +66,20 @@ specie <- "Human"
 
 # Read insert
 # Remove one nucleotide
-# read <- 100
-read <- 150
+read <- 100
+# read <- 150
 
 ### Process information ###
 partition <- "FAST"
-time <- c("00:45:00")
+# time <- c("00:45:00") # Mouse genome
+time <- c("02:00:00") # Human genome
 memory <- c("40")
 cpu <- 8
 ram <- 30000000000 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Input and output directories  
-dir_infiles <- paste(path, project_name, "/02_TRIMMED", sep = "" )
-indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10a"
+indexfolder <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Indexes"
 folder_name <- paste(specie, read+1, sep = "_")
 dir.create(file.path(indexfolder, folder_name))
 dir_outfiles <- paste(indexfolder,"/", folder_name, sep = "")
@@ -90,14 +88,14 @@ dir_outfiles <- paste(indexfolder,"/", folder_name, sep = "")
 setwd(indexfolder)
 
 # Select specie annotation files
-if(specie = "Human"){
+if(specie == "Human"){
   # Human
-  fasta <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/refdata-gex-GRCh38-2020-A/fasta/genome.fa" 
-  gtf <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/refdata-gex-GRCh38-2020-A/genes/genes.gtf"
+  fasta <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Sequences/Homo_sapiens.GRCh38.dna.primary_assembly_110.fa" 
+  gtf <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Annotation/Homo_sapiens.GRCh38.110.gtf"
 }else{
   # Mouse
-  fasta <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/refdata-gex-mm10-2020-A/fasta/genome.fa" 
-  gtf <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes/refdata-gex-mm10-2020-A/genes/genes.gtf"
+  fasta <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Sequences/Mus_musculus.GRCm39.dna.primary_assembly_110.fa" 
+  gtf <- "/vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Annotation/Mus_musculus.GRCm39.110.gtf"
 }
 
 
@@ -135,7 +133,7 @@ cat(
   "\n\n",
   c(star_path), 
   "\n",
-  c(paste("cd ", dir_infiles)), 
+  c(paste("cd ", indexfolder)), 
   "\n",
   c(command),
   file=filename,sep = "\n",append=F)
