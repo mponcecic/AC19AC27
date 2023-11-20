@@ -20,7 +20,7 @@ pdf_to_tab <- function(x, first_sample, last_sample){
   
   # Create a character vector using \n as the row separator
   x <- map(x, ~ str_split(.x, "\\n") %>% unlist())
-  x <- reduce(x, c)
+  x <- purrr::reduce(x, c)
   
   # Select the beginning of the table
   # Must be always the same
