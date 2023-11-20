@@ -284,8 +284,8 @@ specie <- logfile$Organism
 
 
 # Reference genome
-ref_genome <- read.table(paste(anot_path, "/DATA_shared/Genomes/DEG_annotation_20231108/gene_annotation_20231106.txt", sep = ""),
-                         col.names = c("Symbol", "GeneID", "Organism"))
+ref_genome <- read.table(paste(anot_path, "/DATA_shared/Genomes_Rocky/Annotation_DEG/gene_annotation_20231117.txt", sep = ""),
+                         col.names = c("Symbol", "Ensembl", "Organism"))
 genome <- ref_genome[which(ref_genome$Organism == specie), -3]
 
 

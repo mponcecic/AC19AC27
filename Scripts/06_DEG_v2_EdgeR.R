@@ -420,15 +420,20 @@ for (i in 1:length(contrast)){
   
   # All results
   colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
-  data <- cbind(res_df, res_log2)
+  data <- cbind(df, gene_counts)
+  data <- cbind(data, res_log2)
+  data <- data %>% select(GENEID, Symbol, EnsemblID, DEG, Direction, MeanExp, logFC, lfcSE, stat, pvalue, padj, everything())
+  
   write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
   write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALS_", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
   colnames(m) <- paste(md, colnames(m), sep = "_")
-  sel <- cbind(df, m)
+  sel <- cbind(df, gene_counts)
+  sel <- cbind(sel, m)
+  sel <- sel %>% select(GENEID, Symbol, EnsemblID, DEG, Direction, logFC, logCPM, pvalue, padj, everything())
   write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
-  write.xlsx(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".xlsx", sep = ""), overwrite = TRUE)
+  
   
 }
 
