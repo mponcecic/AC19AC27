@@ -14,16 +14,17 @@
 #                         LOAD FILES AND DATA                           
 ################################################################################
 
-
+# -----------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC58"
+project <- "XXX"
 
 # File path
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+path <- "W:/mponce"
+# -----------------------------------------------------------------------------------------------------------------e/"
 
 # Input directory
-input_dir <- paste (path, project, "/03_STAR", sep = "")
+input_dir <- paste (path, project, "/04_STAR", sep = "")
 # Output directory
 output_dir <- paste (path, project, "/VERIFICATION", sep = "")
 
@@ -93,4 +94,4 @@ for (i in 1:length(samples_names)){
 ################################################################################
 
 
-write.csv(def_file,file = paste(output_dir ,"/03_STAR_file.csv", sep = ""), row.names=FALSE)
+write.csv(def_file,file = paste(output_dir ,"/04_STAR_file.csv", sep = ""), row.names=FALSE)

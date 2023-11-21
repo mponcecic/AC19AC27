@@ -17,13 +17,15 @@
 ################################################################################
 
 
+# -----------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project Name 
-project_name <- "AC58"
+project_name <- "XXX"
 
 # File path
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
+# -----------------------------------------------------------------------------------------------------------------
 
 # Output and input directories SSH 
 input_dir <- paste(path, project_name, "/02_TRIMMED", sep = "" )
