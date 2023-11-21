@@ -26,7 +26,7 @@ project_name <- "AC58"
 path <- "W:/mponce/"
 
 # Output and input directories SSH 
-input_dir <- paste(path, project_name, "/01_TRIMMED", sep = "" )
+input_dir <- paste(path, project_name, "/02_TRIMMED", sep = "" )
 output_dir <- paste(path, project_name, "/VERIFICATION", sep = "")
 
 # Set working directory

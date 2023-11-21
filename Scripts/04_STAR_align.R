@@ -429,7 +429,7 @@ logdate <- format(Sys.time(), "%Y%m%d")
 logfile$Date <- Sys.time()
 logfile$Trimming <- trmd
 
-write.table(as.data.frame(logfile), paste(dir_out, "/4_STAR_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(logfile), paste(dir_outfiles, "/4_STAR_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 
 

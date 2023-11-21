@@ -25,9 +25,12 @@ project_name <- "AC58"
 path <- "W:/mponce/"
 
 # Input directory
-input_dir <- paste("W:/mponce/", project,"/03_STAR", sep = "")
+input_dir <- paste(path, project_name,"/04_STAR", sep = "")
+
 # Output directory
-output_dir <- paste("W:/mponce/", project,"/VERIFICATION", sep ="")
+dir.create(file.path(paste(path, project_name, sep = ""),"VERIFICATION"))
+output_dir <- paste(path, project_name,"/VERIFICATION", sep ="")
+
 
 # Set working directory
 setwd(input_dir)
@@ -44,8 +47,8 @@ pattern <- c("Number of input reads", "Uniquely mapped reads %")
 def_file <- data.frame()
 
 
-# AC35_Trimming_check.csv
-trim_file <- read.csv(file = paste(output_dir, "/", project,"_Trimming_check.csv", sep = ""), header = TRUE)
+#Load trimming check
+trim_file <- read.csv(file = paste(output_dir, "/", project_name,"_Trimming_check.csv", sep = ""), header = TRUE)
 colnames(trim_file) <- gsub("\\.", " ", colnames(trim_file))
 colnames(trim_file) <- gsub("   ", " < ", colnames(trim_file))
 
@@ -95,9 +98,9 @@ final_check <- merge(trim_file,def_file, by = "Sample")
 ################################################################################
 
 
-write.csv(def_file, file = paste(output_dir ,"/", project,"_STAR_check.csv", sep = ""), row.names=FALSE)
+write.csv(def_file, file = paste(output_dir ,"/", project_name,"_STAR_check.csv", sep = ""), row.names=FALSE)
 
-write.csv(final_check, file = paste(output_dir,"/", project,"_Trimmed_STAR_check.csv", sep = ""), row.names=FALSE)
+write.csv(final_check, file = paste(output_dir,"/", project_name,"_Trimmed_STAR_check.csv", sep = ""), row.names=FALSE)
 
 
 
