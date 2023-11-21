@@ -112,7 +112,7 @@ project <- "PRUEBA"
 path <- "W:/mponce/"
 
 # Date of the log file
-logdate <- "20231106"
+logdate <- "20231121"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -284,9 +284,10 @@ specie <- logfile$Organism
 
 
 # Reference genome
-ref_genome <- read.table(paste(anot_path, "/DATA_shared/Genomes_Rocky/Annotation_DEG/gene_annotation_20231117.txt", sep = ""),
-                         col.names = c("Symbol", "Ensembl", "Organism"))
-genome <- ref_genome[which(ref_genome$Organism == specie), -3]
+ref_genome <- read.table(paste(anot_path, "/DATA_shared/Genomes_Rocky/DEG_Annotation/Annotated_Genes_20231121.txt", sep = ""), header = TRUE)
+genome <- ref_genome[which(ref_genome$Specie == specie), -3]
+genome$Name <- paste(genome$Symbol, genome$Ensembl, sep = "_")
+print(dim(genome))
 
 
 # Sample information/ Metadata
@@ -395,8 +396,8 @@ cat(paste("Total genes in gene count:", dim(gene_counts)[1]))
 # CAUTION: Symbol id present more than one Ensembl identifier. 
 # I propose to perform the analysis using the Ensembl identifier, if not the 
 # mean value of the genes with the same Symbol id should be performed.
-annot <- genome[which(genome$GeneID %in% rownames(gene_counts)),]
-gene_names <- data.frame(GeneID = annot$GeneID, Symbol = annot$Symbol)
+annot <- genome[which(genome$Ensembl %in% rownames(gene_counts)),]
+gene_names <- annot[match(rownames(gene_counts), annot$Ensembl), -3]
 
 
 ## Barplot verification the quality of the gene counts
