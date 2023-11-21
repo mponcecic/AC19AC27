@@ -8,8 +8,8 @@
 # Summary report with the fastqc or quality control from the fastq files.
 
 # Folder
-# Input: Project_folder/02_FASTQC
-# Output: Project_folder/02_FASTQC
+# Input: Project_folder/03_FASTQC
+# Output: Project_folder/03_FASTQC
 
 
 ################################################################################

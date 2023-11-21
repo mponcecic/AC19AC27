@@ -8,8 +8,8 @@
 # Summary report with the fastqc or quality control from the fastq files.
 
 # Folder
-# Input: Project_folder/00_FASTQC
-# Output: Project_folder/00_FASTQC
+# Input: Project_folder/01_FASTQC
+# Output: Project_folder/01_FASTQC
 
 
 ################################################################################
@@ -30,7 +30,7 @@
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project Name 
-project_name <- "AC58"
+project_name <- "XXX"
 
 
 # Pathway to the folders and files

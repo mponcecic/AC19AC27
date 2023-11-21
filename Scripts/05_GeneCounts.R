@@ -116,7 +116,7 @@
 #------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project name
-project <- "AC58"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local

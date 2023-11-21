@@ -8,8 +8,8 @@
 # Quality control of the trimmed fastq files
 
 # Folder
-# Input: Project_folder/01_TRIMMED
-# Output: Project_folder/02_FASTQC
+# Input: Project_folder/02_TRIMMED
+# Output: Project_folder/03_FASTQC
 
 
 ################################################################################

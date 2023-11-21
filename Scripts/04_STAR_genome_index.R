@@ -18,8 +18,8 @@
 
 
 # Folder 
-# Input: /vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10b
-# Output:/vols/GPArkaitz_bigdata/DATA_shared/Genomes/Indexes_2.7.10b/Specie_read
+# Input: /vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Indexes
+# Output:/vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Indexes/Specie_read
 
 
 

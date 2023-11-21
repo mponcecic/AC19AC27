@@ -9,7 +9,7 @@
 
 # Folder
 # Input: W:/DATA_shared/Sequencing_name/
-# Output: Project_folder/00_FASTQC
+# Output: Project_folder/01_FASTQC
 
 
 ################################################################################
@@ -39,7 +39,7 @@ R
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project Name 
-project_name <- "AC58"
+project_name <- "XXX"
 
 
 # Pathway to the folders and files
