@@ -39,7 +39,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC58"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -54,17 +54,16 @@ local_dir <- "C:/Users/mponce/CIC bioGUNE/Arkaitz group - Maria Ponce/Projects/0
 # Input directory
 # Must be the folder where the library preparation pdf is found and folder 
 # with the fastq are included 
-files_rocky <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-58_TotalRNAseq/"
-files <- "W:/DATA_shared/AC-58_TotalRNAseq/"
+files_rocky <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-XX_TotalRNAseq/"
+files <- "W:/DATA_shared/AC-XX_TotalRNAseq/"
 # Select input directory
 dir_in <- files
   
-# First and last sample found in the Library Preparation pdf
-# Add this carefully. This is a key step to generate a data frame based on the 
-# table from the data frame
-first_sample <- "AC-58_L01"
-
-last_sample <- "AC-58_L16"
+# First and last sample found in the Library Preparation pdf table which is 
+# usually in page 5.
+# This is a key step to generate a data frame based on the table from the pdf
+first_sample <- "AC-XX_XX"
+last_sample <- "AC-XX_XX"
 
 # Condition
 trt <- "Time"
