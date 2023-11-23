@@ -204,7 +204,7 @@ write.table(RawCounts, paste(input_dir, "/RawCounts_", project,".txt", sep=""), 
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
-log_data$Directory <- dir_input
+log_data$Directory <- input_dir
 log_data$project_name <- project
 log_data$Strandness <- strand
 
