@@ -18,7 +18,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "PRUEBA"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -40,8 +40,8 @@ source(paste(path, project, "/utils/Libraries.R", sep = ""))
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
-# Load log file 
-logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
+# Load log file from 6_DEG_qc_xxxxx.log
+logfile <- read.table(paste(path, project, "/6_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 
 # Output directory
@@ -194,14 +194,14 @@ for (i in 1:length(contrast)){
     
     # Load results
     genes <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
-    genes <- genes %>% mutate(Method = analysis) %>% select(GeneID, Method, DEG, logFC, padj, Direction, metadata$Sample)
+    genes <- genes %>% mutate(Method = analysis) %>% select(Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
 
     # Results summary table 
     sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(genes$DEG == "YES"), length(genes$Direction == "Upregulated"), length(genes$Direction == "Downregulated")))
     
     # Data frame for the correlation plot
-    gen_tab <- genes %>% mutate(paste(log_FC, analysis, sep ="_") = logFC) %>% select(GeneID, paste(log_FC, analysis, sep ="_"), paste(padj, analysis, sep ="_"))
+    gen_tab <- genes %>% mutate(paste(log_FC, analysis, sep ="_") = logFC) %>% select(Ensembl, paste(log_FC, analysis, sep ="_"), paste(padj, analysis, sep ="_"))
     tab_cor <- cbind(tab_cor, gen_tab)
   }
   
@@ -257,12 +257,12 @@ for (i in 1:length(contrast)){
   
   
   # List of shared events
-  genes_list <- split(data$GeneID, data$Method)
-  de_list <- split(data_de$GeneID, data_de$Method)
+  genes_list <- split(data$Ensembl, data$Method)
+  de_list <- split(data_de$Ensembl, data_de$Method)
   
   
   # List of the duplicated events
-  dup_tab <- as.data.frame(table(data_de$GeneID))
+  dup_tab <- as.data.frame(table(data_de$Ensembl))
   dup_gen <- dup_tab[dup_tab$Freq > 1,]
   
   
@@ -272,8 +272,8 @@ for (i in 1:length(contrast)){
   #   - Direction of the event (up/down)
   #   - Congruence: Direction the event was the same or not in 
   #     both groups
-  duplicates <- data_de[which(data_de$GeneID %in% dup_gen$Var1),] %>% 
-    group_by(GeneID) %>%
+  duplicates <- data_de[which(data_de$Ensembl %in% dup_gen$Var1),] %>% 
+    group_by(Ensembl) %>%
     summarise(N = n_distinct(Method),
               Method = paste(unique(Method), collapse = ", "),
               Direction = paste(Direction, collapse = ", ")) %>%
@@ -293,7 +293,7 @@ for (i in 1:length(contrast)){
   unq_tab <- dup_tab[dup_tab$Freq == 1,]
   
   # Data frame of unique events
-  unq_events <- deg_data[which(data_de$GeneID %in% unq_tab$Var1),]
+  unq_events <- deg_data[which(data_de$Ensembl %in% unq_tab$Var1),]
   
   
   
