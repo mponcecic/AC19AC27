@@ -289,7 +289,7 @@ for (i in 1:length(contrast)){
   
   ## Results as a data frame
   res_df <- as.data.frame(res) 
-  res_df$GeneID <- rownames(res_df)
+  res_df$Ensembl <- rownames(res_df)
   print(dim(res_df))
   
   ## Threshold label
@@ -312,16 +312,17 @@ for (i in 1:length(contrast)){
   
   
   ## Annotated gene names in Symbol
-  res_df <- merge(res_df, gen_annot, by = "GeneID") 
+  res_df <- merge(res_df, gen_annot, by = "Ensembl") 
   print(head(res_df))
   print(dim(res_df))
+  
   
   ## MERGE WITH GENE COUNTS
   # Row names to a variable
   genes <- gene_counts[, metadata$Sample]
-  genes$GeneID <-  rownames(genes)
+  genes$Ensembl <-  rownames(genes)
   # Merge gene_counts and comparison results
-  result <- merge(x = res_df, y = genes, by = "GeneID")
+  result <- merge(x = res_df, y = genes, by = "Ensembl")
   
   
   ## Differential expressed genes
@@ -332,7 +333,7 @@ for (i in 1:length(contrast)){
   ## Transform matrix 
   # Select the differentially expressed genes that overcame the test
   # Used to plot the data 
-  m <- m_trs[which(rownames(m_trs) %in% df$GeneID),]
+  m <- m_trs[which(rownames(m_trs) %in% df$Ensembl),]
   
   
   
@@ -420,20 +421,17 @@ for (i in 1:length(contrast)){
   
   # All results
   colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
-  data <- cbind(df, gene_counts)
-  data <- cbind(data, res_log2)
-  data <- data %>% select(GENEID, Symbol, EnsemblID, DEG, Direction, MeanExp, logFC, lfcSE, stat, pvalue, padj, everything())
+  data <- cbind(result, res_log2)
+  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
   
   write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
   write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALS_", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
   colnames(m) <- paste(md, colnames(m), sep = "_")
-  sel <- cbind(df, gene_counts)
-  sel <- cbind(sel, m)
-  sel <- sel %>% select(GENEID, Symbol, EnsemblID, DEG, Direction, logFC, logCPM, pvalue, padj, everything())
+  sel <- cbind(df, m)
+  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
   write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
-  
   
 }
 
