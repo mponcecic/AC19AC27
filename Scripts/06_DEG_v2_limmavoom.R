@@ -41,8 +41,7 @@ logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = 
 dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
-# dir_out <- paste(path, project, sep = "")   # Default option
-dir_out <- paste(path, project, sep = "")
+dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -156,7 +155,7 @@ for (i in 1:length(contrast)){
   # classified in Results and Figures. 
   
   # Load output directory
-  dir_outfolder <- paste(dir_out, "/05_DEG_ANALYSIS/", name, sep='')
+  dir_outfolder <- paste(dir_out, "/", name, sep='')
   setwd(dir_outfolder)
   
   # Files folder
