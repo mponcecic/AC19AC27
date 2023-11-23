@@ -128,6 +128,10 @@ sum_tab <- data.frame(matrix(nrow = 0, ncol = length(tab_cols)))
 comparison <- list()
 for (p in 2:length(analysis_list)) {for (t in 1:(p - 1)) {comparison[length(comparison) + 1] <- list(c(analysis_list[t], analysis_list[p]))}}
 
+# Create a workbook
+exc <- createWorkbook()
+
+
 
 
 ################################################################################
@@ -373,13 +377,17 @@ for (i in 1:length(contrast)){
   write.table(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".txt", sep = ""))
   write.xlsx(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".xlsx", sep = ""), overwrite = TRUE)
   
-}
+  # Save data in the workbook
+  addWorksheet(exc, name)
+  writeData(exc, result_tab, sheet = name)
+  
+  }
 
+# Save workbook
+saveWorkbook(exc, file =  paste(dir_outfolder, "/", project, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Summary table 
 write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
-
-
 
 ################################################################################
 #                                 LOG FILE 
@@ -393,6 +401,7 @@ log_data$Date <- Sys.time()
 log_data$Directory <- dir_out
 
 write.table(result_tab, paste(dir_output, "/log/5_DEG_v3_", paste(analysis_list, collapse = "_"), "_", logdate, ".log", sep = ""))
+
 
 
 
