@@ -357,8 +357,7 @@ for (i in 1:length(contrast)){
   
   # All results
   colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
-  data <- cbind(df, gene_counts)
-  data <- cbind(data, res_log2)
+  data <- cbind(res_df, res_log2)
   data <- data %>% select(Ensembl, Symbol, EnsemblID, DEG, Direction, logFC, pvalue, padj, everything())
   
   write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
@@ -366,8 +365,7 @@ for (i in 1:length(contrast)){
   
   # Differential expressed genes
   colnames(m) <- paste(md, colnames(m), sep = "_")
-  sel <- cbind(df, gene_counts)
-  sel <- cbind(sel, m)
+  sel <- cbind(df, m)
   sel <- sel %>% select(Ensembl, Symbol, EnsemblID, DEG, Direction, logFC, pvalue, padj, everything())
   write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
   
