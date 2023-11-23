@@ -25,7 +25,7 @@ project <- "XXX"
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
 
-# Date of the log file
+# Date of the log file 5_DEG_qc_xxxxx.log
 logdate <- "20231110"
 
 # Select the methods you want to compare
@@ -40,8 +40,8 @@ source(paste(path, project, "/utils/Libraries.R", sep = ""))
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
-# Load log file from 6_DEG_qc_xxxxx.log
-logfile <- read.table(paste(path, project, "/6_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
+# Load log file
+logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 
 # Output directory
@@ -351,7 +351,7 @@ for (i in 1:length(contrast)){
 
 
 # Summary table 
-write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project,".csv", sep = ""), row.names = FALSE)
+write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
 
 
 

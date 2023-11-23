@@ -194,3 +194,20 @@ RawCounts <- RawCounts[order(colnames(RawCounts))]
 # Save the count dataframe
 write.table(RawCounts, paste(input_dir, "/RawCounts_", project,".txt", sep=""), quote=F, row.names=T, sep="\t") 
 
+
+################################################################################
+#                                 LOG FILE 
+################################################################################
+
+
+# Save log file information
+logdate <- format(Sys.time(), "%Y%m%d")
+log_data <- c()
+log_data$Date <- Sys.time()
+log_data$Directory <- dir_input
+log_data$project_name <- project
+log_data$Strandness <- strand
+
+write.table(as.data.frame(log_data), paste(path, project, "/log/4_STAR_GeneCounts_v2_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+
+
