@@ -153,8 +153,11 @@ for (i in 1:length(contrast)){
   
   # Data frame with all the methods information 
   data <- c() 
-  # Data frame for the correlation plot 
-  tab_cor <- c() 
+  
+  # Data frame which will gather the results per each comparison and all the 
+  # methods used. In addition, it's used for the correlation plots of the logFC 
+  # and adjusted p-values
+  result_tab <- c() 
   
   
   ##############################################################################
@@ -193,24 +196,38 @@ for (i in 1:length(contrast)){
     ref <- paste(analysis, "_", name, "_", project, sep = "")
     
     # Load results
-    genes <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
-    genes <- genes %>% mutate(Method = analysis) %>% select(Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
+    df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
+    genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
 
     # Results summary table 
     sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(genes$DEG == "YES"), length(genes$Direction == "Upregulated"), length(genes$Direction == "Downregulated")))
     
+    
+    # Select the statistic columns per each analysis
+    if(analysis == "DESeq2"){col_nam <- c("logFC", "padj", "MeanExp", "lfcSE", "stat", "pvalue")
+    } else if(analysis == "EdgeR"){col_nam <- c("logFC", "padj", "logCPM", "pvalue")
+    } else if(analysis == "limma-voom"){col_nam <- c("logFC", "padj", "logCPM", "t", "padj", "B")
+    } else {col_nam <- c("logFC", "pvalue", "padj")}
+    
+    # Rename statistics with the method used
+    colnames(df)[which(colnames(df) %in% col_nam)] <- paste(col_nam, analysis, sep = "_")
+    
     # Data frame for the correlation plot
-    gen_tab <- genes %>% mutate(paste(log_FC, analysis, sep ="_") = logFC) %>% select(Ensembl, paste(log_FC, analysis, sep ="_"), paste(padj, analysis, sep ="_"))
-    tab_cor <- cbind(tab_cor, gen_tab)
+    gen_tab <- df %>% select(Name, Symbol, Ensembl, paste(col_nam, analysis, sep ="_"), everything())
+    gen_tab[analysis] <- ifelse(gen_tab$DEG == "YES", "X", "")
+    result_tab <- cbind(result_tab, gen_tab)
   }
+  
+  # Remove DEG column and direction column
+  result_tab <- result_tab[,-which(colnames(result_tab) %in% c("DEG", "Direction"))]
+  
   
   # Rename columns name 
   colnames(sum_tab) <- tab_cols
   
   # Differential expressed genes
   data_de <- data[which(data$DEG == "YES"),]
-  
   
   
   ## SCATTERPLOT
@@ -227,7 +244,7 @@ for (i in 1:length(contrast)){
     # - Significance: The significance of the genes is known, possible options: 
     #   analysis1, analysis2, analysis1_analysis2 and "-" for the non-significant
     #   The significance is based on the logFC and adjusted p-value
-    m <- tab_cor[, which(colnames(tab_cor %in% parm))]
+    m <- result_tab[, which(colnames(result_tab %in% parm))]
     m <- m[match(colnames(m), parm),]
     m$sig <- "-"
     colnames(m) <- c("A", "B", "C", "D", "Significance")
@@ -346,8 +363,17 @@ for (i in 1:length(contrast)){
   dev.off()
   
   
+  
+  ##############################################################################
+  #                                 SAVE DATA  
+  ##############################################################################
+  
+  # Order output
+  result_tab <- result_tab %>% select(Name, Symbol, Ensembl, analysis_list, everything())
+  write.table(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".txt", sep = ""))
+  write.xlsx(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".xlsx", sep = ""), overwrite = TRUE)
+  
 }
-
 
 
 # Summary table 
@@ -366,6 +392,7 @@ log_data <- c()
 log_data$Date <- Sys.time()
 log_data$Directory <- dir_out
 
+write.table(result_tab, paste(dir_output, "/log/5_DEG_v3_", paste(analysis_list, collapse = "_"), "_", logdate, ".log", sep = ""))
 
 
 
