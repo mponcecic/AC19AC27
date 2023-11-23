@@ -36,7 +36,7 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
 # Load log file 
-logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project, "/6_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
 dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
@@ -527,5 +527,5 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_v2_", analysis, logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/6_DEG_v2_", analysis, "_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
