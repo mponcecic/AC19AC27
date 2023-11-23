@@ -123,7 +123,7 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
 # Load log file 
-logfile <- read.table(paste(path, project, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
 dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
