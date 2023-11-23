@@ -258,7 +258,7 @@ color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0
 names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
 
 # Automatically generate the colors for the treatment condition
-color_list <- color_palette(color_list, trt, lvl_order, palette = "Dark2")
+color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   
