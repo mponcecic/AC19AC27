@@ -27,12 +27,21 @@
 ################################################################################
 
 
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project Name 
-project_name <- "AC58"
+project_name <- "XXX"
+
+
+# Pathway to the folders and files
+# Select one option depending if you are running the script in Rocky or local
+# path <- "/vols/GPArkaitz_bigdata/mponce/"
+path <- "W:/mponce/"
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output and input directories SSH 
-dir_infiles <- paste("W:/mponce/", project_name, "/03_FASTQC", sep = "" )
+dir_infiles <- paste(path, project_name, "/03_FASTQC", sep = "" )
 dir_outfiles <- dir_infiles
 setwd(dir_outfiles)
 

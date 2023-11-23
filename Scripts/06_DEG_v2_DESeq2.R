@@ -17,7 +17,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "PRUEBA"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -42,8 +42,7 @@ logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = 
 dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
-# dir_out <- paste(path, project, sep = "")   # Default option
-dir_out <- paste(path, project, sep = "")
+dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -127,7 +126,7 @@ analysis <- "DESeq2"
 
 
 # Load annotation data 
-# gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
+gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
 
   
 ################################################################################
@@ -155,7 +154,7 @@ for (i in 1:length(contrast)){
   # classified in Results and Figures. 
   
   # Load output directory
-  dir_outfolder <- paste(dir_out, "/05_DEG_ANALYSIS/", name, sep='')
+  dir_outfolder <- paste(dir_out, "/", name, sep='')
   setwd(dir_outfolder)
   
   # Files folder
@@ -316,7 +315,7 @@ for (i in 1:length(contrast)){
   
   ## Results as a data frame
   res_df <- res
-  res_df$GeneID <- rownames(res_df)
+  res_df$Ensembl <- rownames(res_df)
   print(dim(res_df))
   
   ## Threshold label
@@ -339,17 +338,16 @@ for (i in 1:length(contrast)){
   
   
   ## Annotated gene names in Symbol
-  # res_df <- merge(res_df, gen_annot, by = "GeneID") 
+  res_df <- merge(gen_annot, res_df, by = "Ensembl") 
   print(head(res_df))
   print(dim(res_df))
   
   ## MERGE WITH GENE COUNTS
   # Row names to a variable
   genes <- gene_counts
-  genes$GeneID <-  rownames(genes)
+  genes$Ensembl <-  rownames(genes)
   # Merge gene_counts and comparison results
-  result <- merge(x = res_df, y = genes, by = "GeneID")
-  
+  result <- merge(x = res_df, y = genes, by = "Ensembl")
   
   ## Differential expressed genes
   # Select differentially expressed genes
@@ -395,9 +393,9 @@ for (i in 1:length(contrast)){
   ## Transform matrix 
   # Select the differentially expressed genes that overcame the test
   # Used to plot the data 
-  m <- res_log2[which(rownames(res_log2) %in% df$GeneID), ]
+  m <- res_log2[which(rownames(res_log2) %in% df$Ensembl), ]
   
-  if(identical(rownames(m), df$GeneID) == FALSE){m <- m[match(rownames(m), df$GeneID),]}
+  if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
   
   
   
@@ -483,18 +481,16 @@ for (i in 1:length(contrast)){
   
   # All results
   colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
-  data <- cbind(df, gene_counts)
-  data <- cbind(data, res_log2)
-  data <- data %>% select(GENEID, Symbol, EnsemblID, DEG, Direction, MeanExp,logFC, lfcSE, stat, pvalue, padj, everything())
+  data <- cbind(result, res_log2)
+  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
   
   write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
   write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALS_", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
   colnames(m) <- paste(md, colnames(m), sep = "_")
-  sel <- cbind(df, gene_counts)
-  sel <- cbind(sel, m)
-  sel <- sel %>% select(GENEID, Symbol, EnsemblID, DEG, Direction, MeanExp,logFC, lfcSE, stat, pvalue, padj, everything())
+  sel <- cbind(df, m)
+  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
   write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
 
     }

@@ -141,17 +141,23 @@ color_palette <- function(color_list, trt, lvl_order, palette = "Dark2"){
   # If the number list is than 4 it means that the condition color palette was 
   # not manually added and must be added now to the color_list to visualize data
   if(n < 4){
-    x <- brewer.pal(length(lvl_order), palette)
+    suppressWarnings(x <- brewer.pal(length(lvl_order), palette))
     names(x) <- lvl_order
     color_list[[trt]] <- x
     
     # To avoid problems with the color palette, we make sure the levels from the 
     # present color_list the correct levels from the condition  
-  } else(if(all.equal.list(names(color_list[[trt]]), lvl_order) == TRUE){
-    x <- brewer.pal(length(lvl_order), palette)
+  } else(
+    if(all.equal.list(names(color_list[[trt]]), lvl_order) == FALSE){
+    suppressWarnings(x <- brewer.pal(length(lvl_order), palette))
     names(x) <- lvl_order
     color_list[[trt]] <- x
   })
+  
+  # Remove the third element of the condition colors when the condition levels 
+  # are only two and the list present three due to brewer.pal which give a minimun 
+  # of three values
+  if(length(lvl_order)<3 & length(lvl_order)!= length(color_list[[trt]])){color_list[[trt]] <- color_list[[trt]][-3]}
   
   return(color_list)
 }
