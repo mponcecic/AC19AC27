@@ -47,7 +47,7 @@ project_name <- "XXX"
 path <- "/vols/GPArkaitz_bigdata/mponce/"
 # path <- "W:/mponce/"
 
-# Date of the log file
+# Date of the log file 0_Sample_info_XXX.txt
 logdate <- ""
 
 ### Process information ###

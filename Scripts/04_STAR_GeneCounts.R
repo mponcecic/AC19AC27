@@ -208,6 +208,6 @@ log_data$Directory <- dir_input
 log_data$project_name <- project
 log_data$Strandness <- strand
 
-write.table(as.data.frame(log_data), paste(path, project, "/log/4_STAR_GeneCounts_v2_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/log/4_STAR_GeneCounts_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 

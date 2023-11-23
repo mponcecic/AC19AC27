@@ -297,8 +297,7 @@ path <- "/vols/GPArkaitz_bigdata/mponce/"
 # Trimmed fastq/ raw fastqs
 trmd <- TRUE
 
-# Log file date from 0_Sample_info {YYYYMMDD} format
-# Add when you want to work with raw fastqs
+# Log file date from 0_Sample_info_XXX.log
 logdate <- ""
 
 ### Process information ###
@@ -312,7 +311,7 @@ ram <- as.numeric(memory)*10^9
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load log file 
-logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project_name, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Specie
 specie <- logfile$Organism
@@ -429,7 +428,7 @@ logdate <- format(Sys.time(), "%Y%m%d")
 logfile$Date <- Sys.time()
 logfile$Trimming <- trmd
 
-write.table(as.data.frame(logfile), paste(dir_outfiles, "/4_STAR_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(logfile), paste(path, project_name, "/log/4_STAR_align_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 
 
