@@ -705,7 +705,7 @@ for (i in 1:length(contrast)){
   # Save transform data with blind = FALSE
   # Why blind = FALSE
   if(group_n < 30){dds_trs <- assay(vst(dds, blind = FALSE))}else{dds_trs <- assay(rlog(dds, blind = FALSE))}
-  write.table(dds_trs, paste(dir_output,"/GeneCount_", md , "_", name, "_", project, ".txt", sep = ""))
+  write.table(dds_trs, paste(dir_output,"/GeneCount_", md , "_blindTRUE__", name, "_", project, ".txt", sep = ""))
   
   # Save filtered gene counts per comparison 
   write.table(df, paste(dir_output,"/GeneCount_", name, "_", project,".txt", sep = ""))
