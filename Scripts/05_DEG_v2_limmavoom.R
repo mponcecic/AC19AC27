@@ -179,7 +179,7 @@ for (i in 1:length(contrast)){
   # Load transform gene counts
   file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
   md <- file_trs$Transformation
-  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_", name, "_", project, ".txt", sep = ""), header = TRUE)
+  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_blindFALSE_", name, "_", project, ".txt", sep = ""), header = TRUE)
   
   # Load sample information per comparison
   metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
@@ -330,6 +330,7 @@ for (i in 1:length(contrast)){
   # Used to plot the data 
   m <- m_trs[which(rownames(m_trs) %in% df$Ensembl),]
   
+  if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
   
   
   ##############################################################################

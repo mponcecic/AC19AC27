@@ -176,6 +176,11 @@ for (i in 1:length(contrast)){
   # Load gene count filtered
   gene_counts <- read.table(paste(dir_output, "/GeneCount_", name, "_", project, ".txt", sep = ""))
   
+  # Load transform gene counts
+  file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
+  md <- file_trs$Transformation
+  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_blindFALSE_", name, "_", project, ".txt", sep = ""), header = TRUE)
+  
   # Load sample information per comparison
   metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
   metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
@@ -260,45 +265,12 @@ for (i in 1:length(contrast)){
   dim(df)
   
   
-  ## Variance stabilizing transformation
-  # 
-  # Variance stabilization methods in log2 scale to interpret the data
-  # 
-  # Choose VST for samples size group smaller than 30. Why? 
-  # 
-  # if you have many samples (e.g. 100s), the rlog function might take too long, and so the vst function will be 
-  # a faster choice. The rlog and VST have similar properties, but the rlog requires fitting a shrinkage term for 
-  # each sample and each gene which takes time. See the DESeq2 paper for more discussion on the differences 
-  # (Love, Huber, and Anders 2014)
-  
-  # Why blind = FALSE 
-  # 
-  
-  # Output
-  # - Columns are samples
-  # - Rows are genes
-  # 
-  #                    N_3_E1    N_2_E4    N_2_E3   N_2_E2   H4_2_E4   H4_2_E3   H4_2_E2   H4_2_E1
-  # ENSG00000000003 11.075692 10.993586 11.209109 11.03978 11.136152 11.147595 11.118555 11.125602
-  # ENSG00000000419 11.959761 11.938768 12.033994 11.84389 11.846617 11.951190 11.951552 11.888236
-  # ENSG00000000457 10.476816 10.557566 10.470185 10.47396 10.568444 10.488905 10.569326 10.394093
-  
-  # Estimate the biggest group sample size
-  group_n <- max(as.vector(tabulate(metadata[[trt]])))
-  
-  # Data transformation
-  if(group_n < 30){
-    res_log2 <- as.data.frame(assay(vst(dds, blind = FALSE)))
-    md <- "VST"
-  }else{
-    res_log2 <- as.data.frame(assay(rlog(dds, blind = FALSE)))
-    md <- "RLOG"}
-  print(md) 
+  #  
   
   ## Transform matrix 
   # Select the differentially expressed genes that overcame the test
   # Used to plot the data 
-  m <- res_log2[which(rownames(res_log2) %in% df$Ensembl), ]
+  m <- m_trs[which(rownames(m_trs) %in% df$Ensembl),]
   
   if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
   
