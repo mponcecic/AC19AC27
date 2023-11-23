@@ -104,7 +104,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "PRUEBA"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -257,9 +257,11 @@ color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0
                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
 
-
+# Automatically generate the colors for the treatment condition
+color_list <- color_palette(color_list, trt, lvl_order, palette = "Dark2")
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+  
 
 # Genome annotation path
 anot_path <- sub(pattern = "/.*", replacement = "", path)
