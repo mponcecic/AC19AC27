@@ -723,7 +723,7 @@ for (i in 1:length(contrast)){
   sum_contrast$GenesFiltered <- dim(df)[1] 
   sum_contrast$design <- design_cond
   sum_contrast$Transformation <- md
-  write.table(sum_contrast, paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""))
+  write.table(sum_contrast, paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), row.names = FALSE, eol = "\r")
   
 }
 
