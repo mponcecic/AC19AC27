@@ -258,7 +258,7 @@ for (i in 1:length(contrast)){
   # error)
   # 
   # Create contrast
-  cont <- makeContrasts(paste(experimental, "-", control, sep = ""), levels = colnames(coef(dlim)))
+  cont <- makeContrasts(paste(trt, experimental, "-", trt,control, sep = ""), levels = colnames(coef(dlim)))
   # Perform contrast
   tmp <- contrasts.fit(dlim, cont)
   # Empirical bayes
