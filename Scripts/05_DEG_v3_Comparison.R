@@ -155,6 +155,9 @@ for (i in 1:length(contrast)){
   color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
   color_l[["Shared"]] <- color_l[["Shared"]][which(names(color_l[["Shared"]]) %in% analysis_list)]
   
+  # Threshold label
+  threshold <- paste("padj_", fdr_cutoff, "_log2FC_", round(lfc_cutoff, 2), sep ="")
+  
   # Data frame with all the methods information 
   data <- c() 
   
@@ -190,6 +193,10 @@ for (i in 1:length(contrast)){
   metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
   metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
   
+  # Load QC_result_name_project.txt
+  file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
+  md <- file_trs$Transformation
+  
   # Load differentially expressed genes results
   for (j in 1:length(analysis_list)) {
     
@@ -203,7 +210,8 @@ for (i in 1:length(contrast)){
     df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
-
+    print(dim(df))
+    
     # Results summary table 
     sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(genes$DEG == "YES"), length(genes$Direction == "Upregulated"), length(genes$Direction == "Downregulated")))
     
@@ -217,10 +225,17 @@ for (i in 1:length(contrast)){
     # Rename statistics with the method used
     colnames(df)[which(colnames(df) %in% col_nam)] <- paste(col_nam, analysis, sep = "_")
     
-    # Data frame for the correlation plot
-    gen_tab <- df %>% select(Name, Symbol, Ensembl, paste(col_nam, analysis, sep ="_"), everything())
-    gen_tab[analysis] <- ifelse(gen_tab$DEG == "YES", "X", "")
-    result_tab <- cbind(result_tab, gen_tab)
+    if(j==1){
+      # Data frame for the correlation plot
+      gen_tab <- df %>% select(Name, Symbol, Ensembl, paste(col_nam, analysis, sep ="_"), everything())
+      gen_tab[analysis] <- ifelse(gen_tab$DEG == "YES", "X", "")
+      result_tab <- gen_tab
+    } else {
+      # Data frame for the correlation plot
+      gen_tab <- df %>% select(Name, paste(col_nam, analysis, sep ="_"), DEG)
+      gen_tab[analysis] <- ifelse(gen_tab$DEG == "YES", "X", "")
+      gen_tab <- gen_tab[,-which(colnames(gen_tab) %in% "DEG")]
+      result_tab <- merge(result_tab, gen_tab)}
   }
   
   # Remove DEG column and direction column
@@ -248,25 +263,25 @@ for (i in 1:length(contrast)){
     # - Significance: The significance of the genes is known, possible options: 
     #   analysis1, analysis2, analysis1_analysis2 and "-" for the non-significant
     #   The significance is based on the logFC and adjusted p-value
-    m <- result_tab[, which(colnames(result_tab %in% parm))]
-    m <- m[match(colnames(m), parm),]
+    m <- result_tab[,which(colnames(result_tab) %in% parm)]
+    m <- m[,match(colnames(m), parm)]
     m$sig <- "-"
     colnames(m) <- c("A", "B", "C", "D", "Significance")
-    m$Significance[which(abs(A) > lfc_cutoff & C <= fdr_cutoff)] <-  comp[1]
-    m$Significance[which(abs(B) > lfc_cutoff & D <= fdr_cutoff)] <-  comp[2]
-    m$Significance[which(abs(A) > lfc_cutoff & C <= fdr_cutoff & abs(B) > lfc_cutoff & D <= fdr_cutoff)] <-  paste(comp, collapse = "_")
+    m$Significance[which(abs(m$A) > lfc_cutoff & m$C <= fdr_cutoff)] <-  comp[1]
+    m$Significance[which(abs(m$B) > lfc_cutoff & m$D <= fdr_cutoff)] <-  comp[2]
+    m$Significance[which(abs(m$A) > lfc_cutoff & m$C <= fdr_cutoff & abs(m$B) > lfc_cutoff & m$D <= fdr_cutoff)] <-  paste(comp, collapse = "_")
     
     # Scatterplot
     ggplot(m, aes(x = A, y = B))+
       geom_point(alpha = 0.4)
-    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_",  name, "_", project, ".pdf"), plot = last_plot(), height = 4, width = 4, bg = "white")
+    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_",  name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
     
     # Scatterplot with colors
     ggplot(m, aes(x = A, y = B, color = Significance))+
       geom_point(alpha = 0.4)+
       labs(x = comp[1], y = comp[2], title = "log2 Fold Change")+ 
       theme(legend.position = "bottom", legend.box = "horizontal")
-    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_sig_", name, "_", project, ".pdf"), plot = last_plot(), height = 4, width = 4, bg = "white")
+    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_sig_", name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
     
   }
   
@@ -334,20 +349,20 @@ for (i in 1:length(contrast)){
     scale_fill_manual(values = color_l$Shared)+
     labs(x = "log2FC", y = "Counts")
   fig <- ggarrange(A, B, ncol = 2, nrow = 1, widths = 10, heights = 5)
-  ggsave(filename = paste("00_Histogram_verif_", ref, ".pdf", sep = ""), path = dir_fig, plot = fig, width = 4, height = 2, bg = "white")
+  ggsave(filename = paste("00_Histogram_verif_", paste(analysis_list, collapse = "_"), ".pdf", sep = ""), path = dir_fig, plot = fig, width = 4, height = 2, bg = "white")
   
   
   ## VENN DIAGRAM
   # Visualization of the shared genes among the different methods used
   ggvenn(de_list,
          digits = 2,                                  # Two decimals
-         fill_color = color_l,                        # Fill color
+         fill_color = as.vector(color_l[["Shared"]]),                        # Fill color
          fill_alpha = 0.5,                            # Transparency, default
          stroke_size = 0.25,                          # Line thickness
          set_name_size = 3,                           # Default 
          text_size = 2.5                              # Default
   )
-  ggsave(filename = paste("Venn_diagram_", name, "_", project, ".pdf", sep =""), path = dir_sh, height = 4, width = 4, plot = last_plot(), bg = "white")
+  ggsave(filename = paste("Venn_diagram_", paste(analysis_list, collapse = "_"), "_", name, "_", project, ".pdf", sep =""), path = dir_fig, height = 4, width = 4, plot = last_plot(), bg = "white")
   
   
   ## UPSET PLOT 
@@ -362,7 +377,7 @@ for (i in 1:length(contrast)){
                   sets.bar.color = "#483D8B",      # X axis bar color
                   matrix.color =  "black"        # Matrix dots color
   )     
-  pdf(file = paste(dir_sh, "/Upset_plot_", name, "_", project,".pdf", sep = ""), height = 5, width = 10, bg = "white")
+  pdf(file = paste(dir_fig, "/Upset_plot_", paste(analysis_list, collapse = "_"), "_", name, "_", project,".pdf", sep = ""), height = 5, width = 10, bg = "white")
   print(upset1)
   dev.off()
   
