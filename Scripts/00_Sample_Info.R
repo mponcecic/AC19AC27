@@ -96,6 +96,10 @@ setwd(dir_out)
 dir.create(file.path(dir_out, "utils"))
 dir_utils <- paste(dir_out, "/utils", sep = "")
 
+# Create log file folder
+dir.create(file.path(dir_out, "log"))
+dir_log <- paste(dir_out, "/log", sep = "")
+
 
 ## Utils folder transfer files 
 # utils folder in local directory
@@ -199,7 +203,7 @@ log_data$filedirRocky <- files_rocky
 log_data$Organism <- org
 log_data$read <- read
 
-write.table(as.data.frame(log_data), paste(dir_out, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(dir_log, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 
 

@@ -16,14 +16,14 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "XXX"
+project <- "PRUEBA"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
 
-# Date of the log file
+# Date of the log file 5_DEG_qc_XXXX.log
 logdate <- "20231110"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
 # Load log file 
-logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
 dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
@@ -115,7 +115,7 @@ theme_set(theme_DEGs)
 specie <- logfile$Organism 
 
 # Method used to study DEGs
-analysis <- "EdgeR"
+analysis <- "limma-voom"
 
 
 
@@ -126,6 +126,7 @@ analysis <- "EdgeR"
 
 # Load annotation data 
 gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
+
 
 
 ################################################################################
@@ -170,7 +171,7 @@ for (i in 1:length(contrast)){
   ##############################################################################
   #                               Load Data
   ##############################################################################
- 
+  
   
   # Load gene count filtered
   gene_counts <- read.table(paste(dir_output, "/GeneCount_", name, "_", project, ".txt", sep = ""))
@@ -178,12 +179,11 @@ for (i in 1:length(contrast)){
   # Load transform gene counts
   file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
   md <- file_trs$Transformation
-  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_", name, "_", project, ".txt", sep = ""), header = TRUE)
+  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_blindFALSE_", name, "_", project, ".txt", sep = ""), header = TRUE)
   
   # Load sample information per comparison
   metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
   metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
-  
   
   # Select the contrast levels
   color_l <- color_list
@@ -195,7 +195,7 @@ for (i in 1:length(contrast)){
   
   # Build a model matrix 
   m_model = model.matrix(as.formula(design_cond), metadata)
-
+  
   
   # Annotation for all the results 
   ref <- paste(analysis, "_", name, "_", project, sep = "")
@@ -203,7 +203,7 @@ for (i in 1:length(contrast)){
   
   
   ##############################################################################
-  #                                 EdgeR
+  #                                 limma-voom
   ##############################################################################
   
   
@@ -235,43 +235,40 @@ for (i in 1:length(contrast)){
   deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, sumTrim = 0.05, doWeighting = TRUE, Acutoff = -1e10, p = 0.75)
   
   
-  # Step 3: Run EdgeR 
+  # Step 3: Run limma-voom 
   # ----------------------------------------------------------------------------
   #
-  # In this NB model, we use a GLM (Generalized linear model) which is used when 
-  # multiple factor variables are used in the analysis. In this case, we have the 
-  # experimental variables and the covariate correction.
-  # 
-  # First, estimates a common NB regression based on the the matrix model
-  # Second, estimates the abundance-dispersion trend by Cox-Reid
-  # Third, computes empirical Bayes estimate of the NB dispersion parameter for 
-  # each gene (= tag), with expression levels specified by a log-linear model.
-  #
-  # This analysis can be performed using: 
-  #       estimateDisp(deg, design = m_model, tagwise = TRUE, trend.method = "locfit", robust = TRUE)
-  # The results are very similar to the classic method used here but are not equal
+  # Run voom transformation 
+  # Transform count data to log2-counts per million (logCPM), estimate the mean-variance 
+  # relationship and use this to compute appropriate observation-level weights. The 
+  # data are then ready for linear modelling.
   
-  degde <- estimateGLMCommonDisp(deg, design = m_model, method = "CoxReid", verbose = FALSE)
-  degde <- estimateGLMTrendedDisp(degde, design = m_model, method = "auto")
-  degde <- estimateGLMTagwiseDisp(degde, design = m_model)
-  
-  # Biological coefficient variation per gene 
-  pdf(file = paste(dir_fig, "/00_BCV_", ref, ".pdf", sep = ""), height = 5 , width = 5)
-  plotBCV(degde)
-  dev.off()
+  # Voom transformation 
+  dlim <- voom(deg, m_model, plot = FALSE, save.plot = TRUE)
+  # Model fit 
+  dlim <- lmFit(dlim, m_model, ndups = NULL, spacing = NULL, block = NULL, correlation, weights = NULL, method = "ls")
   
   
   # Step 4: Perform the contrast 
   # ----------------------------------------------------------------------------
+  # 
+  # First, we create and perform the contrast. Afterwards, we applied the empirical 
+  # Bayes smoothing of standard errors (shrinks standard errors that are much 
+  # larger or smaller than those from other genes towards the average standard 
+  # error)
+  # 
+  # Create contrast
+  cont <- makeContrasts(paste(experimental, "-", control, sep = ""), levels = colnames(coef(dlim)))
   # Perform contrast
-  fit <- exactTest(degde, pair = c(control, experimental), dispersion = "auto", rejection.region = "doubletail")
+  tmp <- contrasts.fit(dlim, cont)
+  # Empirical bayes
+  tmp <- eBayes(tmp)  
   
-  # Estimate adjusted p-value
-  res <- as.data.frame(topTags(fit, adjust.method = correction, n = dim(gene_counts)[1]))
-  
-  # Change columns names to plot data 
+  # Extract results
+  res <- topTable(tmp, adjust.method = correction, n = dim(gene_counts)[1])
   res <- res[match(rownames(gene_counts), rownames(res)),]
-  colnames(res) <- c("logFC", "logCPM", "pvalue", "padj")
+  # Change columns names to plot data 
+  colnames(res) <- c("logFC", "logCPM", "t", "pvalue", "padj", "B")
   
   
   # MA plot 
@@ -279,7 +276,7 @@ for (i in 1:length(contrast)){
   MA_plot(res, analysis, fdr_cutoff)
   dev.off()
   
- 
+  
   
   ##############################################################################
   #                            Data Processing
@@ -315,7 +312,6 @@ for (i in 1:length(contrast)){
   print(head(res_df))
   print(dim(res_df))
   
-  
   ## MERGE WITH GENE COUNTS
   # Row names to a variable
   genes <- gene_counts[, metadata$Sample]
@@ -334,6 +330,7 @@ for (i in 1:length(contrast)){
   # Used to plot the data 
   m <- m_trs[which(rownames(m_trs) %in% df$Ensembl),]
   
+  if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
   
   
   ##############################################################################
@@ -405,7 +402,6 @@ for (i in 1:length(contrast)){
   #                               Save data 
   ##############################################################################
   
-  
   # Summary table
   sum_res <- c()
   sum_res$Contrast <- name
@@ -420,17 +416,18 @@ for (i in 1:length(contrast)){
   
   # All results
   colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
-  data <- cbind(result, res_log2)
-  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
+  data <- cbind(res_df,res_log2)
+  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
   
-  write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
+  write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
   write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALS_", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
   colnames(m) <- paste(md, colnames(m), sep = "_")
   sel <- cbind(df, m)
-  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
-  write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
+  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
+  write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)
+  
   
 }
 
@@ -466,5 +463,6 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_v2_", analysis, logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+
 

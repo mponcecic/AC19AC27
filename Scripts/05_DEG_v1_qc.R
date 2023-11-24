@@ -111,7 +111,7 @@ project <- "XXX"
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
 
-# Date of the log file
+# Date of the log file 0_Sample_info_XXXX.log
 logdate <- "20231121"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -123,7 +123,7 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
 # Load log file 
-logfile <- read.table(paste(path, project, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
 dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
@@ -258,7 +258,7 @@ color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0
 names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
 
 # Automatically generate the colors for the treatment condition
-color_list <- color_palette(color_list, trt, lvl_order, palette = "Dark2")
+color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   
@@ -705,7 +705,7 @@ for (i in 1:length(contrast)){
   # Save transform data with blind = FALSE
   # Why blind = FALSE
   if(group_n < 30){dds_trs <- assay(vst(dds, blind = FALSE))}else{dds_trs <- assay(rlog(dds, blind = FALSE))}
-  write.table(dds_trs, paste(dir_output,"/GeneCount_", md , "_", name, "_", project, ".txt", sep = ""))
+  write.table(dds_trs, paste(dir_output,"/GeneCount_", md , "_blindFALSE_", name, "_", project, ".txt", sep = ""))
   
   # Save filtered gene counts per comparison 
   write.table(df, paste(dir_output,"/GeneCount_", name, "_", project,".txt", sep = ""))

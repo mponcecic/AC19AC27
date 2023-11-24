@@ -1,5 +1,5 @@
 ################################################################################
-#                               RUN DESEeq2
+#                               RUN EdgeR
 ################################################################################
 
 # Summary
@@ -7,8 +7,7 @@
 # 
 # This script aims to automatized the differentially expressed genes (DEGs)
 # analysis based on the RNA-seq for the AC laboratory.
-# 
-# After performing the analysis 
+
 
 
 ################################################################################
@@ -24,7 +23,7 @@ project <- "XXX"
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
 
-# Date of the log file
+# Date of the log file 5_DEG_qc_XXXX.log
 logdate <- "20231110"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -36,7 +35,7 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
 # Load log file 
-logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory. Raw gene counts  
 dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
@@ -116,7 +115,7 @@ theme_set(theme_DEGs)
 specie <- logfile$Organism 
 
 # Method used to study DEGs
-analysis <- "DESeq2"
+analysis <- "EdgeR"
 
 
 
@@ -128,7 +127,7 @@ analysis <- "DESeq2"
 # Load annotation data 
 gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
 
-  
+
 ################################################################################
 #                               COMPARISONS
 ################################################################################
@@ -143,6 +142,7 @@ for (i in 1:length(contrast)){
   # Contrast levels 
   control <- contrast[[i]][3]
   experimental <- contrast[[i]][2]
+  
   
   
   ##############################################################################
@@ -170,151 +170,124 @@ for (i in 1:length(contrast)){
   ##############################################################################
   #                               Load Data
   ##############################################################################
-  
+ 
   
   # Load gene count filtered
   gene_counts <- read.table(paste(dir_output, "/GeneCount_", name, "_", project, ".txt", sep = ""))
+  
+  # Load transform gene counts
+  file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
+  md <- file_trs$Transformation
+  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_blindFALSE_", name, "_", project, ".txt", sep = ""), header = TRUE)
   
   # Load sample information per comparison
   metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
   metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
   
+  
   # Select the contrast levels
   color_l <- color_list
   color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
   
-  # DESeq2 design formula
-  # Used to estimate the variance stabilization (VST) method proposed in DESeq2
-  # 
-  # Steps
-  # 1. Check there are covariates
-  # 2. Check the values of the covariate are not equal to avoid colinearity in 
-  #   the model. If their values are equal the variable is not included in the 
-  #   model.
-  # 3. Create the design formula
+  # Design formula 
   design_cond <- design_condition(analysis, trt, var_exp, metadata)
   print(design_cond)
   
+  # Build a model matrix 
+  m_model = model.matrix(as.formula(design_cond), metadata)
+
+  
   # Annotation for all the results 
   ref <- paste(analysis, "_", name, "_", project, sep = "")
-  
+  print(ref)
   
   
   ##############################################################################
-  #                                 DESeq2
+  #                                 EdgeR
   ##############################################################################
   
   
-  # Step 1: Create DESeq object
+  # Step 1: Create DGEList object
   # ----------------------------------------------------------------------------
   #
-  # DESeqDataSetFromMatrix contains all the information necessary to run DESeq. 
+  # DGEList contains all the information necessary to run EdgeR and limma-voom 
   # - Count matrix
   # - Metadata with the following columns: Sample, Time and RIN. Data associated 
   #       to the samples valuable to perform the contrast
-  # - Design formula with the experimental conditions (Time) and the covariates (RIN)
   
   # The options of the SummarizedExperiment can be applied in this object.
-  dds <- DESeqDataSetFromMatrix(countData = gene_counts,                     # Input: Count matrix 
-                                colData = metadata,                          # Input: Metadata
-                                design = eval(parse(text = design_cond)),    # Design matrix
-                                tidy = FALSE,                                # Default; Option: TRUE = First column of count data is the row names for the count matrix
-                                ignoreRank = FALSE                           # Default: Reserved for DEXSeq developers
-  )
+  deg <- DGEList(counts = gene_counts, group = metadata[,trt])
+  deg$samples[var_exp] <- metadata[,var_exp]
   
   
-  # Step 2: Run DESeq
+  # Step 2: Normalization
   # ----------------------------------------------------------------------------
   # 
-  # Filtering by default
-  #   - Genes with zero counts are remove
-  #   - Gene with an extreme count outlier
-  #   - Genes with low mean normalized counts
-  
-  dds <- DESeq(dds,                                                  # DESeqDataSet
-               test = "Wald",                                        # default; Wald Test
-               fitType = "parametric",                               # default; Dispersion estimates
-               sfType = "ratio",                                     # default; Size factors estimates
-               betaPrior = FALSE,                                    # default; betaPrior = FALSE
-               minReplicatesForReplace = 7,                          # default; Outliers replaced
-               useT = FALSE,                                         # default; Std Normal distr for Wald statistics
-               # minmu = if (fitType == "glmGamPoi") 1e-06 else 0.5,   # default;  lower bound on the estimate count while fitting the GLM
-               quiet = FALSE,                                        # default; Print a message per step performed
-               
-               ## Not used
-               # full = design(object),                                # default; Not used
-               # reduced,                                              # defaultt; Not used
-               # Parallelization
-               # parallel = FALSE,                                     # default; Not used
-               # BPPARAM = bpparam()                                   # default; Not used
-  )
+  # This step is common between EdgeR and limma-voom 
+  # 
+  # Minimized the logFC between samples for most genes using weighted Trimmed Mean of M-values 
+  # between each pair of samples (TMM method) to normalized the gene counts based 
+  # on the library size.
+  # Corrects for sequencing detph, RNA composition and gene length
+  # Can be used to perform DE analysis and within sampe analysis
+  # 
+  # All the parameters used are the default options
+  deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, sumTrim = 0.05, doWeighting = TRUE, Acutoff = -1e10, p = 0.75)
   
   
-  # Fit of the dispersion estimates
-  pdf(file = paste(dir_fig, "/00_Dispersion_DESeq2_", project, ".pdf", sep = ""), width = 6, height = 5)
-  plotDispEsts(dds, genecol = "black", fitcol = "red", finalcol = "dodgerblue", legend = TRUE, log = "xy", cex = 0.45)
+  # Step 3: Run EdgeR 
+  # ----------------------------------------------------------------------------
+  #
+  # In this NB model, we use a GLM (Generalized linear model) which is used when 
+  # multiple factor variables are used in the analysis. In this case, we have the 
+  # experimental variables and the covariate correction.
+  # 
+  # First, estimates a common NB regression based on the the matrix model
+  # Second, estimates the abundance-dispersion trend by Cox-Reid
+  # Third, computes empirical Bayes estimate of the NB dispersion parameter for 
+  # each gene (= tag), with expression levels specified by a log-linear model.
+  #
+  # This analysis can be performed using: 
+  #       estimateDisp(deg, design = m_model, tagwise = TRUE, trend.method = "locfit", robust = TRUE)
+  # The results are very similar to the classic method used here but are not equal
+  
+  degde <- estimateGLMCommonDisp(deg, design = m_model, method = "CoxReid", verbose = FALSE)
+  degde <- estimateGLMTrendedDisp(degde, design = m_model, method = "auto")
+  degde <- estimateGLMTagwiseDisp(degde, design = m_model)
+  
+  # Biological coefficient variation per gene 
+  pdf(file = paste(dir_fig, "/00_BCV_", ref, ".pdf", sep = ""), height = 5 , width = 5)
+  plotBCV(degde)
   dev.off()
   
   
-  # Step 3: Contrast genes with Wald test
+  # Step 4: Perform the contrast 
   # ----------------------------------------------------------------------------
+  # Perform contrast
+  fit <- exactTest(degde, pair = c(control, experimental), dispersion = "auto", rejection.region = "doubletail")
   
-  # Log2 fold change result table for an specific comparison
-  resl <- results(object = dds,                      # DESeqDataSet  
-                  contrast = contrast[[i]],          # Constrast 
-                  test = "Wald",                     # default; Wald Test
-                  minmu = 0.5,                       # default; lower bound on the estimate count while fitting the GLM
-                  
-                  ## Independent filtering  
-                  alpha = 0.1,                       # default = 0.1
-                  pAdjustMethod = correction,        # default = "BH"
-                  lfcThreshold = 0,                  # default
-                  independentFiltering = FALSE,      # Independent filtering 
-                  format = "DataFrame"               # default, Result format
-                  # theta,                             # Quantiles at which to assess the number of rejections
-                  # filter,                            # default, mean of normalized counts
-                  # filterFun,                         # optional; for performing independent filtering and p-value adjustment
-                  # 
-                  # altHypothesis = "greaterAbs",     #c("greaterAbs", "lessAbs", "greater", "less"),
-                  # listValues = c(1, -1),
-                  # cooksCutoff,                      # Threshold Cook's distance
-                  # 
-                  
-                  # 
-                  # ## Not used
-                  # addMLE = FALSE,                   # default; Not used
-                  # tidy = FALSE,                     # default; Not used
-                  # saveCols = NULL,                  # default; Not used
-                  # name,                             # default; Not used
-                  # 
-                  # ## Parallelization
-                  # parallel = FALSE,                 # default; Not used
-                  # BPPARAM = bpparam(),              # default; Not used
-  )
-  
-  
-  # Results as data frame 
-  res <- as.data.frame(resl)
-  res <- res[match(rownames(gene_counts), rownames(res)),]
-  
+  # Estimate adjusted p-value
+  res <- as.data.frame(topTags(fit, adjust.method = correction, n = dim(gene_counts)[1]))
   
   # Change columns names to plot data 
-  colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj")
-
+  res <- res[match(rownames(gene_counts), rownames(res)),]
+  colnames(res) <- c("logFC", "logCPM", "pvalue", "padj")
+  
+  
   # MA plot 
   pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
   MA_plot(res, analysis, fdr_cutoff)
   dev.off()
   
-  
+ 
   
   ##############################################################################
   #                            Data Processing
   ##############################################################################
-
+  
   
   ## Results as a data frame
-  res_df <- res
+  res_df <- as.data.frame(res) 
   res_df$Ensembl <- rownames(res_df)
   print(dim(res_df))
   
@@ -338,65 +311,30 @@ for (i in 1:length(contrast)){
   
   
   ## Annotated gene names in Symbol
-  res_df <- merge(gen_annot, res_df, by = "Ensembl") 
+  res_df <- merge(res_df, gen_annot, by = "Ensembl") 
   print(head(res_df))
   print(dim(res_df))
   
+  
   ## MERGE WITH GENE COUNTS
   # Row names to a variable
-  genes <- gene_counts
+  genes <- gene_counts[, metadata$Sample]
   genes$Ensembl <-  rownames(genes)
   # Merge gene_counts and comparison results
   result <- merge(x = res_df, y = genes, by = "Ensembl")
   
+  
   ## Differential expressed genes
   # Select differentially expressed genes
   df <- result[which(result$DEG == "YES"),]
-  dim(df)
   
-  
-  ## Variance stabilizing transformation
-  # 
-  # Variance stabilization methods in log2 scale to interpret the data
-  # 
-  # Choose VST for samples size group smaller than 30. Why? 
-  # 
-  # if you have many samples (e.g. 100s), the rlog function might take too long, and so the vst function will be 
-  # a faster choice. The rlog and VST have similar properties, but the rlog requires fitting a shrinkage term for 
-  # each sample and each gene which takes time. See the DESeq2 paper for more discussion on the differences 
-  # (Love, Huber, and Anders 2014)
-  
-  # Why blind = FALSE 
-  # 
-  
-  # Output
-  # - Columns are samples
-  # - Rows are genes
-  # 
-  #                    N_3_E1    N_2_E4    N_2_E3   N_2_E2   H4_2_E4   H4_2_E3   H4_2_E2   H4_2_E1
-  # ENSG00000000003 11.075692 10.993586 11.209109 11.03978 11.136152 11.147595 11.118555 11.125602
-  # ENSG00000000419 11.959761 11.938768 12.033994 11.84389 11.846617 11.951190 11.951552 11.888236
-  # ENSG00000000457 10.476816 10.557566 10.470185 10.47396 10.568444 10.488905 10.569326 10.394093
-  
-  # Estimate the biggest group sample size
-  group_n <- max(as.vector(tabulate(metadata[[trt]])))
-  
-  # Data transformation
-  if(group_n < 30){
-    res_log2 <- as.data.frame(assay(vst(dds, blind = FALSE)))
-    md <- "VST"
-  }else{
-    res_log2 <- as.data.frame(assay(rlog(dds, blind = FALSE)))
-    md <- "RLOG"}
-  print(md) 
   
   ## Transform matrix 
   # Select the differentially expressed genes that overcame the test
   # Used to plot the data 
-  m <- res_log2[which(rownames(res_log2) %in% df$Ensembl), ]
+  m <- m_trs[which(rownames(m_trs) %in% df$Ensembl),]
   
   if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
-  
   
   
   ##############################################################################
@@ -407,6 +345,7 @@ for (i in 1:length(contrast)){
   ## HISTOGRAMS
   # Representation of the adjusted p-value and log2 fold-change for all and 
   # significant genes
+  
   plot_hist <- hist_verif(res_df, df)
   ggsave(filename = paste("01_Histogram_verif_", ref, ".pdf", sep = ""), plot = plot_hist, path = dir_fig, height = 4, width = 4, bg = "white")
   
@@ -455,11 +394,12 @@ for (i in 1:length(contrast)){
   
   ## WATERFALL
   
-  waterfall_pl <- waterfall_plot(df, color_l)
+  waterfall_p <- waterfall_plot(df, color_l)
   waterfall_plot_top <- waterfall_top(df, color_l)
   
-  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_pl, path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_p, path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste("Waterfall_top_genes_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
+  
   
   
   ##############################################################################
@@ -482,20 +422,20 @@ for (i in 1:length(contrast)){
   # All results
   colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
   data <- cbind(result, res_log2)
-  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
+  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
   
-  write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
+  write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
   write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALS_", threshold,".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
   colnames(m) <- paste(md, colnames(m), sep = "_")
   sel <- cbind(df, m)
-  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
-  write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""))
+  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
+  write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)
+  
+}
 
-    }
 
- 
 
 ################################################################################
 #                                 LOG FILE 
@@ -527,5 +467,5 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_v2_", analysis, logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 

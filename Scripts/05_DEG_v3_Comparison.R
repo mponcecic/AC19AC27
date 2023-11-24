@@ -18,14 +18,14 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "PRUEBA"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
 path <- "W:/mponce/"
 
-# Date of the log file
+# Date of the log file 5_DEG_qc_xxxxx.log
 logdate <- "20231110"
 
 # Select the methods you want to compare
@@ -40,8 +40,8 @@ source(paste(path, project, "/utils/Libraries.R", sep = ""))
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
-# Load log file 
-logfile <- read.table(paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
+# Load log file
+logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 
 # Output directory
@@ -128,6 +128,10 @@ sum_tab <- data.frame(matrix(nrow = 0, ncol = length(tab_cols)))
 comparison <- list()
 for (p in 2:length(analysis_list)) {for (t in 1:(p - 1)) {comparison[length(comparison) + 1] <- list(c(analysis_list[t], analysis_list[p]))}}
 
+# Create a workbook
+exc <- createWorkbook()
+
+
 
 
 ################################################################################
@@ -153,8 +157,11 @@ for (i in 1:length(contrast)){
   
   # Data frame with all the methods information 
   data <- c() 
-  # Data frame for the correlation plot 
-  tab_cor <- c() 
+  
+  # Data frame which will gather the results per each comparison and all the 
+  # methods used. In addition, it's used for the correlation plots of the logFC 
+  # and adjusted p-values
+  result_tab <- c() 
   
   
   ##############################################################################
@@ -193,24 +200,38 @@ for (i in 1:length(contrast)){
     ref <- paste(analysis, "_", name, "_", project, sep = "")
     
     # Load results
-    genes <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
-    genes <- genes %>% mutate(Method = analysis) %>% select(GeneID, Method, DEG, logFC, padj, Direction, metadata$Sample)
+    df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
+    genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
 
     # Results summary table 
     sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(genes$DEG == "YES"), length(genes$Direction == "Upregulated"), length(genes$Direction == "Downregulated")))
     
+    
+    # Select the statistic columns per each analysis
+    if(analysis == "DESeq2"){col_nam <- c("logFC", "padj", "MeanExp", "lfcSE", "stat", "pvalue")
+    } else if(analysis == "EdgeR"){col_nam <- c("logFC", "padj", "logCPM", "pvalue")
+    } else if(analysis == "limma-voom"){col_nam <- c("logFC", "padj", "logCPM", "t", "padj", "B")
+    } else {col_nam <- c("logFC", "pvalue", "padj")}
+    
+    # Rename statistics with the method used
+    colnames(df)[which(colnames(df) %in% col_nam)] <- paste(col_nam, analysis, sep = "_")
+    
     # Data frame for the correlation plot
-    gen_tab <- genes %>% mutate(paste(log_FC, analysis, sep ="_") = logFC) %>% select(GeneID, paste(log_FC, analysis, sep ="_"), paste(padj, analysis, sep ="_"))
-    tab_cor <- cbind(tab_cor, gen_tab)
+    gen_tab <- df %>% select(Name, Symbol, Ensembl, paste(col_nam, analysis, sep ="_"), everything())
+    gen_tab[analysis] <- ifelse(gen_tab$DEG == "YES", "X", "")
+    result_tab <- cbind(result_tab, gen_tab)
   }
+  
+  # Remove DEG column and direction column
+  result_tab <- result_tab[,-which(colnames(result_tab) %in% c("DEG", "Direction"))]
+  
   
   # Rename columns name 
   colnames(sum_tab) <- tab_cols
   
   # Differential expressed genes
   data_de <- data[which(data$DEG == "YES"),]
-  
   
   
   ## SCATTERPLOT
@@ -227,7 +248,7 @@ for (i in 1:length(contrast)){
     # - Significance: The significance of the genes is known, possible options: 
     #   analysis1, analysis2, analysis1_analysis2 and "-" for the non-significant
     #   The significance is based on the logFC and adjusted p-value
-    m <- tab_cor[, which(colnames(tab_cor %in% parm))]
+    m <- result_tab[, which(colnames(result_tab %in% parm))]
     m <- m[match(colnames(m), parm),]
     m$sig <- "-"
     colnames(m) <- c("A", "B", "C", "D", "Significance")
@@ -257,12 +278,12 @@ for (i in 1:length(contrast)){
   
   
   # List of shared events
-  genes_list <- split(data$GeneID, data$Method)
-  de_list <- split(data_de$GeneID, data_de$Method)
+  genes_list <- split(data$Ensembl, data$Method)
+  de_list <- split(data_de$Ensembl, data_de$Method)
   
   
   # List of the duplicated events
-  dup_tab <- as.data.frame(table(data_de$GeneID))
+  dup_tab <- as.data.frame(table(data_de$Ensembl))
   dup_gen <- dup_tab[dup_tab$Freq > 1,]
   
   
@@ -272,8 +293,8 @@ for (i in 1:length(contrast)){
   #   - Direction of the event (up/down)
   #   - Congruence: Direction the event was the same or not in 
   #     both groups
-  duplicates <- data_de[which(data_de$GeneID %in% dup_gen$Var1),] %>% 
-    group_by(GeneID) %>%
+  duplicates <- data_de[which(data_de$Ensembl %in% dup_gen$Var1),] %>% 
+    group_by(Ensembl) %>%
     summarise(N = n_distinct(Method),
               Method = paste(unique(Method), collapse = ", "),
               Direction = paste(Direction, collapse = ", ")) %>%
@@ -293,7 +314,7 @@ for (i in 1:length(contrast)){
   unq_tab <- dup_tab[dup_tab$Freq == 1,]
   
   # Data frame of unique events
-  unq_events <- deg_data[which(data_de$GeneID %in% unq_tab$Var1),]
+  unq_events <- deg_data[which(data_de$Ensembl %in% unq_tab$Var1),]
   
   
   
@@ -346,14 +367,27 @@ for (i in 1:length(contrast)){
   dev.off()
   
   
-}
+  
+  ##############################################################################
+  #                                 SAVE DATA  
+  ##############################################################################
+  
+  # Order output
+  result_tab <- result_tab %>% select(Name, Symbol, Ensembl, analysis_list, everything())
+  write.table(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".txt", sep = ""))
+  write.xlsx(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".xlsx", sep = ""), overwrite = TRUE)
+  
+  # Save data in the workbook
+  addWorksheet(exc, name)
+  writeData(exc, result_tab, sheet = name)
+  
+  }
 
-
+# Save workbook
+saveWorkbook(exc, file =  paste(dir_outfolder, "/", project, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Summary table 
-write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project,".csv", sep = ""), row.names = FALSE)
-
-
+write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
 
 ################################################################################
 #                                 LOG FILE 
@@ -365,6 +399,8 @@ logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
 log_data$Directory <- dir_out
+
+write.table(result_tab, paste(dir_output, "/log/5_DEG_v3_", paste(analysis_list, collapse = "_"), "_", logdate, ".log", sep = ""))
 
 
 

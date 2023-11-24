@@ -91,7 +91,7 @@ R
 ### General Project ###
 
 # Project Name 
-project_name <- "PRUEBA"
+project_name <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -99,8 +99,8 @@ path <- "/vols/GPArkaitz_bigdata/mponce/"
 # path <- "W:/mponce/"
 
 
-# Date of the log file
-logdate <- "20231106"
+# Date of the log file 0_Sample_info_XXX.log
+logdate <- ""
 
 
 ### Process information ###
@@ -175,7 +175,6 @@ min_length <- paste("-m=", m, sep = "")
 
 
 
-
 ###############################################################
 #                      TRIMMING
 ############################################################### 
@@ -247,10 +246,35 @@ for (i in 1:length(samples)) {
   } 
   
   
-  # # Run PBS
-  # system(paste("sbatch",filename,sep=' '));
-  # Sys.sleep(3)
+  # Run PBS
+  system(paste("sbatch",filename,sep=' '));
+  Sys.sleep(3)
   }
+
+
+#######################################################################
+#                            LOG FILE                        
+#######################################################################
+
+
+# Save log file information
+logdate <- format(Sys.time(), "%Y%m%d")
+log_data <- c()
+log_data$Date <- Sys.time()
+log_data$project_name <- project
+log_data$outputdir <- dir_outfiles
+log_data$inputdir <- dir_infiles
+log_data$Library <- seq_library
+log_data$AdaptR1 <- a 
+log_data$AdaptR2 <- A
+log_data$q <- q
+log_data$m <- m
+log_data$nucR1 <- u
+log_data$nucR2 <- U
+
+
+write.table(as.data.frame(log_data), paste(dir_outfiles, "/log/2_Trimming_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+
 
 q()
 

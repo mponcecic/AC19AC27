@@ -557,23 +557,27 @@ hist_verif <- function(res_df = res_df, df = df){
   # Histogram log 2 FC distribution
   A <- ggplot(data = res_df, aes(x = logFC)) +
     geom_histogram( fill = "#6696CC", color = "black")+
-    labs(x = "log2FC", y = "Counts")
+    labs(x = "log2FC", y = "Counts")+
+    theme(text = element_text(size = 6))
   # Histogram adjusted p-value distribution
   B <- ggplot(data = res_df, aes(x = padj)) +
     geom_histogram( fill = "#6696CC", color = "black")+
-    labs(x = "Adjusted p-value", y = "Counts")
+    labs(x = "Adjusted p-value", y = "Counts")+
+    theme(text = element_text(size = 6))
   
   # DEGs
   # Histogram log 2 FC distribution 
   C <- ggplot(data = df, aes(x = logFC)) +
     geom_histogram( fill = "#6696CC", color = "black")+
-    labs(x = "log2FC", y = "Counts")
+    labs(x = "log2FC", y = "Counts")+
+    theme(text = element_text(size = 6))
   # Histogram p-value adjusted distribution
   D <- ggplot(data = df, aes(x = padj)) +
     geom_histogram( fill = "#6696CC", color = "black")+
-    labs(x = "Adjusted p-value", y = "Counts")
+    labs(x = "Adjusted p-value", y = "Counts")+
+    theme(text = element_text(size = 6))
   
-  fig <- ggarrange(A, B, C, D, ncol = 2, nrow = 2, widths = 10, heights = 10)
+  fig <- ggarrange(A, B, C, D, ncol = 2, nrow = 2)
   
   # Return the plot
   return(fig)
@@ -624,6 +628,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
 
 
 
+
 ################################################################
 #                     Waterfall
 ################################################################
@@ -640,11 +645,11 @@ waterfall_plot <- function(data, color_list) {
   # Input data: data = df
   
   # Remove genes with duplicated gene ID
-  wf <- df[which(!(duplicated(df$GeneID))),]
+  wf <- df[which(!(duplicated(df$Ensembl))),]
   # Sort the data based on the log2 FC
-  wf$GeneID <- factor(wf$GeneID, levels = wf$GeneID[order(wf$logFC, decreasing = FALSE)])
+  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$logFC, decreasing = FALSE)])
   
-  ggplot(wf, aes(x = GeneID, y = logFC, fill = Direction)) +
+  ggplot(wf, aes(x = Ensembl, y = logFC, fill = Direction)) +
     geom_bar(stat = "identity")+
     scale_fill_manual(values = as.vector(color_l$Direction)[-2])+
     xlab("Differentially expressed genes")+
@@ -669,14 +674,14 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
   top <- top_genes/2 
   
   # Remove genes with duplicated gene ID
-  wf <- df[which(!(duplicated(df$GeneID))),]
+  wf <- df[which(!(duplicated(df$Ensembl))),]
   # Sort the data based on the log2 FC
-  wf$GeneID <- factor(wf$GeneID, levels = wf$GeneID[order(wf$logFC, decreasing = FALSE)])
+  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$logFC, decreasing = FALSE)])
   
   # Select the top 30 genes 
   wf_sel <- rbind(wf[1:top,], wf[(dim(wf)[1]-top):dim(wf)[1],]) 
   
-  ggplot(wf_sel, aes(x = logFC, y = GeneID, fill = Direction)) +
+  ggplot(wf_sel, aes(x = logFC, y = Ensembl, fill = Direction)) +
     geom_bar( stat = "identity") +
     xlab("Log2 Fold Change") +
     ylab("Gene name") +
