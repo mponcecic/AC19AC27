@@ -417,7 +417,7 @@ log_data$Date <- Sys.time()
 log_data$Directory <- dir_out
 log_data$AnalysisComp <- analysis_list
 
-write.table(result_tab, paste(dir_output, "/log/5_DEG_v3_", paste(analysis_list, collapse = "_"), "_", logdate, ".log", sep = ""))
+write.table(result_tab, paste(path, project, "/log/5_DEG_v3_", paste(analysis_list, collapse = "_"), "_", logdate, ".log", sep = ""))
 
 
 
