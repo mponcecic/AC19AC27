@@ -8,34 +8,42 @@
 
 # This script aims to automatized the differentially expressed genes (DEGs)
 # analysis based on the RNA-seq for the AC laboratory. 
-
-# The method applied to estimate the DEGs are DESeq2, EdgeR, limma-voom
-# and Wilcoxon rank-sum test. 
 # 
-# First, you will find a chunk of code where you can adjust all the parameters, 
+# This analysis is divided in different scripts. First, perform the quality 
+# control of the data (05_DEG_v1_qc). Second, perform the methods to estimate the 
+# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom 
+# (05_DEG_v2_limma-voom) and Wilcoxon rank-sum test (05_DEG_v2_wilcoxon). Third,
+# compare the results among the different methods used using 05_DEG_v3_Comparison 
+# script.
+# 
+# This script is the quality control of the data set. In addition, the gene count 
+# matrix is filtered by each comparison so the input data in each comparison made 
+# later on is the same. This filtering of the lowly expressed genes is based on the 
+# filterByExprss available in EdgeR. The design formula per each analysis is also 
+# created here.
+
+
+# Recommendations and warnings
+# ---------------------------------
+# 
+# If you want all the comparison to be included in the same input for applying 
+# DESeq2, EdgeR, limma-voom or Wilcoxon test, this is not possible in this script. 
+# We generate a unique matrix per each contrast which only includes the samples 
+# of that contrast
+# 
+# In the design formula, interactions are not considered.
+# 
+# You will find a chunk of code where you can adjust all the parameters, 
 # filtering, thresholds and colors needed to perform in this analysis. This 
 # variables are deeply detailed in the code. Following the code, it's time to 
 # load the data sets, be careful everything is matched.
 # 
-# Second,
-# 
-# Third,  
-# 
-# Fourth,
-
-
-
 # Code chunk contain between the following separators can be modify and must be 
 # modify to perform the correct analysis. Two chunk will be found one referring
 # to the parameter selection and the order for loading the data.
 
 
-# DESeq2 recommendations include all the comparison group in the DESeq object 
-# and in the exploratory analysis of the data
-
-# Does not consider interactions in the design formula, but can be added to the script
-
-# Authors: Ivana Rondón and María Ponce
+# Authors: María Ponce
 
 
 #-------------------------------------------------------------------------------
@@ -65,8 +73,18 @@
 ## Annotation file
 # ------------------
 # 
-# The annotation file must present at least two columns being the first one the 
-# Ensembl gene annotation and the second the Symbol annotation. 
+# The annotation file must present at least three columns, Ensembl and Symbol gene 
+# annotation and the specie. This file can be found in the following path: 
+# W:\DATA_shared\Genomes_Rocky\DEG_Annotation\Annotated_Genes_20231121
+# 
+# This annotation information correspond to GRCh38.p14 and GRCm39 release 110.
+
+
+## 0_Sample_info_XXXX.log
+# -------------------------
+# 
+# This file will be used in all the scripts, which gives the order to the data 
+# and is used in different several comparison and testings.
 
 #-------------------------------------------------------------------------------
 
