@@ -200,7 +200,7 @@ for (i in 1:length(contrast)){
     ref <- paste(analysis, "_", name, "_", project, sep = "")
     
     # Load results
-    df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), col.names = TRUE)
+    df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
 
