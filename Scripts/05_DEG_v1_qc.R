@@ -745,14 +745,17 @@ log_data$condition_order <- paste0(lvl_ord, collapse =",")
 log_data$Outliers <- paste(outliers, collapse = ",") 
 log_data$Varexp <- paste(var_exp, collapse = ",") 
 log_data$min_count <- min_count
+log_data$min_total <- min_total
+log_data$n_large <- n_large
+log_data$min_prop <- min_prop
 log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
 log_data$contrast <- paste(unlist(contrast), collapse = ",")
-log_data$colortrt <- paste(color_list[[1]], collapse = ",")
-log_data$colorheat <- paste(color_list[[2]], collapse = ",")
-log_data$colordir<-  paste(color_list[[3]], collapse = ",")
-log_data$colorsh <- paste(color_list[[4]], collapse = ",")
+log_data$colortrt <- paste(color_list[[trt]], collapse = ",")
+log_data$colorheat <- paste(color_list[["Heatmap"]], collapse = ",")
+log_data$colordir<-  paste(color_list[["Direction"]], collapse = ",")
+log_data$colorsh <- paste(color_list[["Shared"]], collapse = ",")
 
 
 write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
