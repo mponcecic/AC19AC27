@@ -2,13 +2,46 @@
 #                               RUN DESEeq2
 ################################################################################
 
-# Summary
-# ---------- 
-# 
+
+# Summary 
+#------------
+
 # This script aims to automatized the differentially expressed genes (DEGs)
-# analysis based on the RNA-seq for the AC laboratory.
+# analysis based on the RNA-seq for the AC laboratory. 
 # 
-# After performing the analysis 
+# This analysis is divided in different scripts. First, perform the quality 
+# control of the data (05_DEG_v1_qc). Second, perform the methods to estimate the 
+# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom 
+# (05_DEG_v2_limma-voom) and Wilcoxon rank-sum test (05_DEG_v2_wilcoxon). Third,
+# compare the results among the different methods used using 05_DEG_v3_Comparison 
+# script.
+# 
+# In this script, DESeq2 method is perform based on the gene count matrix resulting 
+# from the previous script.
+
+
+# Recommendations and warnings
+# ---------------------------------
+# 
+# If you want all the comparison to be included in the same input for applying 
+# DESeq2, EdgeR, limma-voom or Wilcoxon test, this is not possible in this script. 
+# We generate a unique matrix per each contrast which only includes the samples 
+# of that contrast
+# 
+# In the design formula, interactions are not considered.
+# 
+# You will find a chunk of code where you can adjust all the parameters, 
+# filtering, thresholds and colors needed to perform in this analysis. This 
+# variables are deeply detailed in the code. Following the code, it's time to 
+# load the data sets, be careful everything is matched.
+# 
+# Code chunk contain between the following separators can be modify and must be 
+# modify to perform the correct analysis. Two chunk will be found one referring
+# to the parameter selection and the order for loading the data.
+
+
+# Authors: María Ponce
+
 
 
 ################################################################################

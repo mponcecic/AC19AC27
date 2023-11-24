@@ -1,12 +1,47 @@
 ################################################################################
-#                               RUN EdgeR
+#                               RUN limma-voom
 ################################################################################
 
-# Summary
-# ---------- 
-# 
+
+# Summary 
+#------------
+
 # This script aims to automatized the differentially expressed genes (DEGs)
-# analysis based on the RNA-seq for the AC laboratory.
+# analysis based on the RNA-seq for the AC laboratory. 
+# 
+# This analysis is divided in different scripts. First, perform the quality 
+# control of the data (05_DEG_v1_qc). Second, perform the methods to estimate the 
+# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom 
+# (05_DEG_v2_limma-voom) and Wilcoxon rank-sum test (05_DEG_v2_wilcoxon). Third,
+# compare the results among the different methods used using 05_DEG_v3_Comparison 
+# script.
+# 
+# In this script, limma-voom method is perform based on the gene count matrix 
+# resulting from the previous script.
+
+
+# Recommendations and warnings
+# ---------------------------------
+# 
+# If you want all the comparison to be included in the same input for applying 
+# DESeq2, EdgeR, limma-voom or Wilcoxon test, this is not possible in this script. 
+# We generate a unique matrix per each contrast which only includes the samples 
+# of that contrast
+# 
+# In the design formula, interactions are not considered.
+# 
+# You will find a chunk of code where you can adjust all the parameters, 
+# filtering, thresholds and colors needed to perform in this analysis. This 
+# variables are deeply detailed in the code. Following the code, it's time to 
+# load the data sets, be careful everything is matched.
+# 
+# Code chunk contain between the following separators can be modify and must be 
+# modify to perform the correct analysis. Two chunk will be found one referring
+# to the parameter selection and the order for loading the data.
+
+
+# Authors: María Ponce
+
 
 
 
@@ -314,8 +349,8 @@ for (i in 1:length(contrast)){
   
   ## MERGE WITH GENE COUNTS
   # Row names to a variable
-  genes <- gene_counts[, metadata$Sample]
-  genes$Ensembl <-  rownames(genes)
+  genes <- gene_counts
+  genes$Ensembl <- rownames(genes)
   # Merge gene_counts and comparison results
   result <- merge(x = res_df, y = genes, by = "Ensembl")
   
@@ -416,7 +451,7 @@ for (i in 1:length(contrast)){
   
   # All results
   colnames(m_trs) <- paste(md, colnames(m_trs), sep = "_")
-  data <- cbind(res_df, m_trs)
+  data <- cbind(result, m_trs)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
   
   write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
