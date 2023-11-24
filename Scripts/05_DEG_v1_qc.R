@@ -258,7 +258,8 @@ color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0
 names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
 
 # Automatically generate the colors for the treatment condition
-color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")
+if(length(color_list)<4){color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")}
+
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   
@@ -753,7 +754,7 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-write.table(as.data.frame(log_data), paste(path, project, "/1_DEG_qc_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/log/1_DEG_qc_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 
 
