@@ -200,7 +200,7 @@ for (i in 1:length(contrast)){
     ref <- paste(analysis, "_", name, "_", project, sep = "")
     
     # Load results
-    df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""))
+    df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), col.names = TRUE)
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
 
@@ -389,6 +389,7 @@ saveWorkbook(exc, file =  paste(dir_outfolder, "/", project, ";", paste(analysis
 # Summary table 
 write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
 
+
 ################################################################################
 #                                 LOG FILE 
 ################################################################################
@@ -399,6 +400,7 @@ logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
 log_data$Directory <- dir_out
+log_data$AnalysisComp <- analysis_list
 
 write.table(result_tab, paste(dir_output, "/log/5_DEG_v3_", paste(analysis_list, collapse = "_"), "_", logdate, ".log", sep = ""))
 
