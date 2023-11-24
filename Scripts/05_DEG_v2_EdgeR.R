@@ -420,8 +420,8 @@ for (i in 1:length(contrast)){
   write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, ";", ref, "_", threshold,".csv", sep = ""))
   
   # All results
-  colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
-  data <- cbind(result, res_log2)
+  colnames(m_trs) <- paste(md, colnames(m_trs), sep = "_")
+  data <- cbind(result, m_trs)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
   
   write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)

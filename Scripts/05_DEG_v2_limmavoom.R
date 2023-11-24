@@ -16,7 +16,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "PRUEBA"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -415,8 +415,8 @@ for (i in 1:length(contrast)){
   write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, ";", ref, "_", threshold,".csv", sep = ""))
   
   # All results
-  colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
-  data <- cbind(res_df,res_log2)
+  colnames(m_trs) <- paste(md, colnames(m_trs), sep = "_")
+  data <- cbind(res_df, m_trs)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
   
   write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
