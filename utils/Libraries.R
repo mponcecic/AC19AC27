@@ -29,3 +29,4 @@ suppressPackageStartupMessages(library(limma))
 suppressPackageStartupMessages(library(affy))        # PlotDensity
 suppressPackageStartupMessages(library(dendsort))    # dist
 
+suppressPackageStartupMessages(library(DGEobj.utils))

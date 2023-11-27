@@ -9,6 +9,9 @@
 # which is manipulated to obtain the raw counts file used in the differential 
 # expressed analysis. To accomplish this aim we first need to decide the reads
 # directionality and which one is a reflect of the coding strand.  
+# 
+# In addition, we perform the counts per million normalization method on the 
+# raw counts data based on all the samples. 
 
 
 # Folder
@@ -187,12 +190,26 @@ RawCounts <- RawCounts[order(row.names(RawCounts)),]
 RawCounts <- RawCounts[order(colnames(RawCounts))]
 
 
+# Create a CPM
+# 
+# Input data must be a matrix/data frame with numeric values.
+# log = TRUE; prior.count should be selected 0 for TPM, 0.25 for CPM and FPKM
+# geneLength is used for length-normalized units such as TPM, FPKM or FPK
+raw <- apply(RawCounts, 2, as.numeric)
+counts_cpm <- convertCounts(raw, unit = "CPM", normalize = "none", log = FALSE)
+rownames(counts_cpm) <- rownames(RawCounts)
+
+
+
 #######################################################################
 #                         SAVED DATA                
 #######################################################################
 
-# Save the count dataframe
+
+# Save the count data frame
 write.table(RawCounts, paste(input_dir, "/RawCounts_", project,".txt", sep=""), quote=F, row.names=T, sep="\t") 
+write.table(counts_cpm, paste(input_dir, "/CPM_Counts_", project,".txt", sep=""), quote=F, row.names=T, sep="\t")
+
 
 
 ################################################################################
