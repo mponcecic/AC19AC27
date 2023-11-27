@@ -30,7 +30,7 @@
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project Name 
-project_name <- "XXX"
+project <- "XXX"
 
 
 # Pathway to the folders and files
@@ -40,7 +40,7 @@ path <- "W:/mponce/"
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output and input directories SSH 
-dir_infiles <- paste(path, project_name, "/01_FASTQC", sep = "" )
+dir_infiles <- paste(path, project, "/01_FASTQC", sep = "" )
 dir_outfiles <- dir_infiles
 setwd(dir_outfiles)
 

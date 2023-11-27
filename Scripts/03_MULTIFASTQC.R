@@ -31,7 +31,7 @@
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 ### General Project ###
 # Project Name 
-project_name <- "XXX"
+project <- "XXX"
 
 
 # Pathway to the folders and files
@@ -41,7 +41,7 @@ path <- "W:/mponce/"
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output and input directories SSH 
-dir_infiles <- paste(path, project_name, "/03_FASTQC", sep = "" )
+dir_infiles <- paste(path, project, "/03_FASTQC", sep = "" )
 dir_outfiles <- dir_infiles
 setwd(dir_outfiles)
 
@@ -69,6 +69,6 @@ source(paste(path, project, "/utils/Libraries.R", sep = ""))
 ################################################################################
 
 
-qc_report(qc.path = dir_infiles, result.file = paste(dir_outfiles, "/",  project_name, "_MultiReport", sep=""), 
+qc_report(qc.path = dir_infiles, result.file = paste(dir_outfiles, "/",  project, "_MultiReport", sep=""), 
           interpret = TRUE)
 
