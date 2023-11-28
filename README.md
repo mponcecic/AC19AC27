@@ -1,4 +1,4 @@
-# DEG_Reference
+# Differentially expressed genes pipeline
 
 :collision: Differential expressed genes analysis workflow from scratch for the AC lab.
 
