@@ -253,6 +253,11 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # var_exp <- NULL
 var_exp <- logfile$covariance
 
+# Contrast
+contrast <- unlist(str_split(logfile$contrast, ","))
+contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
+
+
 ## Generate color list
 # Automatically generate the colors for the treatment condition
 if(length(color_list)<4){color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")}
@@ -265,9 +270,6 @@ theme_set(theme_DEGs)
 # Columns are Comparison, Method, Genes, Upregulated and Downregulated
 out_df <- data.frame()
 
-# Specie 
-# specie = "Human"
-specie <- logfile$Organism
 
 
 ################################################################################
@@ -309,6 +311,9 @@ setwd(dir_out)
 dir.create(file.path(dir_out, "QC"), showWarnings = FALSE)
 dir_fig <- paste(dir_out, "/QC", sep='')
 
+# Results folder
+dir.create(file.path(dir_fig, "Results"), showWarnings = FALSE)
+dir_output <- paste(dir_fig, "/Results", sep='')
 
 
 ################################################################################
@@ -339,7 +344,7 @@ if(is.null(outliers) == FALSE){
 
 
 #### Add covariates effects #### 
-if(is.null(var_exp) == FALSE){
+if(var_exp != ""){
   # Normal for EdgeR and limma-voom
   sample_info[, var_exp] <- data_info[, which(colnames(data_info) %in% var_exp)]
   # Z_score for DESeq2
@@ -428,7 +433,7 @@ print(design_cond)
 #     associated to the samples valuable to perform the contrast. The row names
 #     must be the samples names
 # - Design formula with the experimental conditions and the covariates 
-dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info[,-1], design =  eval(parse(text = design_cond)))
+dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
   
   
 # Step 2: Variance stabilizing transformation
@@ -571,20 +576,100 @@ dev.off()
 
 
 ##############################################################################
-#                               Save data 
+#                   GENE COUNT FILTERING AND NORMALIZATION
 ##############################################################################
+
+
+##############################################################################
+#                               Filtering
+##############################################################################
+
+## Filter gene count matrix per each comparison
+#
+# This data will be used when running DESeq2, EdgeR, limma-voom and Wilcoxon to
+# perform the test for the differentially expressed genes
+keep <- filter_genecounts(gene_counts, metadata, trt, min_count = min_count, min_prop = min_prop, n_large = n_large, min_total = min_total)
+df <- gene_counts[keep,]
+
+
+##############################################################################
+#                           Data transformation
+##############################################################################
+
+# Normalized filtered gene counts for the DEG analysis following steps. This
+# transformation is different based on the method used to perform the analysis.
+# The methods used are DESeq2, EdgeR, limma-voom and Wilcoxon test
+
+
   
-
-
+# DESeq2
+# ----------------------------------------------------------------------------
+  
+# 1. Create DESeq object
+dds <- DESeqDataSetFromMatrix(countData = df, colData = metadata, design =  eval(parse(text = design_cond)))
+  
+# 2. Variance stabilization methods in log2 scale to interpret the data
+# 
+# blind set FALSE, because we want the method to know to which group each sample 
+# belongs to. 
+# Options: VST for samples size group smaller than 30. 
+  
+if(group_n < 30){
+  m1 <- as.data.frame(assay(vst(dds, blind = FALSE)))
+  md <- "VST"
+}else{
+  m1 <- as.data.frame(assay(rlog(dds, blind = FALSE)))
+  md <- "RLOG"}
+  
+  
+# EdgeR/limma-voom
+# ----------------------------------------------------------------------------
+  
+# 1. Create DGEList object
+deg <- DGEList(counts = df, group = metadata[,trt])
+if(var_exp != ""){deg$samples[var_exp] <- metadata[,var_exp]}
+  
+  
+# 2. Normalization
+# 
+# This step is common between EdgeR and limma-voom 
+# 
+# Minimized the logFC between samples for most genes using weighted Trimmed Mean of M-values 
+# between each pair of samples (TMM method) to normalized the gene counts based 
+# on the library size.
+# Corrects for sequencing detph, RNA composition and gene length
+# Can be used to perform DE analysis and within sampe analysis
+# 
+# All the parameters used are the default options
+deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, sumTrim = 0.05, doWeighting = TRUE, Acutoff = -1e10, p = 0.75)
+  
+# 3. Counts per million normalization method 
+logcpm <- cpm(deg, log = TRUE, normalized.lib.sizes = TRUE)
+logcpm <- as.data.frame(logcpm)
+  
+  
+################################################################################
+#                               SAVE DATA           
+################################################################################
+  
+  
 # Save metadata information
 write.table(sample_info, paste(dir_out, "/Metadata_", project,".txt", sep = ""))
-
+  
 # Save gene counts
-write.table(gene_counts, paste(dir_fig,"/GeneCount_filtered_", project,".txt", sep = ""))
-
+write.table(gene_counts, paste(dir_fig,"/GeneCount_", label ,"_", project,".txt", sep = ""))
+  
 # Save transform data with blind = TRUE
 write.table(m, paste(dir_fig,"/GeneCount_", md , "_blindTRUE_", project, ".txt", sep = ""))
   
+# Save transform data with blind = FALSE
+write.table(df, paste(dir_output,"/GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
+  
+# Save transform data with blind = FALSE
+write.table(m1, paste(dir_output,"/GeneCount_filter_blindFALSE_", "_", project, ".txt", sep = ""))
+  
+# Save transform data with blind = TRUE
+write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", "_", project, ".txt", sep = ""))
   
 # Save QC file information
 logdate <- format(Sys.time(), "%Y%m%d")
