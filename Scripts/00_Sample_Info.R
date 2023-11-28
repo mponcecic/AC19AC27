@@ -41,6 +41,7 @@
 # Project name
 project <- "XXX"
 
+
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
@@ -65,18 +66,29 @@ dir_in <- files
 first_sample <- "AC-XX_XX"
 last_sample <- "AC-XX_XX"
 
+
 # Condition
-trt <- "Time"
-  
+trt <- "XXX"
+
 # Contrast level order 
-lvl_order <- c("Control", "4", "24", "48")
+lvl_order <- c("A", "B", "C", "D")
 
 # Organism
 # org <- "Mouse"
 org <- "Human"
 
 # Read length
-read <- 101
+read <- 151
+
+
+# Contrast
+# If contrast set NULL the different contrasts will be created based on the 
+# lvl_order vector. Nonetheless, you can add the contrast manually following the 
+# 
+# DESeq2 formula:
+# contrast <- list(c("Condition", "Experimental level", "Reference level"), 
+#                  c("Condition", "Experimental level", "Reference level"))
+contrast <- NULL
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -122,6 +134,7 @@ file.copy(from = file.path(local_dir, file_list), to = dir_utils)
 source(paste(path, project, "/utils/Libraries.R", sep = ""))
 # Load functions 
 source(paste(path, project, "/utils/function_pdf_to_tab.R", sep = ""))
+source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
 
@@ -176,9 +189,18 @@ data <- data %>% mutate(Ind = sub(".*E", "E", data$Sample)) %>% arrange(Time)
 sample_info <- data
 
 
+################################################################################
+#                           CREATE CONTRAST                         
+################################################################################
+
+
+if(is.null(contrast)== TRUE){contrast <- create_contrast(trt, lvl_order)}
+
+
 #######################################################################
 #                             SAVE DATA                         
 #######################################################################
+
 
 # Save sample information file
 write.csv(sample_info, file = paste("Sample_info.csv", sep = ""), row.names = FALSE)
@@ -202,6 +224,7 @@ log_data$filedir <- dir_in
 log_data$filedirRocky <- files_rocky
 log_data$Organism <- org
 log_data$read <- read
+log_data$contrasts <- paste(unlist(contrast), collapse = ",")
 
 write.table(as.data.frame(log_data), paste(dir_log, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
