@@ -41,8 +41,10 @@ In the verification script folder, you can find the following scripts
 # Folder and scripts
 
 
-[Folders generated in BigData with all the information concerning this pipeline.](/Schematics/Folder_structure2.png)
+![Folders generated in BigData with all the information concerning this pipeline.](/Schematics/Folder_structure2.png)
 
-[Folders generated in BigData personal folder after running the pipeline](/Schematics/Folder_structure_project2.png)
+![Folders generated in BigData personal folder after running the pipeline](/Schematics/Folder_structure_project2.png)
 
-[Differentially expressed genes analysis summary.](/Schematics/DEG_flow.png)
+![Differentially expressed genes analysis summary.](/Schematics/DEG_flow.png)
+
+
