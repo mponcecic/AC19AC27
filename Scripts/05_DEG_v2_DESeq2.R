@@ -71,11 +71,11 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 # Load log file 
 logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
-# Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
-
 # Output directory
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
+
+# Input directory. Raw gene counts  
+dir_infiles <- paste(dir_out,  "/QC/Results/", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -97,7 +97,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 # var_exp <- NULL
-var_exp <- c("RIN")
+var_exp <- logfile$covariance
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -154,190 +154,265 @@ analysis <- "DESeq2"
 
 
 ################################################################################
-#                               LOAD FILES
+#                               LOAD DATA
 ################################################################################
 
 
-# Load annotation data 
-gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
+## Load metadata file 
+sample_info <- read.table(paste(dir_output, "/Metadata_", project, ".txt", sep = ""))
+
+## Load annotation data
+# Genome annotation path
+anot_path <- sub(pattern = "/.*", replacement = "", path)
+if (anot_path == ""){anot_path <- "/vols/GPArkaitz_bigdata"}
+# Reference genome
+ref_genome <- read.table(paste(anot_path, "/DATA_shared/Genomes_Rocky/DEG_Annotation/Annotated_Genes_20231121.txt", sep = ""), header = TRUE)
+genome <- ref_genome[which(ref_genome$Specie == specie), -3]
+genome$Name <- paste(genome$Symbol, genome$Ensembl, sep = "_")
+print(dim(genome))
+
+
+
+for (h in 1:2) {
+  
+  # Load gene count matrix and select folder name
+  if(h == 1){
+    raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
+    analysis <- "DESeq2"
+  } else {
+    raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
+    analysis <- "DESeq2_all"
+  }
+  print(dim(raw_counts))
+  
+  
+  # Annotate all the genes in the matrix with the Symbol annotation
+  
+  # CAUTION: Symbol id present more than one Ensembl identifier. 
+  # I propose to perform the analysis using the Ensembl identifier, if not the 
+  # mean value of the genes with the same Symbol id should be performed.
+  annot <- genome[which(genome$Ensembl %in% rownames(raw_counts)),]
+  gene_names <- annot[match(rownames(raw_counts), annot$Ensembl), -3]
+  print(dim(gene_names))
+  
+  
+  ################################################################################
+  #                               COMPARISONS
+  ################################################################################
+  
+  for (i in 1:length(contrast)){
+  
+    # Contrast 
+    name <- paste(contrast[[i]][2], "vs", contrast[[i]][3], sep = "")
+    print(name)
+  
+    # Contrast levels 
+    control <- contrast[[i]][3]
+    experimental <- contrast[[i]][2]
+    
+    # Comparison levels
+    comp_lvl <- c(control, experimental)
+    
+  
+    ##############################################################################
+    #                         Create working directories
+    ##############################################################################
+    
+    # Create a folder for the analysis. This folder contains several folders 
+    # classified in Results and Figures. 
+    
+    # Load output directory
+    dir.create(file.path(dir_out , analysis), showWarnings = FALSE)
+    dir_outfolder <- paste(dir_out, "/", name, sep='')
+    setwd(dir_outfolder)
+    
+    # Data folder
+    dir.create(file.path(dir_out , analysis), showWarnings = FALSE)
+    dir_output <- paste(dir_out,"/Results", sep='')
+    # Figures folder
+    dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
+    dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
+  
+    
+    
+    ##############################################################################
+    #                               Load Data
+    ##############################################################################
+    
+    
+    # Metadata
+    metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
+    metadata[,trt] <- factor(metadata[,trt])
+    
+    # Load gene count matrix
+    gene_counts <- raw_counts[, metadata$Sample]
+    
+    # Select the contrast levels
+    color_l <- color_list
+    color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
+    
+    # DESeq2 design formula
+    # Used to estimate the variance stabilization (VST) method proposed in DESeq2
+    # 
+    # Steps
+    # 1. Check there are covariates
+    # 2. Check the values of the covariate are not equal to avoid colinearity in 
+    #   the model. If their values are equal the variable is not included in the 
+    #   model.
+    # 3. Create the design formula
+    design_cond <- design_condition("DESeq2", trt, var_exp, metadata)
+    print(design_cond)
+    
+    
+    # Annotation for all the results 
+    ref <- paste(analysis, "_", name, "_", project, sep = "")
+  
+    
+    
+    ##############################################################################
+    #                                 DESeq2
+    ##############################################################################
+    
+    
+    # Step 1: Create DESeq object
+    # ----------------------------------------------------------------------------
+    #
+    # DESeqDataSetFromMatrix contains all the information necessary to run DESeq. 
+    # - Count matrix
+    # - Metadata with the following columns: Sample, Time and RIN. Data associated 
+    #       to the samples valuable to perform the contrast
+    # - Design formula with the experimental conditions (Time) and the covariates (RIN)
+    
+    # The options of the SummarizedExperiment can be applied in this object.
+    dds <- DESeqDataSetFromMatrix(countData = gene_counts,                     # Input: Count matrix 
+                                  colData = metadata,                          # Input: Metadata
+                                  design = eval(parse(text = design_cond)),    # Design matrix
+                                  tidy = FALSE,                                # Default; Option: TRUE = First column of count data is the row names for the count matrix
+                                  ignoreRank = FALSE                           # Default: Reserved for DEXSeq developers
+                                  )
+    
+    
+    # Step 2: Run DESeq
+    # ----------------------------------------------------------------------------
+    # 
+    # Filtering by default
+    #   - Genes with zero counts are remove
+    #   - Gene with an extreme count outlier
+    #   - Genes with low mean normalized counts
+    
+    dds <- DESeq(dds,                                                  # DESeqDataSet
+                 test = "Wald",                                        # default; Wald Test
+                 fitType = "parametric",                               # default; Dispersion estimates
+                 sfType = "ratio",                                     # default; Size factors estimates
+                 betaPrior = FALSE,                                    # default; betaPrior = FALSE
+                 minReplicatesForReplace = 7,                          # default; Outliers replaced
+                 useT = FALSE,                                         # default; Std Normal distr for Wald statistics
+                 # minmu = if (fitType == "glmGamPoi") 1e-06 else 0.5,   # default;  lower bound on the estimate count while fitting the GLM
+                 quiet = FALSE,                                        # default; Print a message per step performed
+                 
+                 ## Not used
+                 # full = design(object),                                # default; Not used
+                 # reduced,                                              # defaultt; Not used
+                 # Parallelization
+                 # parallel = FALSE,                                     # default; Not used
+                 # BPPARAM = bpparam()                                   # default; Not used
+                 )
+    
+    # Fit of the dispersion estimates
+    pdf(file = paste(dir_fig, "/00_Dispersion_DESeq2_", project, ".pdf", sep = ""), width = 6, height = 5)
+    plotDispEsts(dds, genecol = "black", fitcol = "red", finalcol = "dodgerblue", legend = TRUE, log = "xy", cex = 0.45)
+    dev.off()
+    
+    
+    # Step 3: Contrast genes with Wald test
+    # ----------------------------------------------------------------------------
+    
+    # Log2 fold change result table for an specific comparison
+    resl <- results(object = dds,                      # DESeqDataSet  
+                    contrast = contrast[[i]],          # Constrast 
+                    test = "Wald",                     # default; Wald Test
+                    minmu = 0.5,                       # default; lower bound on the estimate count while fitting the GLM
+                    
+                    ## Independent filtering  
+                    alpha = lfc_cutoff,                       # default = 0.1
+                    pAdjustMethod = correction,        # default = "BH"
+                    lfcThreshold = 0,                  # default
+                    independentFiltering = TRUE,      # Independent filtering 
+                    format = "DataFrame"               # default, Result format
+                    # theta,                             # Quantiles at which to assess the number of rejections
+                    # filter,                            # default, mean of normalized counts
+                    # filterFun,                         # optional; for performing independent filtering and p-value adjustment
+                    # 
+                    # altHypothesis = "greaterAbs",     #c("greaterAbs", "lessAbs", "greater", "less"),
+                    # listValues = c(1, -1),
+                    # cooksCutoff,                      # Threshold Cook's distance
+                    # 
+                    
+                    # 
+                    # ## Not used
+                    # addMLE = FALSE,                   # default; Not used
+                    # tidy = FALSE,                     # default; Not used
+                    # saveCols = NULL,                  # default; Not used
+                    # name,                             # default; Not used
+                    # 
+                    # ## Parallelization
+                    # parallel = FALSE,                 # default; Not used
+                    # BPPARAM = bpparam(),              # default; Not used
+    )
+    
+    
+    # Results as data frame 
+    res <- as.data.frame(resl)
+    res <- res[match(rownames(gene_counts), rownames(res)),]
+
+    # Shrinkage log2 fold change 
+    lfcresl <- lfcShrink(dds, contrast = contrast[[i]], type = "ashr")
+    lfcres <- as.data.frame(lfcresl)
+    shrklogFC <- lfcres$log2FoldChange 
+    res <- cbind(res, shrklogFC)
+    
+    # Change columns names to plot data 
+    colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj", "shrklogFC")
+    
+    # MA plot 
+    pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
+    MA_plot(res, analysis, fdr_cutoff)
+    dev.off()
+    
+    # Plot with the number of adjusted pvalues rejected 
+    pdf(paste(dir_fig, "/00_Rejections_", ref,".pdf", sep = ""), height = 4, width = 4)
+    plot(metadata(resl)$filterNumRej, type="b", ylab="number of rejections", xlab="quantiles of filter")
+    lines(metadata(resl)$lo.fit, col="red")
+    abline(v=metadata(resl)$filterTheta)
+    dev.off()
+    
+    
+    
+    
+    
+    
+    
+}
+  
 
   
-################################################################################
-#                               COMPARISONS
-################################################################################
-
-
-for (i in 1:length(contrast)){
-  
-  # Contrast 
-  name <- paste(contrast[[i]][2], "vs", contrast[[i]][3], sep = "")
-  print(name)
-  
-  # Contrast levels 
-  control <- contrast[[i]][3]
-  experimental <- contrast[[i]][2]
-  
-  
-  ##############################################################################
-  #                         Create working directories
-  ##############################################################################
-  
-  
-  # Create a folder for the analysis. This folder contains several folders 
-  # classified in Results and Figures. 
-  
-  # Load output directory
-  dir_outfolder <- paste(dir_out, "/", name, sep='')
-  setwd(dir_outfolder)
-  
-  # Files folder
-  dir_output <- paste(dir_outfolder,"/Results", sep='')
-  # Quality control figures folder
-  dir_fig_qc <- paste(dir_outfolder, "/Figures", sep='')
-  
-  # Analysis figures folder
-  dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
-  dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
-  
-  
-  ##############################################################################
-  #                               Load Data
-  ##############################################################################
-  
-  
-  # Load gene count filtered
-  gene_counts <- read.table(paste(dir_output, "/GeneCount_", name, "_", project, ".txt", sep = ""))
-  
-  # Load sample information per comparison
-  metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
-  metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
-  
-  # Select the contrast levels
-  color_l <- color_list
-  color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
-  
-  # DESeq2 design formula
-  # Used to estimate the variance stabilization (VST) method proposed in DESeq2
-  # 
-  # Steps
-  # 1. Check there are covariates
-  # 2. Check the values of the covariate are not equal to avoid colinearity in 
-  #   the model. If their values are equal the variable is not included in the 
-  #   model.
-  # 3. Create the design formula
-  design_cond <- design_condition(analysis, trt, var_exp, metadata)
-  print(design_cond)
-  
-  # Annotation for all the results 
-  ref <- paste(analysis, "_", name, "_", project, sep = "")
   
   
   
-  ##############################################################################
-  #                                 DESeq2
-  ##############################################################################
   
   
-  # Step 1: Create DESeq object
-  # ----------------------------------------------------------------------------
-  #
-  # DESeqDataSetFromMatrix contains all the information necessary to run DESeq. 
-  # - Count matrix
-  # - Metadata with the following columns: Sample, Time and RIN. Data associated 
-  #       to the samples valuable to perform the contrast
-  # - Design formula with the experimental conditions (Time) and the covariates (RIN)
-  
-  # The options of the SummarizedExperiment can be applied in this object.
-  dds <- DESeqDataSetFromMatrix(countData = gene_counts,                     # Input: Count matrix 
-                                colData = metadata,                          # Input: Metadata
-                                design = eval(parse(text = design_cond)),    # Design matrix
-                                tidy = FALSE,                                # Default; Option: TRUE = First column of count data is the row names for the count matrix
-                                ignoreRank = FALSE                           # Default: Reserved for DEXSeq developers
-  )
   
   
-  # Step 2: Run DESeq
-  # ----------------------------------------------------------------------------
-  # 
-  # Filtering by default
-  #   - Genes with zero counts are remove
-  #   - Gene with an extreme count outlier
-  #   - Genes with low mean normalized counts
-  
-  dds <- DESeq(dds,                                                  # DESeqDataSet
-               test = "Wald",                                        # default; Wald Test
-               fitType = "parametric",                               # default; Dispersion estimates
-               sfType = "ratio",                                     # default; Size factors estimates
-               betaPrior = FALSE,                                    # default; betaPrior = FALSE
-               minReplicatesForReplace = 7,                          # default; Outliers replaced
-               useT = FALSE,                                         # default; Std Normal distr for Wald statistics
-               # minmu = if (fitType == "glmGamPoi") 1e-06 else 0.5,   # default;  lower bound on the estimate count while fitting the GLM
-               quiet = FALSE,                                        # default; Print a message per step performed
-               
-               ## Not used
-               # full = design(object),                                # default; Not used
-               # reduced,                                              # defaultt; Not used
-               # Parallelization
-               # parallel = FALSE,                                     # default; Not used
-               # BPPARAM = bpparam()                                   # default; Not used
-  )
   
   
-  # Fit of the dispersion estimates
-  pdf(file = paste(dir_fig, "/00_Dispersion_DESeq2_", project, ".pdf", sep = ""), width = 6, height = 5)
-  plotDispEsts(dds, genecol = "black", fitcol = "red", finalcol = "dodgerblue", legend = TRUE, log = "xy", cex = 0.45)
-  dev.off()
   
   
-  # Step 3: Contrast genes with Wald test
-  # ----------------------------------------------------------------------------
-  
-  # Log2 fold change result table for an specific comparison
-  resl <- results(object = dds,                      # DESeqDataSet  
-                  contrast = contrast[[i]],          # Constrast 
-                  test = "Wald",                     # default; Wald Test
-                  minmu = 0.5,                       # default; lower bound on the estimate count while fitting the GLM
-                  
-                  ## Independent filtering  
-                  alpha = 0.1,                       # default = 0.1
-                  pAdjustMethod = correction,        # default = "BH"
-                  lfcThreshold = 0,                  # default
-                  independentFiltering = FALSE,      # Independent filtering 
-                  format = "DataFrame"               # default, Result format
-                  # theta,                             # Quantiles at which to assess the number of rejections
-                  # filter,                            # default, mean of normalized counts
-                  # filterFun,                         # optional; for performing independent filtering and p-value adjustment
-                  # 
-                  # altHypothesis = "greaterAbs",     #c("greaterAbs", "lessAbs", "greater", "less"),
-                  # listValues = c(1, -1),
-                  # cooksCutoff,                      # Threshold Cook's distance
-                  # 
-                  
-                  # 
-                  # ## Not used
-                  # addMLE = FALSE,                   # default; Not used
-                  # tidy = FALSE,                     # default; Not used
-                  # saveCols = NULL,                  # default; Not used
-                  # name,                             # default; Not used
-                  # 
-                  # ## Parallelization
-                  # parallel = FALSE,                 # default; Not used
-                  # BPPARAM = bpparam(),              # default; Not used
-  )
   
   
-  # Results as data frame 
-  res <- as.data.frame(resl)
-  res <- res[match(rownames(gene_counts), rownames(res)),]
   
   
-  # Change columns names to plot data 
-  colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj")
-
-  # MA plot 
-  pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
-  MA_plot(res, analysis, fdr_cutoff)
-  dev.off()
+  
+  
   
   
   
