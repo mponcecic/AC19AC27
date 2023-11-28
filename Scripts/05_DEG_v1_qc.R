@@ -163,17 +163,6 @@ trt <- logfile$condition
 # The first must be the reference level
 lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 
-
-# Contrast
-# If contrast set NULL the different contrasts will be created based on the 
-# lvl_order vector. Nonetheless, you can add the contrast manually following the 
-# 
-# DESeq2 formula:
-# contrast <- list(c("Experimental Variable", "Experimental level", "Reference level"), 
-#                  c("Experimental Variable", "Experimental level", "Reference level"))
-contrast <- NULL
-
-
 # Variance sources to include in the model
 # Can be set NULL
 # Mouse: RIN
@@ -346,10 +335,6 @@ setwd(dir_out)
 ################################################################################
 #                           PREPROCESSING 
 ################################################################################
-
-
-#### Create contrast list #### 
-if(is.null(contrast)== TRUE){contrast <- create_contrast(trt, lvl_ord)}
 
 
 #### Metadata information #### 
