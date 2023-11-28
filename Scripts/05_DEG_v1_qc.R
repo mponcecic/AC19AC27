@@ -131,47 +131,6 @@ path <- "W:/mponce/"
 
 # Date of the log file 0_Sample_info_XXXX.log
 logdate <- "20231128"
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
-
-# Load functions scripts
-source(paste(path, project, "/utils/functions_degs.R", sep = ""))
-
-
-# Load log file 
-logfile <- read.table(paste(path, project, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
-
-# Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
-
-# Output directory
-# dir_out <- paste(path, project, sep = "")   # Default option
-dir_out <- paste(path, project, sep = "")
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Experimental condition
-# Choose only one condition per script
-# The name should be the same as in the metadata file or sample information file
-trt <- logfile$condition
-
-# Contrast levels
-# The order is important because it will be used to order the data, as well as, 
-# to create the contrast matrix, reference of the order, plot data, ...
-# 
-# The first must be the reference level
-lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
-
-# Variance sources to include in the model
-# Can be set NULL
-# Mouse: RIN
-# Human: RIN, dv200, Age, ... 
-#
-# Options
-# var_exp <- c("Age", "dv200")
-# var_exp <- NULL
-var_exp <- c("RIN")
 
 
 ### Pre-processing cutoffs
@@ -215,7 +174,6 @@ n_large <- 30
 min_prop <- 0.7
 
 
-
 ### Threshold criteria 
 
 ## Significance level
@@ -253,12 +211,51 @@ color_list <- list(Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4
 #                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
 #                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 # names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
-
-# Automatically generate the colors for the treatment condition
-if(length(color_list)<4){color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")}
-
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+# Load libraries
+source(paste(path, project, "/utils/Libraries.R", sep = ""))
+
+# Load functions scripts
+source(paste(path, project, "/utils/functions_degs.R", sep = ""))
+
+
+# Load log file 
+logfile <- read.table(paste(path, project, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+
+# Input directory. Raw gene counts  
+dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
+
+# Output directory
+# dir_out <- paste(path, project, sep = "")   # Default option
+dir_out <- paste(path, project, sep = "")
+
+# Experimental condition
+# Choose only one condition per script
+# The name should be the same as in the metadata file or sample information file
+trt <- logfile$condition
+
+# Contrast levels
+# The order is important because it will be used to order the data, as well as, 
+# to create the contrast matrix, reference of the order, plot data, ...
+# 
+# The first must be the reference level
+lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
+
+# Variance sources to include in the model
+# Can be set NULL
+# Mouse: RIN
+# Human: RIN, dv200, Age, ... 
+#
+# Options
+# var_exp <- c("Age", "dv200")
+# var_exp <- NULL
+var_exp <- logfile$covariance
+
+## Generate color list
+# Automatically generate the colors for the treatment condition
+if(length(color_list)<4){color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")}
 
 # ggplot2 theme 
 theme_DEGs <- theme_bw()+ theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black"), panel.grid = element_blank())
@@ -408,7 +405,7 @@ ggsave(filename = paste("Barplot_genecounts_", project, ".pdf", sep =""), height
 #   the model. If their values are equal the variable is not included in the 
 #   model.
 # 3. Create the design formula
-if(is.null(var_exp) == FALSE){
+if(var_exp != ""){
   var_design <- NULL
   for (k in 1:length(var_exp)){if(length(unique(sample_info[, var_exp[k]]))>1){var_design <- c(var_design, var_exp[k])}}
   design_cond = ifelse(is.null(var_design) == FALSE, paste("~", paste(var_design, "_zscore", " +", sep = "", collapse = " "), trt, sep = " "), paste("~", trt, sep = " "))
@@ -615,6 +612,7 @@ log_data$Organism <- specie
 log_data$dir_out <- dir_out
 log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_ord, collapse =",")
+log_data$covariance <- logfile$covariance
 log_data$Outliers <- paste(outliers, collapse = ",") 
 log_data$Varexp <- paste(var_exp, collapse = ",") 
 log_data$min_count <- min_count
