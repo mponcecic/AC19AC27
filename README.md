@@ -39,25 +39,10 @@ In the verification script folder, you can find the following scripts
 
 
 # Folder and scripts
-- Scripts
-    - 00_Sample_Info.R
-    - 01_FASTQC.R
-    - 01_MULTIFASTQC.R 
-    - 02_TRIMMING.R
-    - 03_FASTQC.R
-    - 03_MULTIFASTQC.R
-    - 04_STAR_genome_index.R (optional)
-    - 04_STAR_align.R
-    - 05_GeneCounts.R        
-    - 
-    -         
-    - 
 
-- Verification 
-    - 00_fastq_file.R              
-    - 01_fastqc_output.R
-    - 02_trimmed_fastq_output.R
-    - 02_trimmed_fastq_result_check.R
-    - 03_fastqc_output.R 
-    - 04_STAR_output.R
-    - 04_STAR_result_check.R 
+
+[Folders generated in BigData with all the information concerning this pipeline.](/Schematics/Folder_structure2.png)
+
+[Folders generated in BigData personal folder after running the pipeline](/Schematics/Folder_structure_project2.png)
+
+[Differentially expressed genes analysis summary.](/Schematics/DEG_flow.png)
