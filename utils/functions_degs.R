@@ -346,7 +346,7 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   ylab <- "log fold change"
   
   # Select X axis column and label for the different methods and DEGs color
-  if (analysis == "DESeq2" | analysis == "DESeq2_all"){
+  if (analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
     # X axis column
     counts.col <- "MeanExp"
     xlab <- "Mean of normalized counts"
@@ -616,7 +616,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_point(size = 2, alpha = 0.6)+
     scale_color_manual(values = c("grey", "blue"), labels = c("Not significant", "Significative"))+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)")+
-    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
+    theme(text = element_text(size = 6), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
   # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey
@@ -626,7 +626,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_point(size = 2, alpha = 0.6)+
     scale_color_manual(values = as.vector(color_list$Direction))+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
-    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
+    theme(text = element_text(size = 6), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
   # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey, with gene names for the degs
@@ -634,10 +634,12 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
+    geom_text_repel(hjust = "outward", max.overlaps = 10, size = 2, na.rm = TRUE, min.segment.length = 0.6)+
     scale_color_manual(values = as.vector(color_list$Direction))+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
-    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
+    theme(axis.text.x = element_text(size = 6), axis.text.y = element_text(size = 6), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
+ 
   
   # Return the plots
   return(list(A, B, C))
