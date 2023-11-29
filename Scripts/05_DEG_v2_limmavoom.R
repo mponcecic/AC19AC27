@@ -72,11 +72,12 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 # Load log file 
 logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
-# Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
-
 # Output directory
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
+
+# Input directory. Raw gene counts  
+dir_infiles <- paste(dir_out,  "/QC/Results/", sep = "")
+
 
 # Experimental condition
 # Choose only one condition per script
@@ -98,7 +99,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 # var_exp <- NULL
-var_exp <- c("RIN")
+var_exp <- logfile$covariance
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -111,9 +112,17 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$Outliers, collapse = ",")}
 
 
-# Filtering lowly expressed genes
-# Default: TRUE
-filter_cutoff <- logfile$filter_cutoff
+# Filtering parameters 
+
+# Minimum number of counts per gene
+min_total <- logfile$min_total
+# Minimum number of counts per sample
+min_count <- logfile$min_count
+# Large sample size 
+n_large <- logfile$n_large
+# Proportion
+min_prop <- logfile$min_prop
+
 
 
 ### Threshold criteria 
@@ -153,14 +162,39 @@ specie <- logfile$Organism
 analysis <- "limma-voom"
 
 
-
 ################################################################################
-#                               LOAD FILES
+#                               LOAD DATA
 ################################################################################
 
 
-# Load annotation data 
-gen_annot <- read.table(paste(dir_out,"/Annotation_", project,".txt", sep = ""), header = TRUE)
+## Load metadata file 
+sample_info <- read.table(paste(dir_out, "/Metadata_", project, ".txt", sep = ""))
+
+
+## Load gene counts
+raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
+
+
+## Load transformed data 
+m_vst <- read.table(file = paste(dir_infiles, "GeneCount_filter_CPM_", project, ".txt", sep = ""))
+
+
+## Load annotation data
+# Genome annotation path
+anot_path <- sub(pattern = "/.*", replacement = "", path)
+if (anot_path == ""){anot_path <- "/vols/GPArkaitz_bigdata"}
+# Reference genome
+ref_genome <- read.table(paste(anot_path, "/DATA_shared/Genomes_Rocky/DEG_Annotation/Annotated_Genes_20231121.txt", sep = ""), header = TRUE)
+genome <- ref_genome[which(ref_genome$Specie == specie), -4]
+genome$Name <- paste(genome$Symbol, genome$Ensembl, sep = "_")
+print(dim(genome))
+# Annotate all the genes in the matrix with the Symbol annotation
+# CAUTION: Symbol id present more than one Ensembl identifier. 
+# I propose to perform the analysis using the Ensembl identifier, if not the 
+# mean value of the genes with the same Symbol id should be performed.
+annot <- genome[which(genome$Ensembl %in% rownames(raw_counts)),]
+gene_names <- annot[match(rownames(raw_counts), annot$Ensembl), ]
+print(dim(gene_names))
 
 
 
@@ -179,6 +213,9 @@ for (i in 1:length(contrast)){
   control <- contrast[[i]][3]
   experimental <- contrast[[i]][2]
   
+  # Comparison levels
+  comp_lvl <- c(control, experimental)
+  
   
   
   ##############################################################################
@@ -190,17 +227,17 @@ for (i in 1:length(contrast)){
   # classified in Results and Figures. 
   
   # Load output directory
+  dir.create(file.path(dir_out , name), showWarnings = FALSE)
   dir_outfolder <- paste(dir_out, "/", name, sep='')
   setwd(dir_outfolder)
   
-  # Files folder
-  dir_output <- paste(dir_outfolder,"/Results", sep='')
-  # Quality control figures folder
-  dir_fig_qc <- paste(dir_outfolder, "/Figures", sep='')
-  
-  # Analysis figures folder
+  # Data folder
+  dir.create(file.path(dir_out , "/Results"), showWarnings = FALSE)
+  dir_output <- paste(dir_out,"/Results", sep='')
+  # Figures folder
   dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
   dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
+  
   
   
   ##############################################################################
@@ -208,17 +245,15 @@ for (i in 1:length(contrast)){
   ##############################################################################
   
   
-  # Load gene count filtered
-  gene_counts <- read.table(paste(dir_output, "/GeneCount_", name, "_", project, ".txt", sep = ""))
+  # Metadata
+  metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
+  metadata[,trt] <- factor(metadata[,trt])
   
-  # Load transform gene counts
-  file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
-  md <- file_trs$Transformation
-  m_trs <- read.table(paste(dir_output, "/GeneCount_", md , "_blindFALSE_", name, "_", project, ".txt", sep = ""), header = TRUE)
+  # Gene count matrix per comparison
+  gene_counts <- raw_counts[, metadata$Sample]
   
-  # Load sample information per comparison
-  metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
-  metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
+  # Transformed data per comparison
+  res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
   
   # Select the contrast levels
   color_l <- color_list
@@ -231,10 +266,10 @@ for (i in 1:length(contrast)){
   # Build a model matrix 
   m_model = model.matrix(as.formula(design_cond), metadata)
   
-  
   # Annotation for all the results 
   ref <- paste(analysis, "_", name, "_", project, sep = "")
   print(ref)
+  
   
   
   ##############################################################################
@@ -252,7 +287,7 @@ for (i in 1:length(contrast)){
   
   # The options of the SummarizedExperiment can be applied in this object.
   deg <- DGEList(counts = gene_counts, group = metadata[,trt])
-  deg$samples[var_exp] <- metadata[,var_exp]
+  if(!is.null(var_exp)){deg$samples[var_exp] <- metadata[,var_exp]}
   
   
   # Step 2: Normalization
@@ -343,7 +378,7 @@ for (i in 1:length(contrast)){
   
   
   ## Annotated gene names in Symbol
-  res_df <- merge(res_df, gen_annot, by = "Ensembl") 
+  res_df <- merge(res_df, gene_names, by = "Ensembl") 
   print(head(res_df))
   print(dim(res_df))
   
@@ -363,7 +398,7 @@ for (i in 1:length(contrast)){
   ## Transform matrix 
   # Select the differentially expressed genes that overcame the test
   # Used to plot the data 
-  m <- m_trs[which(rownames(m_trs) %in% df$Ensembl),]
+  m <- res_log2[which(rownames(res_log2) %in% df$Ensembl),]
   
   if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
   
@@ -421,6 +456,7 @@ for (i in 1:length(contrast)){
   
   ggsave(filename = paste("Volcano_", ref, ".pdf", sep = ""), plot = volcano[[1]], path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste("Volcano_color_", ref, ".pdf", sep = ""), plot = volcano[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste("Volcano_lablels_", ref, ".pdf", sep = ""), plot = volcano[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
   
   
   ## WATERFALL
@@ -447,21 +483,21 @@ for (i in 1:length(contrast)){
   sum_res$DEG <- sum(res_df$DEG == "YES")
   sum_res$Up <- sum(res_df$Direction == "Upregulated")
   sum_res$Down <- sum(res_df$Direction == "Downregulated")
-  write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, ";", ref, "_", threshold,".csv", sep = ""))
+  write.csv(sum_res, paste(dir_output, "/Summary_tab_", ref, "_", threshold, ".csv", sep = ""))
   
   # All results
-  colnames(m_trs) <- paste(md, colnames(m_trs), sep = "_")
-  data <- cbind(result, m_trs)
+  colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
+  data <- cbind(result, res_log2)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
   
-  write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
-  write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".xlsx", sep = ""), overwrite = TRUE)
+  write.table(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
+  write.xlsx(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
   colnames(m) <- paste(md, colnames(m), sep = "_")
   sel <- cbind(df, m)
-  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
-  write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)
+  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
+  write.table(data, paste(dir_output, "/", ref, ";DEGs_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
   
   
 }

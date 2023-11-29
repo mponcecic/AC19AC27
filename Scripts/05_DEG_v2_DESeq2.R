@@ -58,7 +58,7 @@ project <- "AC70"
 path <- "W:/mponce/"
 
 # Date of the log file 5_DEG_qc_XXXX.log
-logdate <- "20231128"
+logdate <- "20231129"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -194,7 +194,7 @@ for (h in 1:2) {
     analysis <- "DESeq2"
   } else {
     raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
-    analysis <- "DESeq2_all"
+    analysis <- "DESeq2_NoFilter"
   }
   print(dim(raw_counts))
   
@@ -236,12 +236,12 @@ for (h in 1:2) {
     # classified in Results and Figures. 
     
     # Load output directory
-    dir.create(file.path(dir_out , analysis), showWarnings = FALSE)
+    dir.create(file.path(dir_out , name), showWarnings = FALSE)
     dir_outfolder <- paste(dir_out, "/", name, sep='')
     setwd(dir_outfolder)
     
     # Data folder
-    dir.create(file.path(dir_out , analysis), showWarnings = FALSE)
+    dir.create(file.path(dir_out , "/Results"), showWarnings = FALSE)
     dir_output <- paste(dir_out,"/Results", sep='')
     # Figures folder
     dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
@@ -262,7 +262,7 @@ for (h in 1:2) {
     gene_counts <- raw_counts[, metadata$Sample]
     
     # Transformed data per comparison
-    res_log2 <- m_vst[which(rownames(m_vst %in% rownames(gene_counts))), metadata$Sample]
+    res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
     
     # Select the contrast levels
     color_l <- color_list
@@ -509,6 +509,7 @@ for (h in 1:2) {
     
     ggsave(filename = paste("Volcano_", ref, ".pdf", sep = ""), plot = volcano[[1]], path = dir_fig, height = 5, width = 6, bg = "white")
     ggsave(filename = paste("Volcano_color_", ref, ".pdf", sep = ""), plot = volcano[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste("Volcano_lablels_", ref, ".pdf", sep = ""), plot = volcano[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
     
     
     ## WATERFALL
@@ -536,12 +537,12 @@ for (h in 1:2) {
     sum_res$DEG <- sum(res_df$DEG == "YES")
     sum_res$Up <- sum(res_df$Direction == "Upregulated")
     sum_res$Down <- sum(res_df$Direction == "Downregulated")
-    write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, ";", ref, "_", threshold,".csv", sep = ""))
+    write.csv(sum_res, paste(dir_output, "/Summary_tab_", ref, "_", threshold, ".csv", sep = ""))
     
     # All results
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
-    data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
+    data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
     
     write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
     write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".xlsx", sep = ""), overwrite = TRUE)
