@@ -76,7 +76,7 @@ logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", se
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
 
 # Input directory. Raw gene counts  
-dir_infiles <- paste(dir_out,  "/QC/Results/", sep = "")
+dir_infiles <- paste(dir_out,  "/Results/", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -169,7 +169,7 @@ sum_res <- data.frame()
 
 
 ## Load metadata file 
-sample_info <- read.table(paste(dir_out, "/Metadata_", project, ".txt", sep = ""))
+sample_info <- read.table(paste(dir_infiles, "/Metadata_", project, ".txt", sep = ""))
 
 
 ## Load gene counts
@@ -248,7 +248,7 @@ for (i in 1:length(contrast)){
   
   # Metadata
   metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
-  metadata[,trt] <- factor(metadata[,trt])
+  metadata[,trt] <- factor(metadata[,trt], levels = comp_lvl)
   
   # Gene count matrix per comparison
   gene_counts <- raw_counts[, metadata$Sample]
