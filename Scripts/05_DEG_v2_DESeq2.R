@@ -551,43 +551,44 @@ for (h in 1:2) {
     sel <- cbind(df, m)
     sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
     write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)  
-}
-  
-  
+    
     }
+  
+  ################################################################################
+  #                                 LOG FILE 
+  ################################################################################
+  
+  
+  # Save log file information
+  logdate <- format(Sys.time(), "%Y%m%d")
+  log_data <- c()
+  log_data$Date <- Sys.time()
+  log_data$Directory <- dir_out
+  log_data$Analysis <- analysis
+  log_data$project_name <- project
+  log_data$Organism <- specie
+  log_data$condition <- trt
+  log_data$condition_order <- paste0(lvl_ord, collapse =",")
+  log_data$Outliers <- paste(outliers, collapse = ",") 
+  log_data$Varexp <- paste(var_exp, collapse = ",") 
+  log_data$min_count <- logfile$min_count
+  log_data$min_prop <- logfile$min_prop
+  log_data$n_large <- logfile$n_large
+  log_data$min_total <- log_data$min_total
+  log_data$fdr_cutoff <- fdr_cutoff
+  log_data$lfc_cutoff <- lfc_cutoff
+  log_data$correction <- correction
+  log_data$Variance <- md
+  log_data$contrast <- paste(unlist(contrast), collapse = ",")
+  log_data$colortrt <- paste(color_list[[1]], collapse = ",")
+  log_data$colorheat <- paste(color_list[[2]], collapse = ",")
+  log_data$colordir<-  paste(color_list[[3]], collapse = ",")
+  log_data$colorsh <- paste(color_list[[4]], collapse = ",")
+  
+  write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+  
+  }
 
  
 
-################################################################################
-#                                 LOG FILE 
-################################################################################
-
-
-# Save log file information
-logdate <- format(Sys.time(), "%Y%m%d")
-log_data <- c()
-log_data$Date <- Sys.time()
-log_data$Directory <- dir_out
-log_data$Analysis <- analysis
-log_data$project_name <- project
-log_data$Organism <- specie
-log_data$condition <- trt
-log_data$condition_order <- paste0(lvl_ord, collapse =",")
-log_data$Outliers <- paste(outliers, collapse = ",") 
-log_data$Varexp <- paste(var_exp, collapse = ",") 
-log_data$min_count <- logfile$min_count
-log_data$min_prop <- logfile$min_prop
-log_data$n_large <- logfile$n_large
-log_data$min_total <- log_data$min_total
-log_data$fdr_cutoff <- fdr_cutoff
-log_data$lfc_cutoff <- lfc_cutoff
-log_data$correction <- correction
-log_data$Variance <- md
-log_data$contrast <- paste(unlist(contrast), collapse = ",")
-log_data$colortrt <- paste(color_list[[1]], collapse = ",")
-log_data$colorheat <- paste(color_list[[2]], collapse = ",")
-log_data$colordir<-  paste(color_list[[3]], collapse = ",")
-log_data$colorsh <- paste(color_list[[4]], collapse = ",")
-
-write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
