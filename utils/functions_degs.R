@@ -346,7 +346,7 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   ylab <- "log fold change"
   
   # Select X axis column and label for the different methods and DEGs color
-  if (analysis == "DESeq2"){
+  if (analysis == "DESeq2" | analysis == "DESeq2_all"){
     # X axis column
     counts.col <- "MeanExp"
     xlab <- "Mean of normalized counts"
@@ -603,6 +603,12 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   # 
   # Input data: data = cont_res <- res_df
   
+  
+  # Variable for the degs Symbol names used in volcano plots
+  data$deglabel <- NA
+  data$deglabel[which(data$DEG == "YES")] <- data$Symbol[which(data$DEG == "YES")]
+  
+  
   # Volcano plot with the DEGs in blue and the non-significant in grey
   A <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = DEG))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
@@ -612,7 +618,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)")+
     theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
-  # Volcano plot with the DEGs in separate in tw color for the up and downregulated 
+  # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey
   B <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = Direction))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
@@ -622,8 +628,19 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
     theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
+  # Volcano plot with the DEGs in separate in two color for the up and downregulated 
+  # genes, the non-significant in grey, with gene names for the degs
+  C <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = Direction, label = deglabel))+
+    geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
+    geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
+    geom_point(size = 2, alpha = 0.6)+
+    scale_color_manual(values = as.vector(color_list$Direction))+
+    labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
+    theme(text = element_text(size = 8), axis.title = element_text(size = rel(1.25)), legend.position = "none")
+  
+  
   # Return the plots
-  return(list(A, B))
+  return(list(A, B, C))
 }
 
 

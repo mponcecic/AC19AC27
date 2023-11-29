@@ -111,11 +111,6 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$Outliers, collapse = ",")}
 
 
-# Filtering lowly expressed genes
-# Default: TRUE
-filter_cutoff <- logfile$filter_cutoff
-
-
 ### Threshold criteria 
 
 ## Significance level
@@ -252,7 +247,7 @@ for (i in 1:length(contrast)){
   
   # The options of the SummarizedExperiment can be applied in this object.
   deg <- DGEList(counts = gene_counts, group = metadata[,trt])
-  deg$samples[var_exp] <- metadata[,var_exp]
+  if(!is.null(var_exp)){deg$samples[var_exp] <- metadata[,var_exp]}
   
   
   # Step 2: Normalization
