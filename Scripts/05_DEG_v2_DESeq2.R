@@ -534,7 +534,7 @@ for (h in 1:2) {
     
     
     # Summary table
-    sum_line <- c(name, analysis, design_cond, md, dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
+    sum_line <- c(name, analysis, design_cond, md, dim(gene_counts)[1], dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
     sum_res <- rbind(sum_res, sum_line)
     
     
@@ -592,7 +592,7 @@ for (h in 1:2) {
 
 
 # Save Summary table 
-colnames(sum_res) <- c("Comparison", "Analysis", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
+colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
 write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
  
 
