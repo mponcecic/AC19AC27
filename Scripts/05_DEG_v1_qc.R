@@ -312,8 +312,8 @@ dir.create(file.path(dir_out, "QC"), showWarnings = FALSE)
 dir_fig <- paste(dir_out, "/QC", sep='')
 
 # Results folder
-dir.create(file.path(dir_fig, "Results"), showWarnings = FALSE)
-dir_output <- paste(dir_fig, "/Results", sep='')
+dir.create(file.path(dir_out, "Results"), showWarnings = FALSE)
+dir_output <- paste(dir_out, "/Results", sep='')
 
 
 ################################################################################
@@ -356,7 +356,9 @@ if(!is.null(var_exp)){
 
 
 ### Verify the order of the columns are the same as the sample information file #### 
+raw_counts <- raw_counts[, match(sample_info$Sample, colnames(raw_counts))]
 gene_counts <- raw_counts[, match(sample_info$Sample, colnames(raw_counts))]
+
 
 if(sum(rownames(sample_info) == colnames(gene_counts)) != ncol(gene_counts)){
   cat("ERROR: Samples in count matrix are not ordered", "REORDER COUNT MATRIX COLUMNS", sep = "\n")
@@ -465,10 +467,10 @@ dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, de
 group_n <- max(as.vector(tabulate(sample_info[[trt]])))
 
 if(group_n < 30){
-  m <- as.data.frame(assay(vst(dds, blind = FALSE)))
+  m <- as.data.frame(assay(vst(dds, blind = TRUE)))
   md <- "VST"
 }else{
-  m <- as.data.frame(assay(rlog(dds, blind = FALSE)))
+  m <- as.data.frame(assay(rlog(dds, blind = TRUE)))
   md <- "RLOG"}
 
 # Step 3: Stack matrix
@@ -596,7 +598,25 @@ df <- gene_counts[keep,]
 # The methods used are DESeq2, EdgeR, limma-voom and Wilcoxon test
 
 
-  
+
+# DESeq2: Raw counts
+# ----------------------------------------------------------------------------
+
+# 1. Create DESeq object
+dds <- DESeqDataSetFromMatrix(countData = raw_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
+
+# 2. Variance stabilization methods in log2 scale to interpret the data
+# 
+# blind set FALSE, because we want the method to know to which group each sample 
+# belongs to. 
+# Options: VST for samples size group smaller than 30. 
+
+if(group_n < 30){
+  mk <- as.data.frame(assay(vst(dds, blind = FALSE)))
+}else{
+  mk <- as.data.frame(assay(rlog(dds, blind = FALSE)))}
+
+
 # DESeq2
 # ----------------------------------------------------------------------------
   
@@ -649,7 +669,7 @@ logcpm <- as.data.frame(logcpm)
   
   
 # Save metadata information
-write.table(sample_info, paste(dir_out, "/Metadata_", project,".txt", sep = ""))
+write.table(sample_info, paste(dir_output, "/Metadata_", project,".txt", sep = ""))
   
 # Save gene counts
 write.table(gene_counts, paste(dir_output,"/GeneCount_", label ,"_", project,".txt", sep = ""))
@@ -661,6 +681,7 @@ write.table(m, paste(dir_output,"/GeneCount_", md , "_blindTRUE_", project, ".tx
 write.table(df, paste(dir_output,"/GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
   
 # Save transform data with blind = FALSE
+write.table(mk, paste(dir_output,"/GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
 write.table(m1, paste(dir_output,"/GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   
 # Save transform data with blind = TRUE
