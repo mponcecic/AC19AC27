@@ -75,7 +75,7 @@ logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", se
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
 
 # Input directory. Raw gene counts  
-dir_infiles <- paste(dir_out,  "/QC/Results/", sep = "")
+dir_infiles <- paste(dir_out, "/Results/", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -173,7 +173,7 @@ sum_res <- data.frame()
 
 
 ## Load metadata file 
-sample_info <- read.table(paste(dir_out, "/Metadata_", project, ".txt", sep = ""))
+sample_info <- read.table(paste(dir_infiles, "/Metadata_", project, ".txt", sep = ""))
 
 ## Load annotation data
 # Genome annotation path
@@ -186,9 +186,6 @@ genome$Name <- paste(genome$Symbol, genome$Ensembl, sep = "_")
 print(dim(genome))
 
 
-## Load transformed data 
-m_vst <- read.table(file = paste(dir_infiles, "GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
-
 
 for (h in 1:2) {
   
@@ -196,9 +193,13 @@ for (h in 1:2) {
   if(h == 1){
     raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
     analysis <- "DESeq2"
+    # Load transformed data 
+    m_vst <- read.table(file = paste(dir_infiles, "GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   } else {
     raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
     analysis <- "DESeq2_NoFilter"
+    #Load transformed data 
+    m_vst <- read.table(file = paste(dir_infiles, "GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
   }
   print(dim(raw_counts))
   
