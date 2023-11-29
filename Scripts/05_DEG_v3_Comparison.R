@@ -68,7 +68,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 # var_exp <- NULL
-var_exp <- c("RIN")
+var_exp <- logfile$covariance
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -207,20 +207,25 @@ for (i in 1:length(contrast)){
     ref <- paste(analysis, "_", name, "_", project, sep = "")
     
     # Load results
-    df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
+    # Select the statistic columns per each analysis
+    if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
+      df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
+      col_nam <- c("logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue")
+    } else if(analysis == "EdgeR"){
+      df <- read.table(paste(dir_output, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      col_nam <- c("logFC", "padj", "logCPM", "pvalue")
+    } else if(analysis == "limma-voom"){
+      col_nam <- c("logFC", "padj", "logCPM", "t", "padj", "B")
+      df <- read.table(paste(dir_output, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+    } else {
+      col_nam <- c("logFC", "pvalue", "padj")}
+    
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
     print(dim(df))
     
     # Results summary table 
     sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(genes$DEG == "YES"), length(genes$Direction == "Upregulated"), length(genes$Direction == "Downregulated")))
-    
-    
-    # Select the statistic columns per each analysis
-    if(analysis == "DESeq2"){col_nam <- c("logFC", "padj", "MeanExp", "lfcSE", "stat", "pvalue")
-    } else if(analysis == "EdgeR"){col_nam <- c("logFC", "padj", "logCPM", "pvalue")
-    } else if(analysis == "limma-voom"){col_nam <- c("logFC", "padj", "logCPM", "t", "padj", "B")
-    } else {col_nam <- c("logFC", "pvalue", "padj")}
     
     # Rename statistics with the method used
     colnames(df)[which(colnames(df) %in% col_nam)] <- paste(col_nam, analysis, sep = "_")
