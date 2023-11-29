@@ -49,11 +49,6 @@ pattern <- c("Number of input reads", "Uniquely mapped reads %")
 def_file <- data.frame()
 
 
-#Load trimming check
-trim_file <- read.csv(file = paste(output_dir, "/", project_name,"_Trimming_check.csv", sep = ""), header = TRUE)
-colnames(trim_file) <- gsub("\\.", " ", colnames(trim_file))
-colnames(trim_file) <- gsub("   ", " < ", colnames(trim_file))
-
 ################################################################################
 #                            PROCESS                           
 ################################################################################
@@ -91,8 +86,20 @@ for (i in 1:length(samples_names)){
 }
 
 
+
+#Load trimming check
+if(timming == TRUE){trim_file <- read.csv(file = paste(output_dir, "/", project_name,"_Trimming_check.csv", sep = ""), header = TRUE)
+colnames(trim_file) <- gsub("\\.", " ", colnames(trim_file))
+colnames(trim_file) <- gsub("   ", " < ", colnames(trim_file))
+
 # Save together the results of the trimming and the alignment
 final_check <- merge(trim_file,def_file, by = "Sample")
+write.csv(final_check, file = paste(output_dir,"/", project_name,"_Trimmed_STAR_check.csv", sep = ""), row.names=FALSE)
+
+} else {final_check <- def_file}
+
+
+
 
 
 ################################################################################
@@ -102,7 +109,6 @@ final_check <- merge(trim_file,def_file, by = "Sample")
 
 write.csv(def_file, file = paste(output_dir ,"/", project_name,"_STAR_check.csv", sep = ""), row.names=FALSE)
 
-write.csv(final_check, file = paste(output_dir,"/", project_name,"_Trimmed_STAR_check.csv", sep = ""), row.names=FALSE)
 
 
 
