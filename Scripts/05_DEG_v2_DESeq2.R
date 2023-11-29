@@ -162,6 +162,10 @@ analysis <- "DESeq2"
 # Variance transformation method used 
 md <- logfile$Variance
 
+# Summary table results
+sum_res <- data.frame()
+
+
 
 ################################################################################
 #                               LOAD DATA
@@ -478,7 +482,8 @@ for (h in 1:2) {
     #
     # The results of the correlation matrix must be aligned with the results
     # in the heatmap and PCA.
-    pem <- cor(m, method = "pearson", use = "na.or.complete")
+    m0 <- m[which(rowSums(m) != 0), ] 
+    pem <- cor(m0, method = "pearson", use = "na.or.complete")
     plot_h <- pheatmap(pem, color = colorRampPalette(brewer.pal(9, "Blues"))(255),
                        cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = TRUE,
                        fontsize_row = 6, fontsize_col = 6, border_color = NA, treeheight_row = 0, treeheight_col = 0)
@@ -488,7 +493,7 @@ for (h in 1:2) {
     dev.off()
     
     ## PCA PLOTS
-    plot_pcas <- pca_plot(m, trt, metadata, color_l)
+    plot_pcas <- pca_plot(m0, trt, metadata, color_l)
     
     ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
     ggsave(filename = paste(deparse(substitute(pca_1vs2)), ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
@@ -496,7 +501,7 @@ for (h in 1:2) {
     ggsave(filename = paste(deparse(substitute(pca_1vs4)), ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
     
     ## HEATMAP
-    plot_heatmap <- heatmap_plot(m, metadata, trt, color_l)
+    plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
     
     pdf(paste(dir_fig, "/Heatmap_zscore_", ref, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
     print(plot_heatmap)
@@ -528,16 +533,9 @@ for (h in 1:2) {
     
     
     # Summary table
-    sum_res <- c()
-    sum_res$Contrast <- name
-    sum_res$Method <- analysis
-    sum_res$Design <- design_cond
-    sum_res$Transformation <- md
-    sum_res$Genes <- dim(res_df$DEG)
-    sum_res$DEG <- sum(res_df$DEG == "YES")
-    sum_res$Up <- sum(res_df$Direction == "Upregulated")
-    sum_res$Down <- sum(res_df$Direction == "Downregulated")
-    write.csv(sum_res, paste(dir_output, "/Summary_tab_", ref, "_", threshold, ".csv", sep = ""))
+    sum_line <- c(name, analysis, design_cond, md, dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
+    sum_res <- rbind(sum_res, sum_line)
+    
     
     # All results
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
@@ -553,7 +551,8 @@ for (h in 1:2) {
     sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
     write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)  
     
-    }
+  }
+  
   
   ################################################################################
   #                                 LOG FILE 
@@ -590,6 +589,10 @@ for (h in 1:2) {
   
   }
 
+
+# Save Summary table 
+colnames(sum_res) <- c("Comparison", "Analysis", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
+write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
  
 
 

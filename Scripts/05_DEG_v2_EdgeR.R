@@ -72,11 +72,11 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 # Load log file 
 logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
-# Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
-
 # Output directory
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
+
+# Input directory. Raw gene counts  
+dir_infiles <- paste(dir_out,  "/QC/Results/", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -159,6 +159,8 @@ specie <- logfile$Organism
 # Method used to study DEGs
 analysis <- "EdgeR"
 
+# Summary table results
+sum_res <- data.frame()
 
 
 ################################################################################
@@ -212,6 +214,9 @@ for (i in 1:length(contrast)){
   control <- contrast[[i]][3]
   experimental <- contrast[[i]][2]
   
+  # Comparison levels
+  comp_lvl <- c(control, experimental)
+  
   
   
   ##############################################################################
@@ -247,6 +252,7 @@ for (i in 1:length(contrast)){
   
   # Gene count matrix per comparison
   gene_counts <- raw_counts[, metadata$Sample]
+  gene_counts <- gene_counts[which(rowSums(gene_counts) != 0), ] 
   
   # Transformed data per comparison
   res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
@@ -397,7 +403,7 @@ for (i in 1:length(contrast)){
   ## Transform matrix 
   # Select the differentially expressed genes that overcame the test
   # Used to plot the data 
-  m <- m_trs[which(rownames(m_trs) %in% df$Ensembl),]
+  m <- res_log2[which(rownames(res_log2) %in% df$Ensembl),]
   
   if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
   
@@ -423,7 +429,8 @@ for (i in 1:length(contrast)){
   #
   # The results of the correlation matrix must be aligned with the results
   # in the heatmap and PCA.
-  pem <- cor(m, method = "pearson", use = "na.or.complete")
+  m0 <- m[which(rowSums(m) != 0), ] 
+  pem <- cor(m0, method = "pearson", use = "na.or.complete")
   plot_h <- pheatmap(pem, color = colorRampPalette(brewer.pal(9, "Blues"))(255),
                      cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = TRUE,
                      fontsize_row = 6, fontsize_col = 6, border_color = NA, treeheight_row = 0, treeheight_col = 0)
@@ -434,7 +441,7 @@ for (i in 1:length(contrast)){
   
   
   ## PCA PLOTS
-  plot_pcas <- pca_plot(m, trt, metadata, color_l)
+  plot_pcas <- pca_plot(m0, trt, metadata, color_l)
   
   ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
   ggsave(filename = paste(deparse(substitute(pca_1vs2)), ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
@@ -442,7 +449,7 @@ for (i in 1:length(contrast)){
   ggsave(filename = paste(deparse(substitute(pca_1vs4)), ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
   
   ## HEATMAP
-  plot_heatmap <- heatmap_plot(m, metadata, trt, color_l)
+  plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
   
   pdf(paste(dir_fig, "/Heatmap_zscore_", ref, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
   print(plot_heatmap)
@@ -474,32 +481,30 @@ for (i in 1:length(contrast)){
   
   
   # Summary table
-  sum_res <- c()
-  sum_res$Contrast <- name
-  sum_res$Method <- analysis
-  sum_res$Design <- design_cond
-  sum_res$Transformation <- md
-  sum_res$Genes <- dim(res_df$DEG)
-  sum_res$DEG <- sum(res_df$DEG == "YES")
-  sum_res$Up <- sum(res_df$Direction == "Upregulated")
-  sum_res$Down <- sum(res_df$Direction == "Downregulated")
-  write.csv(sum_res, paste(dir_output, "/Summary_tab_", ref, "_", threshold, ".csv", sep = ""))
+  # Summary table
+  sum_line <- c(name, analysis, design_cond, "CPM", dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
+  sum_res <- rbind(sum_res, sum_line)
+  
   
   # All results
-  colnames(m_trs) <- paste(md, colnames(m_trs), sep = "_")
-  data <- cbind(result, m_trs)
+  colnames(res_log2) <- paste("CPM", colnames(res_log2), sep = "_")
+  data <- cbind(result, res_log2)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
   
   write.table(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
   write.xlsx(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Differential expressed genes
-  colnames(m) <- paste(md, colnames(m), sep = "_")
+  colnames(m) <- paste("CPM", colnames(m), sep = "_")
   sel <- cbind(df, m)
   sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
   write.table(data, paste(dir_output, "/", ref, ";DEGs_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
   
 }
+
+# Save Summary table 
+colnames(sum_res) <- c("Comparison", "Analysis", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
+write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
 
 
 
