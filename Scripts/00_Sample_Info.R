@@ -49,7 +49,7 @@ path <- "W:/mponce/"
 
 
 # Local directory with Git folders 
-local_dir <- "C:/Users/mponce/CIC bioGUNE/Arkaitz group - Maria Ponce/Projects/00_DEG_Reference"
+local_dir <- paste("C:/Users/mponce/CIC bioGUNE/Arkaitz group - Maria Ponce/Projects/", project, sep = "")
 
 
 # Input directory
@@ -229,7 +229,7 @@ log_data$Date <- Sys.time()
 log_data$project_name <- project
 log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_order, collapse =",")
-log_data$covariance <- var_exp
+log_data$covariance <- paste(var_exp, collapse = ",") 
 log_data$path <- dir_out
 log_data$filedir <- dir_in
 log_data$filedirRocky <- files_rocky

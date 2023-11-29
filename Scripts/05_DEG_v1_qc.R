@@ -130,7 +130,7 @@ project <- "AC70"
 path <- "W:/mponce/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20231128"
+logdate <- "20231129"
 
 
 ### Pre-processing cutoffs
@@ -688,11 +688,10 @@ logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
 log_data$project_name <- project
-log_data$Organism <- specie
+log_data$Organism <- logfile$Organism
 log_data$dir_out <- dir_out
 log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_ord, collapse =",")
-log_data$covariance <- logfile$covariance
 log_data$Outliers <- paste(outliers, collapse = ",") 
 log_data$Varexp <- paste(var_exp, collapse = ",") 
 log_data$min_count <- min_count
