@@ -344,7 +344,7 @@ if(is.null(outliers) == FALSE){
 
 
 #### Add covariates effects #### 
-if(var_exp != ""){
+if(!is.null(var_exp)){
   # Normal for EdgeR and limma-voom
   sample_info[, var_exp] <- data_info[, which(colnames(data_info) %in% var_exp)]
   # Z_score for DESeq2
@@ -410,12 +410,7 @@ ggsave(filename = paste("Barplot_genecounts_", project, ".pdf", sep =""), height
 #   the model. If their values are equal the variable is not included in the 
 #   model.
 # 3. Create the design formula
-if(var_exp != ""){
-  var_design <- NULL
-  for (k in 1:length(var_exp)){if(length(unique(sample_info[, var_exp[k]]))>1){var_design <- c(var_design, var_exp[k])}}
-  design_cond = ifelse(is.null(var_design) == FALSE, paste("~", paste(var_design, "_zscore", " +", sep = "", collapse = " "), trt, sep = " "), paste("~", trt, sep = " "))
-} else{design_cond <- paste("~", trt, sep = " ")}
-
+design_cond <- design_condition("DESeq2", trt, var_exp, metadata = sample_info)
 print(design_cond)
 
   
@@ -588,7 +583,7 @@ dev.off()
 #
 # This data will be used when running DESeq2, EdgeR, limma-voom and Wilcoxon to
 # perform the test for the differentially expressed genes
-keep <- filter_genecounts(gene_counts, metadata, trt, min_count = min_count, min_prop = min_prop, n_large = n_large, min_total = min_total)
+keep <- filter_genecounts(gene_counts, sample_info, trt, min_count = min_count, min_prop = min_prop, n_large = n_large, min_total = min_total)
 df <- gene_counts[keep,]
 
 
@@ -606,7 +601,7 @@ df <- gene_counts[keep,]
 # ----------------------------------------------------------------------------
   
 # 1. Create DESeq object
-dds <- DESeqDataSetFromMatrix(countData = df, colData = metadata, design =  eval(parse(text = design_cond)))
+dds <- DESeqDataSetFromMatrix(countData = df, colData = sample_info, design =  eval(parse(text = design_cond)))
   
 # 2. Variance stabilization methods in log2 scale to interpret the data
 # 
@@ -626,8 +621,8 @@ if(group_n < 30){
 # ----------------------------------------------------------------------------
   
 # 1. Create DGEList object
-deg <- DGEList(counts = df, group = metadata[,trt])
-if(var_exp != ""){deg$samples[var_exp] <- metadata[,var_exp]}
+deg <- DGEList(counts = df, group = sample_info[,trt])
+if(!is.null(var_exp)){deg$samples[var_exp] <- sample_info[,var_exp]}
   
   
 # 2. Normalization
@@ -657,19 +652,19 @@ logcpm <- as.data.frame(logcpm)
 write.table(sample_info, paste(dir_out, "/Metadata_", project,".txt", sep = ""))
   
 # Save gene counts
-write.table(gene_counts, paste(dir_fig,"/GeneCount_", label ,"_", project,".txt", sep = ""))
+write.table(gene_counts, paste(dir_output,"/GeneCount_", label ,"_", project,".txt", sep = ""))
   
 # Save transform data with blind = TRUE
-write.table(m, paste(dir_fig,"/GeneCount_", md , "_blindTRUE_", project, ".txt", sep = ""))
+write.table(m, paste(dir_output,"/GeneCount_", md , "_blindTRUE_", project, ".txt", sep = ""))
   
 # Save transform data with blind = FALSE
 write.table(df, paste(dir_output,"/GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
   
 # Save transform data with blind = FALSE
-write.table(m1, paste(dir_output,"/GeneCount_filter_blindFALSE_", "_", project, ".txt", sep = ""))
+write.table(m1, paste(dir_output,"/GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   
 # Save transform data with blind = TRUE
-write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", "_", project, ".txt", sep = ""))
+write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, ".txt", sep = ""))
   
 # Save QC file information
 logdate <- format(Sys.time(), "%Y%m%d")
@@ -679,7 +674,7 @@ sum_contrast$Genes <- dim(gene_counts)[1]
 sum_contrast$GenesFiltered <- dim(df)[1] 
 sum_contrast$design <- design_cond
 sum_contrast$Transformation <- md
-write.table(sum_contrast, paste(dir_fig,"/QC_result_", project,".txt", sep = ""), row.names = FALSE, eol = "\r")
+write.table(sum_contrast, paste(dir_output, "/QC_result_", project,".txt", sep = ""), row.names = FALSE, eol = "\r")
   
 
 
@@ -707,6 +702,7 @@ log_data$min_prop <- min_prop
 log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
+log_data$Variance <- md
 log_data$contrast <- logfile$contrast
 log_data$colortrt <- paste(color_list[[trt]], collapse = ",")
 log_data$colorheat <- paste(color_list[["Heatmap"]], collapse = ",")
