@@ -286,11 +286,9 @@ raw_counts <- read.table(file = dir_infiles, sep = "\t",  header = TRUE, strings
 
 print(dim(raw_counts))
 print(dim(data_info))
-print(dim(genome))
 
 print(head(raw_counts))
 print(head(data_info))
-print(head(genome))
 
 
 
