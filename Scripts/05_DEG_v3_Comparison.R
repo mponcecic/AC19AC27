@@ -26,7 +26,7 @@ project <- "AC58"
 path <- "W:/mponce/"
 
 # Date of the log file 5_DEG_qc_xxxxx.log
-logdate <- "20231129"
+logdate <- "20231204"
 
 # Select the methods you want to compare
 # analysis_list <- c("DESeq2", "EdgeR", "limma-voom", "Wilcoxon")
@@ -46,7 +46,11 @@ logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", se
 
 # Output directory
 # dir_out <- paste(path, project, sep = "")   # Default option
-dir_out <- paste(path, project, sep = "")
+dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
+
+
+# Iput directory 
+dir_infiles <- paste(dir_out, "/Results", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -133,16 +137,6 @@ exc <- createWorkbook()
 
 
 ################################################################################
-#                             SET WORKING DIRECORY
-################################################################################
-
-
-# Result folder
-dir_output <- paste(dir_out, "/05_DEG_ANALYSIS/Results", sep='')
-
-
-
-################################################################################
 #                               LOAD DATA 
 ################################################################################
 
@@ -190,7 +184,7 @@ for (i in 1:length(contrast)){
   ##############################################################################
   
   # Load output directory
-  dir_outfolder <- paste(dir_out, "/05_DEG_ANALYSIS/", name, sep='')
+  dir_outfolder <- paste(dir_out, "/", name, sep='')
   setwd(dir_outfolder)
   
   # Method comparison figures folder
@@ -208,7 +202,7 @@ for (i in 1:length(contrast)){
   metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
   
   # Load QC_result_name_project.txt
-  file_trs <- read.table(paste(dir_output,"/QC_result_", project,".txt", sep = ""), header = TRUE)
+  file_trs <- read.table(paste(dir_infiles,"/QC_result_", project,".txt", sep = ""), header = TRUE)
   md <- file_trs$Transformation
   
   # Load differentially expressed genes results
@@ -217,25 +211,37 @@ for (i in 1:length(contrast)){
     # Select analysis
     analysis <- analysis_list[j]
     
-    # Results annotation 
-    ref <- paste(analysis, "_", name, "_", project, sep = "")
-    
     # Load results
     # Select the statistic columns per each analysis
-    if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
-      df <- read.table(paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
+    if(i == 1){
+      if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
+      df1 <- read.table(paste(dir_infiles, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
+      df <- df1[which(df1$Comparison == name),]
       col_nam <- c("logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue")
     } else if(analysis == "EdgeR"){
-      df <- read.table(paste(dir_output, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      df2 <- read.table(paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      df <- df2[which(df2$Comparison == name),]
       col_nam <- c("logFC", "padj", "logCPM", "pvalue")
     } else if(analysis == "limma-voom"){
       col_nam <- c("logFC", "pvalue", "logCPM", "t", "padj", "B")
-      df <- read.table(paste(dir_output, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      df3 <- read.table(paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      df <- df3[which(df3$Comparison == name),]
     } else {
       col_nam <- c("logFC", "pvalue", "padj")}
-    
-    # Select data from the corresponding comparison
-    df <- df[which(df$Comparison == name),]
+    } else {
+      if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
+        df <- df1[which(df1$Comparison == name),]
+        col_nam <- c("logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue")
+      } else if(analysis == "EdgeR"){
+        df <- df2[which(df2$Comparison == name),]
+        col_nam <- c("logFC", "padj", "logCPM", "pvalue")
+      } else if(analysis == "limma-voom"){
+        df <- df3[which(df3$Comparison == name),]
+        col_nam <- c("logFC", "pvalue", "logCPM", "t", "padj", "B")
+      } else {
+        col_nam <- c("logFC", "pvalue", "padj")}
+    }
+     
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
 
@@ -411,8 +417,8 @@ for (i in 1:length(contrast)){
   
   # Order output
   result_tab <- result_tab %>% select(Name, Symbol, Ensembl, analysis_list, everything())
-  write.table(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".txt", sep = ""))
-  write.xlsx(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+  # write.table(result_tab, paste(dir_infiles, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".txt", sep = ""))
+  # write.xlsx(result_tab, paste(dir_infiles, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save data in the workbook
   addWorksheet(exc, name)
@@ -421,10 +427,10 @@ for (i in 1:length(contrast)){
   }
 
 # Save workbook
-saveWorkbook(exc, file =  paste(dir_output, "/", project, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+saveWorkbook(exc, file =  paste(dir_infiles, "/", project, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Summary table 
-write.csv(sum_tab, paste(dir_output, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_tab, paste(dir_infiles, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
 
 
 ################################################################################
