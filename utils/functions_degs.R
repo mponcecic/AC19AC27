@@ -443,7 +443,7 @@ pca_plot <- function(m, trt, metadata, color_l) {
   # PC1 vs PC2
   pca_1vs2 <- fviz_pca_ind(m_pca, axes = c(1, 2),
                            geom.ind = c("point", "text"), 
-                           pointshape = 21, labelsize = 4, repel = FALSE, mean.point = FALSE, 
+                           pointshape = 21, labelsize = 4, repel = TRUE, mean.point = FALSE, 
                            col.ind = metadata[[trt]],  fill.ind = metadata[[trt]],
                            addEllipses = FALSE, ellipse.level = 0.95,
                            title = "") +
@@ -456,7 +456,7 @@ pca_plot <- function(m, trt, metadata, color_l) {
   # PC1 vs PC3
   pca_1vs3 <- fviz_pca_ind(m_pca, axes = c(1, 3),
                            geom.ind = c("point", "text"),  
-                           pointshape = 21, labelsize = 4, repel = FALSE, mean.point = FALSE, 
+                           pointshape = 21, labelsize = 4, repel = TRUE, mean.point = FALSE, 
                            col.ind = metadata[[trt]], fill.ind = metadata[[trt]],
                            addEllipses = FALSE, ellipse.level = 0.95,
                            legend.title = "Treatment", title = "") +
@@ -469,7 +469,7 @@ pca_plot <- function(m, trt, metadata, color_l) {
   # PC1 vs PC4
   pca_1vs4 <- fviz_pca_ind(m_pca, axes = c(1, 4),
                            geom.ind = c("point", "text"),  
-                           pointshape = 21, labelsize = 4, repel = FALSE, mean.point = FALSE, 
+                           pointshape = 21, labelsize = 4, repel = TRUE, mean.point = FALSE, 
                            col.ind = metadata[[trt]], fill.ind = metadata[[trt]],
                            addEllipses = FALSE, ellipse.level = 0.95,
                            legend.title = "Treatment", title = "") +
