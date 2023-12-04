@@ -33,18 +33,19 @@ In the script folder, you can find the following scripts: 00_fastq_file.R, 01_fa
 
 First, clone this GitHub repository and create a local copy to adjust for your project. 
 
-Second, we created different folders and files available in DATA_shared to run the whole pipeline. In \ref{label1}, you can find the folder with the reference genome, libraries to run R in Rocky and the project fastq files which can be found in other folder but will be usually found in DATA_shared. 
+Second, we created different folders and files available in DATA_shared to run the whole pipeline. In ![Fig1], you can find the folder with the reference genome, libraries to run R in Rocky and the project fastq files which can be found in other folder but will be usually found in DATA_shared. 
 
-![Folders generated in BigData with all the information concerning this pipeline.\label{label1}](/Schematics/Files_in_DATAshared.png)
+![Fig1](/Schematics/Files_in_DATAshared.png)
+*Folders generated in BigData with all the information concerning this pipeline.*
 
 After running the first script (`00_Sample_info.csv`), folder with the project name is created in your personal BigData folder, otherwise you must specify the path, a file name `Sample_info.csv` and the folder `utils`. Make sure you have all this folders and files to keep going with the analysis
 
-![Folders generated in BigData personal folder after running the pipeline.\label{label2}](/Schematics/Folder_structure_project.png)
+![Folders generated in BigData personal folder after running the pipeline.](/Schematics/Folder_structure_project.png)
 
-![Complete differentially expressed genes pipeline workflow for AC lab.\label{label3}](/Schematics/Pipeline_flow.png)
+![Complete differentially expressed genes pipeline workflow for AC lab.](/Schematics/Pipeline_flow.png)
 
 
-![Differentially expressed genes analysis summary.\label{label4}](/Schematics/DEG_flow.png)
+![Differentially expressed genes analysis summary.](/Schematics/DEG_flow.png)
 
 
 # Additional information
