@@ -33,7 +33,7 @@ In the script folder, you can find the following scripts: 00_fastq_file.R, 01_fa
 
 First, clone this GitHub repository and create a local copy to adjust for your project. 
 
-Second, we created different folders and files available in DATA_shared to run the whole pipeline. In ![Fig1], you can find the folder with the reference genome, libraries to run R in Rocky and the project fastq files which can be found in other folder but will be usually found in DATA_shared. 
+Second, we created different folders and files available in DATA_shared to run the whole pipeline. In [Figure 1](#Fig1), you can find the folder with the reference genome, libraries to run R in Rocky and the project fastq files which can be found in other folder but will be usually found in DATA_shared. 
 
 ![Fig1](/Schematics/Files_in_DATAshared.png)
 *Folders generated in BigData with all the information concerning this pipeline.*
