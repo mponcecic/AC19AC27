@@ -18,19 +18,19 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC58"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 # Date of the log file 5_DEG_qc_xxxxx.log
 logdate <- "20231204"
 
 # Select the methods you want to compare
 # analysis_list <- c("DESeq2", "EdgeR", "limma-voom", "Wilcoxon")
-analysis_list <- c("DESeq2", "EdgeR", "limma-voom")
+analysis_list <- c("EdgeR", "limma-voom")
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -44,13 +44,12 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 
-# Output directory
+# Main directory
 # dir_out <- paste(path, project, sep = "")   # Default option
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
 
-
-# Iput directory 
-dir_infiles <- paste(dir_out, "/Results", sep = "")
+# Output directory 
+dir_output <- paste(dir_out, "/Results", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -142,7 +141,7 @@ exc <- createWorkbook()
 
 
 ## Load metadata file 
-sample_info <- read.table(paste(dir_infiles, "/Metadata_", project, ".txt", sep = ""))
+sample_info <- read.table(paste(dir_output, "/Metadata_", project, ".txt", sep = ""))
 
 
 
@@ -183,9 +182,9 @@ for (i in 1:length(contrast)){
   #                         Create working directories
   ##############################################################################
   
-  # Load output directory
-  dir_outfolder <- paste(dir_out, "/", name, sep='')
-  setwd(dir_outfolder)
+  # Load input directory
+  dir_infiles <- paste(dir_out, "/", name, sep='')
+  dir_infiles <- paste(dir_infiles, "/Results", sep = "")
   
   # Method comparison figures folder
   dir.create(file.path(dir_outfolder , "Method_comparison"), showWarnings = FALSE)
@@ -202,7 +201,7 @@ for (i in 1:length(contrast)){
   metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
   
   # Load QC_result_name_project.txt
-  file_trs <- read.table(paste(dir_infiles,"/QC_result_", project,".txt", sep = ""), header = TRUE)
+  file_trs <- read.table(paste(dir_output,"/QC_result_", project,".txt", sep = ""), header = TRUE)
   md <- file_trs$Transformation
   
   # Load differentially expressed genes results
@@ -211,36 +210,23 @@ for (i in 1:length(contrast)){
     # Select analysis
     analysis <- analysis_list[j]
     
+    # Reference
+    ref <- paste(analysis, name ,project, sep = "_")
+    
     # Load results
     # Select the statistic columns per each analysis
-    if(i == 1){
-      if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
-      df1 <- read.table(paste(dir_infiles, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
-      df <- df1[which(df1$Comparison == name),]
+    if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
+      df <- read.table(paste(dir_infiles, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
       col_nam <- c("logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue")
     } else if(analysis == "EdgeR"){
-      df2 <- read.table(paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
-      df <- df2[which(df2$Comparison == name),]
+      df <- read.table(paste(dir_infiles, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
       col_nam <- c("logFC", "padj", "logCPM", "pvalue")
     } else if(analysis == "limma-voom"){
       col_nam <- c("logFC", "pvalue", "logCPM", "t", "padj", "B")
-      df3 <- read.table(paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
-      df <- df3[which(df3$Comparison == name),]
+      df <- read.table(paste(dir_infiles, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
     } else {
       col_nam <- c("logFC", "pvalue", "padj")}
-    } else {
-      if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
-        df <- df1[which(df1$Comparison == name),]
-        col_nam <- c("logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue")
-      } else if(analysis == "EdgeR"){
-        df <- df2[which(df2$Comparison == name),]
-        col_nam <- c("logFC", "padj", "logCPM", "pvalue")
-      } else if(analysis == "limma-voom"){
-        df <- df3[which(df3$Comparison == name),]
-        col_nam <- c("logFC", "pvalue", "logCPM", "t", "padj", "B")
-      } else {
-        col_nam <- c("logFC", "pvalue", "padj")}
-    }
+
      
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
@@ -427,10 +413,10 @@ for (i in 1:length(contrast)){
   }
 
 # Save workbook
-saveWorkbook(exc, file =  paste(dir_infiles, "/", project, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+saveWorkbook(exc, file =  paste(dir_output, "/", project, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Summary table 
-write.csv(sum_tab, paste(dir_infiles, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_tab, paste(dir_output, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
 
 
 ################################################################################

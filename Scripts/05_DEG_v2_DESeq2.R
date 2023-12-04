@@ -50,12 +50,12 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC58"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 # Date of the log file 5_DEG_qc_XXXX.log
 logdate <- "20231204"
@@ -266,7 +266,10 @@ for (h in 1:2) {
     dir_outfolder <- paste(dir_out, "/", name, sep='')
     setwd(dir_outfolder)
     
-   
+    # Save files with comparison results separate
+    dir.create(file.path(dir_outfolder , "Results"), showWarnings = FALSE)
+    dir_files <- paste(dir_outfolder, "/Results", sep='')
+
     # Figures folder
     dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
     dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
@@ -598,7 +601,7 @@ for (h in 1:2) {
     data <- cbind(result, res_log2)
     data <- cbind(data, res_norm)
     data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
-    # write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
+    write.table(data, paste(dir_files, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
 
     # Save data in the workbook
     addWorksheet(exc, name)

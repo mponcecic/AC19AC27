@@ -44,7 +44,7 @@ project_name <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-path <- "/vols/GPArkaitz_bigdata/mponce/"
+path <- "/vols/GPArkaitz_bigdata/user/"
 # path <- "W:/mponce/"
 
 # Date of the log file 0_Sample_info_XXX.txt
