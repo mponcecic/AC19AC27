@@ -159,7 +159,6 @@ sample_info <- read.table(paste(dir_infiles, "/Metadata_", project, ".txt", sep 
 
 for (i in 1:length(contrast)){
   
-  
   # Contrast 
   name <- paste(contrast[[i]][2], "vs", contrast[[i]][3], sep = "")
   print(name)
@@ -224,21 +223,22 @@ for (i in 1:length(contrast)){
     # Load results
     # Select the statistic columns per each analysis
     if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
-      df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
+      df <- read.table(paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
       col_nam <- c("logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue")
     } else if(analysis == "EdgeR"){
-      df <- read.table(paste(dir_output, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      df <- read.table(paste(dir_output, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
       col_nam <- c("logFC", "padj", "logCPM", "pvalue")
     } else if(analysis == "limma-voom"){
       col_nam <- c("logFC", "pvalue", "logCPM", "t", "padj", "B")
-      df <- read.table(paste(dir_output, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      df <- read.table(paste(dir_output, "/", analysis, "_", project, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
     } else {
       col_nam <- c("logFC", "pvalue", "padj")}
     
+    # Select data from the corresponding comparison
+    df <- df[which(df$Comparison == name),]
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
-    print(dim(df))
-    
+
     # Results summary table 
     sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(which(genes$DEG == "YES")), length(which(genes$Direction == "Upregulated")), length(which(genes$Direction == "Downregulated"))))
     
@@ -305,7 +305,6 @@ for (i in 1:length(contrast)){
     ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_sig_", name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
     
   }
-  
   
   
   ##############################################################################
@@ -412,8 +411,8 @@ for (i in 1:length(contrast)){
   
   # Order output
   result_tab <- result_tab %>% select(Name, Symbol, Ensembl, analysis_list, everything())
-  write.table(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", round(lfc_cutoff,2), ".txt", sep = ""))
-  write.xlsx(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", round(lfc_cutoff,2), ".xlsx", sep = ""), overwrite = TRUE)
+  write.table(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".txt", sep = ""))
+  write.xlsx(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save data in the workbook
   addWorksheet(exc, name)
@@ -422,7 +421,7 @@ for (i in 1:length(contrast)){
   }
 
 # Save workbook
-saveWorkbook(exc, file =  paste(dir_output, "/", project, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", round(lfc_cutoff,2), ".xlsx", sep = ""), overwrite = TRUE)
+saveWorkbook(exc, file =  paste(dir_output, "/", project, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Summary table 
 write.csv(sum_tab, paste(dir_output, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)

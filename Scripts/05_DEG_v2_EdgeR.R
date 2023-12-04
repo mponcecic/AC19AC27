@@ -201,6 +201,25 @@ gene_names <- annot[match(rownames(raw_counts), annot$Ensembl), ]
 print(dim(gene_names))
 
 
+## Final results txt 
+# Data frame with all the comparison results 
+final_data <- data.frame()
+
+# Change name
+raw_genes <- raw_counts
+# Normalized counts
+raw_norm <- log2(raw_genes+1)
+# Generate column names
+col_raw <- c(colnames(raw_genes), paste(md, colnames(m_vst), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
+
+# Bind raw, vst/rlog and normalized counts
+raw_genes <- cbind(raw_genes, m_vst, raw_norm)  
+colnames(raw_genes) <- col_raw
+
+# Ensembl id column to merge with results
+raw_genes$Ensembl <- rownames(raw_genes)
+
+
 
 ################################################################################
 #                               COMPARISONS
@@ -505,6 +524,11 @@ for (i in 1:length(contrast)){
   addWorksheet(exc, name)
   writeData(exc, data, sheet = name)
   
+  # All comparisons results
+  result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
+  result2$Comparison <- name
+  result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
+  final_data <- rbind(final_data, result2)
   
   # Differential expressed genes
   # colnames(m) <- paste("CPM", colnames(m), sep = "_")
@@ -516,7 +540,11 @@ for (i in 1:length(contrast)){
 
 
 # Save Workbook
-saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), row.names = FALSE)
+saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), row.names = FALSE)
+
+# Save all comparisons 
+colnames(final_data) <- c("Name", "Symbol", "Ensembl", "DEG", "Direction", "logFC", "padj", "logCPM", "pvalue", col_raw)
+write.table(final_data, file = paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")

@@ -192,6 +192,8 @@ for (h in 1:2) {
   # Create Workbook
   exc <- createWorkbook()
   
+
+  
   # Load gene count matrix and select folder name
   if(h == 1){
     raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
@@ -217,6 +219,25 @@ for (h in 1:2) {
   print(dim(gene_names))
   
   
+  ## Final results txt 
+  # Data frame with all the comparison results 
+  final_data <- data.frame()
+  
+  # Change name
+  raw_genes <- raw_counts
+  # Normalized counts
+  raw_norm <- log2(raw_genes+1)
+  # Generate column names
+  col_raw <- c(colnames(raw_genes), paste(md, colnames(m_vst), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
+  
+  # Bind raw, vst/rlog and normalized counts
+  raw_genes <- cbind(raw_genes, m_vst, raw_norm)  
+  colnames(raw_genes) <- col_raw
+  
+  # Ensembl id column to merge with results
+  raw_genes$Ensembl <- rownames(raw_genes)
+
+
   
   ################################################################################
   #                               COMPARISONS
@@ -503,7 +524,6 @@ for (h in 1:2) {
     if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
     
     
-    
     ##############################################################################
     #                                 Plot
     ##############################################################################
@@ -589,6 +609,12 @@ for (h in 1:2) {
     addWorksheet(exc, name)
     writeData(exc, data, sheet = name)
     
+    # All comparisons results
+    result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
+    result2$Comparison <- name
+    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    final_data <- rbind(final_data, result2)
+    
     # # Differential expressed genes
     # colnames(m) <- paste(md, colnames(m), sep = "_")
     # sel <- cbind(df, m)
@@ -597,9 +623,13 @@ for (h in 1:2) {
     # 
   }
   
-  
   # Save Workbook
-  saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), row.names = FALSE)
+  saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), row.names = FALSE)
+  
+  # Save all comparisons 
+  colnames(final_data) <- c("Name", "Symbol", "Ensembl", "DEG", "Direction", "logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
+  write.table(final_data, file = paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
+  
   
   ################################################################################
   #                                 LOG FILE 
