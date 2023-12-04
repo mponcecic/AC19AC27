@@ -183,12 +183,12 @@ for (i in 1:length(contrast)){
   ##############################################################################
   
   # Load input directory
-  dir_infiles <- paste(dir_out, "/", name, sep='')
-  dir_infiles <- paste(dir_infiles, "/Results", sep = "")
+  dir_outfolder <- paste(dir_out, "/", name, sep='')
+  dir_infiles <- paste(dir_outfolder, "/Results", sep = "")
   
   # Method comparison figures folder
-  dir.create(file.path(dir_outfolder , "Method_comparison"), showWarnings = FALSE)
-  dir_fig <- paste(dir_outfolder ,"/Method_comparison", sep='')
+  dir.create(file.path(dir_outfolder , "Comparison"), showWarnings = FALSE)
+  dir_fig <- paste(dir_outfolder ,"/Comparison", sep='')
   
   
   ##############################################################################
@@ -286,15 +286,15 @@ for (i in 1:length(contrast)){
     # Scatterplot
     ggplot(m, aes(x = A, y = B))+
       geom_point(alpha = 0.4)+
-      labs(x = comp[1], y = comp[2], title = "log2 Fold Change")+ 
+      labs(x = comp[1], y = comp[2], title = "log2 Fold Change")
     ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_",  name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
     
     # Scatterplot with colors
     ggplot(m, aes(x = A, y = B, color = Significance))+
       geom_point(alpha = 0.4)+
-      labs(x = comp[1], y = comp[2], title = "log2 Fold Change")+ 
+      labs(x = comp[1], y = comp[2], title = "log2 Fold Change", color = "")+ 
       theme(legend.position = "bottom", legend.box = "horizontal", legend.text = element_text(size = 6))
-    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_sig_", name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
+    ggsave(paste(dir_fig, "/Corr_Sig_", paste(comp, collapse = "_vs_"), "_", name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
     
   }
   

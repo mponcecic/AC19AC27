@@ -515,7 +515,7 @@ for (i in 1:length(contrast)){
   colnames(res_log2) <- paste("CPM", colnames(res_log2), sep = "_")
   data <- cbind(result, res_log2)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
-  write.table(data, paste(dir_infiles, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
+  write.table(data, paste(dir_files, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
 
   # Save data in the workbook
   addWorksheet(exc, name)
