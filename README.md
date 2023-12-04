@@ -4,14 +4,13 @@
 
 # Contents
 
-- []()
-
-- [How this scripts should be run](#how-this-scripts-should-be-run)
-- [Verification scripts](#verification-scripts)
-- [Folder and scripts](#folder-and-scripts)
-- [Additional information](#additional-information)
-- [Check corrupt files](#check-corrupt-files)
-- [Project_information.md](#project_informationmd)
+1. []()
+2. [How this scripts should be run](#how-this-scripts-should-be-run)
+3. [Verification scripts](#verification-scripts)
+4. [Folder and scripts](#folder-and-scripts)
+5. [Additional information](#additional-information)
+    - [Check corrupt files](#check-corrupt-files)
+    - [Project_information.md](#project_informationmd)
 
 
 
@@ -26,27 +25,29 @@ this file creates a folder in BigData to save the project analysis which is name
 In the script folder, you can find the following scripts: 00_fastq_file.R, 01_fastqc_job_check.R, 02_trimmed_fastq_job_check.R, 02_trimmed_fastq_result_check.R, 03_fastqc_job_check.R, 04_STAR_job_check.R and 04_STAR_result_check.R. As you can see, we can differenciate between three types of files which include *_file*, *_job_check* and *_result_check*. 
 - *_file* : There is only one script with this pattern which is 00_fastq_file.R. As a result, you can see the size of each file and should be run while you run 00_Sample_info script. The result will give you valuable information to change parameters such as memory, time, .. while running programs such as FASTQC, cutadapt or STAR in Rocky, among other applications. 
 - *_job_check* : After running jobs in Rocky, run the corresponding script to verify each job was **completed**. If one job failed, you just have to consult the .err or the .out file to verify the fail and them adjust the .sh to run it again.
-- *_result_check* : This scripts produce the following outputs, one file with how the trimmed fastqs were affected, another with the results of the alignment (how good the mapping to the genome was) and one compeling the trimming results with the alignment results. **MUST RUN AT LEAST 04_STAR_result_check.R TO SEE ALIGNMENT QUALITY**
+- *_result_check* : This scripts produce the following outputs, one file with how the trimmed fastqs were affected, another with the results of the alignment (how good the mapping to the genome was) and one compeling the trimming results with the alignment results. 
+**MUST RUN AT LEAST 04_STAR_result_check.R TO SEE ALIGNMENT QUALITY**
 
 
 # Folder and scripts
 
 First, clone this GitHub repository and create a local copy to adjust for your project. 
 
-Second, we created different folders and files available in DATA_shared to run the whole pipeline. In \@ref(fig:bar), you can find the folder with the reference genome, libraries to run R in Rocky and the project fastq files which can be found in other folder but will be usually found in DATA_shared. 
+Second, we created different folders and files available in DATA_shared to run the whole pipeline. In the following figure, you can find the folder with the reference genome, libraries to run R in Rocky and the project fastq files which can be found in other folder but will be usually found in DATA_shared. 
 
-![(#fig:bar) Fig1](/Schematics/Files_in_DATAshared.png)
+![Fig1](/Schematics/Files_in_DATAshared.png)
 *Folders generated in BigData with all the information concerning this pipeline.*
 
 After running the first script (`00_Sample_info.csv`), folder with the project name is created in your personal BigData folder, otherwise you must specify the path, a file name `Sample_info.csv` and the folder `utils`. Make sure you have all this folders and files to keep going with the analysis
 
-![Folders generated in BigData personal folder after running the pipeline.](/Schematics/Folder_structure_project.png)
+![Fig2](/Schematics/Folder_structure_project.png)
+*Folders generated in BigData personal folder after running the pipeline.*
 
-![Complete differentially expressed genes pipeline workflow for AC lab.](/Schematics/Pipeline_flow.png)
+![Fig3](/Schematics/Pipeline_flow.png)
+*Complete differentially expressed genes pipeline workflow for AC lab.*
 
-
-![Differentially expressed genes analysis summary.](/Schematics/DEG_flow.png)
-
+![Fig4](/Schematics/DEG_flow.png)
+*Differentially expressed genes analysis summary*
 
 # Additional information
 
