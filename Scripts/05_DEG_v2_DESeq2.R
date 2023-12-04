@@ -189,6 +189,9 @@ print(dim(genome))
 
 for (h in 1:2) {
   
+  # Create Workbook
+  exc <- createWorkbook()
+  
   # Load gene count matrix and select folder name
   if(h == 1){
     raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
@@ -268,6 +271,11 @@ for (h in 1:2) {
     
     # Transformed data per comparison
     res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
+    
+    # Normalized counts: log2(x + 1)
+    # To add in the result table
+    res_norm <- log2(gene_counts+1)
+    colnames(res_norm) <- paste("Norm", colnames(res_norm), sep = "_")
     
     # Select the contrast levels
     color_l <- color_list
@@ -568,23 +576,30 @@ for (h in 1:2) {
     # Summary table
     sum_line <- c(name, analysis, design_cond, md, dim(gene_counts)[1], dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
     sum_res <- rbind(sum_res, sum_line)
-    
+ 
     
     # All results
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
+    data <- cbind(data, res_norm)
     data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
-    
-    write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
+    # write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
 
-    # Differential expressed genes
-    colnames(m) <- paste(md, colnames(m), sep = "_")
-    sel <- cbind(df, m)
-    sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
-    write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)  
+    # Save data in the workbook
+    addWorksheet(exc, name)
+    writeData(exc, data, sheet = name)
     
+    # # Differential expressed genes
+    # colnames(m) <- paste(md, colnames(m), sep = "_")
+    # sel <- cbind(df, m)
+    # sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
+    # write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)  
+    # 
   }
   
+  
+  # Save Workbook
+  saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), row.names = FALSE)
   
   ################################################################################
   #                                 LOG FILE 

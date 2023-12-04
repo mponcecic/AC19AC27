@@ -164,6 +164,9 @@ analysis <- "limma-voom"
 # Summary table results
 sum_res <- data.frame()
 
+# Create Workbook
+exc <- createWorkbook()
+
 
 ################################################################################
 #                               LOAD DATA
@@ -258,6 +261,11 @@ for (i in 1:length(contrast)){
   
   # Transformed data per comparison
   res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
+  
+  # Normalized counts: log2(x + 1)
+  # To add in the result table
+  res_norm <- log2(gene_counts+1)
+  colnames(res_norm) <- paste("Norm", colnames(res_norm), sep = "_")
   
   # Select the contrast levels
   color_l <- color_list
@@ -487,17 +495,24 @@ for (i in 1:length(contrast)){
   colnames(res_log2) <- paste("CPM", colnames(res_log2), sep = "_")
   data <- cbind(result, res_log2)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
-  write.table(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
+  # write.table(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
 
-  # Differential expressed genes
-  colnames(m) <- paste("CPM", colnames(m), sep = "_")
-  sel <- cbind(df, m)
-  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
-  write.table(data, paste(dir_output, "/", ref, ";DEGs_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
+  # Save data in the workbook
+  addWorksheet(exc, name)
+  writeData(exc, data, sheet = name)
   
+  # # Differential expressed genes
+  # colnames(m) <- paste("CPM", colnames(m), sep = "_")
+  # sel <- cbind(df, m)
+  # sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
+  # write.table(data, paste(dir_output, "/", ref, ";DEGs_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
+
   
 }
 
+
+# Save Workbook
+saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), row.names = FALSE)
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
