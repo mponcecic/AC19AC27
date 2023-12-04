@@ -490,10 +490,8 @@ for (i in 1:length(contrast)){
   colnames(res_log2) <- paste("CPM", colnames(res_log2), sep = "_")
   data <- cbind(result, res_log2)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
-  
   write.table(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
-  write.xlsx(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
-  
+
   # Differential expressed genes
   colnames(m) <- paste("CPM", colnames(m), sep = "_")
   sel <- cbind(df, m)
