@@ -433,9 +433,8 @@ pca_plot <- function(m, trt, metadata, color_l) {
   print(dim(m_t))
   m_pca <- prcomp(m_t, scale. = TRUE)
   
-  # Save output
-  pca1 <- m_pca$x
-  pca2 <- m_pca$rotation
+  
+  var_perc <- get_eigenvalue(m_pca)[,2]
   
   # Scree plot
   # Percentage of variances explained by each principal component
@@ -443,33 +442,42 @@ pca_plot <- function(m, trt, metadata, color_l) {
   
   # PC1 vs PC2
   pca_1vs2 <- fviz_pca_ind(m_pca, axes = c(1, 2),
-                           geom.ind = "text", repel = TRUE, labelsize = 4,
-                           col.ind = metadata[[trt]],
-                           addEllipses = TRUE, ellipse.level = 0.95,
+                           geom.ind = c("point", "text"), 
+                           pointshape = 21, labelsize = 4, repel = FALSE, mean.point = FALSE, 
+                           col.ind = metadata[[trt]],  fill.ind = metadata[[trt]],
+                           addEllipses = FALSE, ellipse.level = 0.95,
                            title = "") +
     scale_color_manual(values = color_l[[trt]]) +
     scale_fill_manual(values = color_l[[trt]]) +
-    theme(legend.position = "none")
+    labs(x = paste("PC1 (", round(var_perc[1],2),"% of variance)", sep = ""), y = paste("PC2 (", round(var_perc[2],2),"% of variance)", sep = ""))+
+    theme(legend.position = "none", axis.line = element_line(colour = "black"), axis.text = element_text(size = 6),
+          panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), plot.background = element_blank())
   
   # PC1 vs PC3
   pca_1vs3 <- fviz_pca_ind(m_pca, axes = c(1, 3),
-                           geom.ind = "text", repel = TRUE, labelsize = 4,
-                           col.ind = metadata[[trt]],
-                           addEllipses = TRUE, ellipse.level = 0.95,
+                           geom.ind = c("point", "text"),  
+                           pointshape = 21, labelsize = 4, repel = FALSE, mean.point = FALSE, 
+                           col.ind = metadata[[trt]], fill.ind = metadata[[trt]],
+                           addEllipses = FALSE, ellipse.level = 0.95,
                            legend.title = "Treatment", title = "") +
     scale_color_manual(values = color_l[[trt]]) +
     scale_fill_manual(values = color_l[[trt]]) +
-    theme(legend.position = "none")
+    labs(x = paste("PC1 (", round(var_perc[1],2),"% of variance)", sep = ""), y = paste("PC3 (", round(var_perc[3],2),"% of variance)", sep = ""))+
+    theme(legend.position = "none", axis.line = element_line(colour = "black"), axis.text = element_text(size = 6),
+          panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), plot.background = element_blank())
   
   # PC1 vs PC4
   pca_1vs4 <- fviz_pca_ind(m_pca, axes = c(1, 4),
-                           geom.ind = "text", repel = TRUE, labelsize = 4,
-                           col.ind = metadata[[trt]],
-                           addEllipses = TRUE, ellipse.level = 0.95,
+                           geom.ind = c("point", "text"),  
+                           pointshape = 21, labelsize = 4, repel = FALSE, mean.point = FALSE, 
+                           col.ind = metadata[[trt]], fill.ind = metadata[[trt]],
+                           addEllipses = FALSE, ellipse.level = 0.95,
                            legend.title = "Treatment", title = "") +
     scale_color_manual(values = color_l[[trt]]) +
     scale_fill_manual(values = color_l[[trt]]) +
-    theme(legend.position = "none")
+    labs(x = paste("PC1 (", round(var_perc[1],2),"% of variance)", sep = ""), y = paste("PC4 (", round(var_perc[4],2),"% of variance)", sep = ""))+
+    theme(legend.position = "none", axis.line = element_line(colour = "black"), axis.text = element_text(size = 6),
+          panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), plot.background = element_blank())
   
   # Return the plots
   return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4))
