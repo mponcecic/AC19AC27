@@ -348,6 +348,38 @@ for (h in 1:2) {
     
     # Step 3: Contrast genes with Wald test
     # ----------------------------------------------------------------------------
+    # 
+    # Why independent filtering set TRUE?
+    # 
+    # Manual information:
+    # 
+    # The goal of independent filtering is to filter out those tests from the 
+    # procedure that have no, or little chance of showing significant evidence, 
+    # without even looking at their test statistic. Typically, this results in 
+    # increased detection power at the same experiment-wide type I error. Here, 
+    # we measure experiment-wide type I error in terms of the false discovery rate.
+    # 
+    # The results function of the DESeq2 package performs independent filtering 
+    # by default using the mean of normalized counts as a filter statistic. A 
+    # threshold on the filter statistic is found which optimizes the number of 
+    # adjusted p values lower than a significance level alpha (we use the standard 
+    # variable name for significance level, though it is unrelated to the dispersion 
+    # parameter α). The adjusted p values for the genes which do not pass the 
+    # filter threshold are set to NA
+    # 
+    # The default independent filtering is performed using the filtered_p function 
+    # of the genefilter package. The filter threshold value and the number of 
+    # rejections at each quantile of the filter statistic are available as 
+    # metadata of the object returned by results.
+    # 
+    # Personal interpretation:
+    # Independent filtering is a step applied after the analysis which increases 
+    # the statistical power of the results. It estimates a parameter named theta 
+    # which is used as a threshold and based on the mean of normalized counts, count 
+    # normalization used un DESeq2. This value will change from one data set to 
+    # another. The filtering of the adjusted pvalues is based on the gene counts 
+    # which mean of normalized counts overcome the theta statistics. The ones 
+    # which do not overcome this threshold are set to NA.
     
     # Log2 fold change result table for an specific comparison
     resl <- results(object = dds,                      # DESeqDataSet  
@@ -544,8 +576,7 @@ for (h in 1:2) {
     data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
     
     write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
-    write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".xlsx", sep = ""), overwrite = TRUE)
-    
+
     # Differential expressed genes
     colnames(m) <- paste(md, colnames(m), sep = "_")
     sel <- cbind(df, m)
