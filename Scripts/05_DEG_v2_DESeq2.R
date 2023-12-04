@@ -50,7 +50,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC70"
+project <- "AC58"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -58,7 +58,7 @@ project <- "AC70"
 path <- "W:/mponce/"
 
 # Date of the log file 5_DEG_qc_XXXX.log
-logdate <- "20231129"
+logdate <- "20231204"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -186,13 +186,10 @@ genome$Name <- paste(genome$Symbol, genome$Ensembl, sep = "_")
 print(dim(genome))
 
 
-
 for (h in 1:2) {
   
   # Create Workbook
   exc <- createWorkbook()
-  
-
   
   # Load gene count matrix and select folder name
   if(h == 1){
@@ -269,9 +266,7 @@ for (h in 1:2) {
     dir_outfolder <- paste(dir_out, "/", name, sep='')
     setwd(dir_outfolder)
     
-    # Data folder
-    dir.create(file.path(dir_out , "/Results"), showWarnings = FALSE)
-    dir_output <- paste(dir_out,"/Results", sep='')
+   
     # Figures folder
     dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
     dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
@@ -285,7 +280,7 @@ for (h in 1:2) {
     
     # Metadata
     metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
-    metadata[,trt] <- factor(metadata[,trt])
+    metadata[,trt] <- factor(metadata[,trt], levels = c(comp_lvl))
     
     # Gene count matrix per comparison
     gene_counts <- raw_counts[, metadata$Sample]
@@ -557,9 +552,9 @@ for (h in 1:2) {
     plot_pcas <- pca_plot(m0, trt, metadata, color_l)
     
     ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs2)), ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs3)), ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs4)), ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
     
     ## HEATMAP
     plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
@@ -624,11 +619,11 @@ for (h in 1:2) {
   }
   
   # Save Workbook
-  saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), row.names = FALSE)
+  saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
   colnames(final_data) <- c("Name", "Symbol", "Ensembl", "DEG", "Direction", "logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
-  write.table(final_data, file = paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
+  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
   
   
   ################################################################################
@@ -669,7 +664,7 @@ for (h in 1:2) {
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
-write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_res, paste(dir_infiles, "/Summary_tab_DESeq2_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
  
 
 

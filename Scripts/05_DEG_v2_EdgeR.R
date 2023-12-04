@@ -51,7 +51,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "XXX"
+project <- "AC58"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -59,7 +59,7 @@ project <- "XXX"
 path <- "W:/mponce/"
 
 # Date of the log file 5_DEG_qc_XXXX.log
-logdate <- "20231110"
+logdate <- "20231204"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -210,7 +210,7 @@ raw_genes <- raw_counts
 # Normalized counts
 raw_norm <- log2(raw_genes+1)
 # Generate column names
-col_raw <- c(colnames(raw_genes), paste(md, colnames(m_vst), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
+col_raw <- c(colnames(raw_genes), paste("CPM", colnames(m_vst), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
 
 # Bind raw, vst/rlog and normalized counts
 raw_genes <- cbind(raw_genes, m_vst, raw_norm)  
@@ -253,10 +253,7 @@ for (i in 1:length(contrast)){
   dir.create(file.path(dir_out , name), showWarnings = FALSE)
   dir_outfolder <- paste(dir_out, "/", name, sep='')
   setwd(dir_outfolder)
-  
-  # Data folder
-  dir.create(file.path(dir_out , "/Results"), showWarnings = FALSE)
-  dir_output <- paste(dir_out,"/Results", sep='')
+
   # Figures folder
   dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
   dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
@@ -471,9 +468,9 @@ for (i in 1:length(contrast)){
   plot_pcas <- pca_plot(m0, trt, metadata, color_l)
   
   ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
-  ggsave(filename = paste(deparse(substitute(pca_1vs2)), ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-  ggsave(filename = paste(deparse(substitute(pca_1vs3)), ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
-  ggsave(filename = paste(deparse(substitute(pca_1vs4)), ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
   
   ## HEATMAP
   plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
@@ -540,15 +537,15 @@ for (i in 1:length(contrast)){
 
 
 # Save Workbook
-saveWorkbook(exc, file =  paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), row.names = FALSE)
+saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Save all comparisons 
 colnames(final_data) <- c("Name", "Symbol", "Ensembl", "DEG", "Direction", "logFC", "padj", "logCPM", "pvalue", col_raw)
-write.table(final_data, file = paste(dir_output, "/", analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
+write.table(final_data, file = paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
-write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_res, paste(dir_infiles, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
 
 
 
