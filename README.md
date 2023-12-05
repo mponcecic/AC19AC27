@@ -1,4 +1,4 @@
-# :dna: Differentially expressed genes pipeline :dna:
+# Differentially expressed genes pipeline
 
 :dna::computer: Differentially expressed genes analysis workflow from scratch for the AC lab.
 
@@ -123,7 +123,7 @@ you can find a workshop given by Harvard
 ![Fig4](/Schematics/DEG_flow.png)
 *Differentially expressed genes analysis summary*
 
-# Verification scripts
+# :open_file_folder: Verification scripts
 
 In the script folder, you can find the following scripts 
 `00_fastq_file.R`, `01_fastqc_job_check.R`, `02_trimmed_fastq_job_check.R`, `02_trimmed_fastq_result_check.R`, `03_fastqc_job_check.R`, `04_STAR_job_check.R` and `04_STAR_result_check.R`. 
@@ -134,7 +134,7 @@ As you can see, we can differentiate between three types of files which include 
 - *_result_check* : These scripts produce the following outputs, one file with how the trimmed fastqs were affected, another with the results of the alignment (how good the mapping to the genome was) and one compeling the trimming results with the alignment results. 
 **04_STAR_result_check.R MUST BE RUN TO FOLLOW THE ANALYSIS**
 
-# Log files
+# :open_file_folder: Log files
 
 The log files are another result of the scripts and are saved in the log folder. These log files are files used to save paths, variables, contrasts, colors, etc which will be used in other steps of the analysis. It's used to save all the relevant information of each step, to avoid errors due to a variable appearing in more than one script and as a way to increase reproducibility. 
 
@@ -142,7 +142,7 @@ The log files generated if you run all the scripts are `0_Sample_info_DATE.log`,
 
 # Additional information
 
-## Big Data folders
+## :open_file_folder: Big Data folders
 
 We have created different folders and files available in DATA_shared to run the whole pipeline. They can be seen in the following figure. 
 
