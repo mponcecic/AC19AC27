@@ -1,19 +1,20 @@
 # Differentially expressed genes pipeline
 
-:collision: Differentially expressed genes analysis workflow from scratch for the AC lab.
+:dna::computer: Differentially expressed genes analysis workflow from scratch for the AC lab.
 
 # Contents
 
 - [Introduction](#introduction)
 - [How this project should be run](#how-this-project-should-be-run)
 
-    0. [First steps](#first-steps)
-    1. [Fastq quality control](#fastq-quality-control)
-    2. [Trimming](#trimming)
-    3. [Trimmed fastq quality control](#trimmed-fastq-quality-control)
-    4. [Mapping reads](#mapping-reads)
-    5. [Differentially expressed genes analysis](#differentially-expressed-genes-analysis)
+    - [First steps](#first-steps)
+    - [Fastq quality control](#fastq-quality-control)
+    - [Trimming](#trimming)
+    - [Trimmed fastqs quality control](#trimmed-fastqs-quality-control)
+    - [Mapping reads](#mapping-reads)
+    - [Differentially expressed genes analysis](#differentially-expressed-genes-analysis)
 - [Verification scripts](#verification-scripts)
+- [Log files](#log-files)
 - [Additional information](#additional-information)
     - [Big Data folders](#big-data-folders)
     - [Check corrupt files](#check-corrupt-files)
@@ -37,19 +38,17 @@ The pipeline presents the following key steps, which can be summarised in the fo
 4. Mapping the reads and extracting the gene count matrix
 5. Differentially expressed genes analysis using DESeq2, EdgeR, limma-voom and/or Wilcoxon test
 
-![Fig3](/Schematics/Pipeline_flow.png)
-*Complete differentially expressed genes pipeline workflow for AC lab.*
-
-The scripts are sorted numerically, as well as, the folders in which their outputs are saved. For example, script `01_FASTQC` corresponds to the folder 01_FASTQC. There is only one script that does not follow this rule, `00_Sample_info.R`. More detailed information of each script can be found in it, through this document we will give some guidelines to run the project and understand the structure but reading the scripts can't be skipped.
+The scripts are sorted numerically, as well as, the folders in which their outputs are saved. For example, script `01_FASTQC` corresponds to the folder 01_FASTQC. There is only one script that does not follow this rule, `00_Sample_info.R`. More detailed information on each script can be found in it, through this document we will give some guidelines to run the project and understand the structure but reading the scripts can't be skipped.
 
 All the scripts must be modified to adjust the pipeline to your project. The parts of the scripts that must be modified are found between the following characters: 
+
 "# -------------------------------------------"
 
 Furthermore, the following scripts can be directly run in Rocky login node without the need to ask for an interactive session: `01_FASTQC.R`, `01_MULTIFASTQC.R`, `02_TRIMMING.R`, `03_FASTQC.R`, `03_MULTIFASTQC.R` and 
 
 In addition, each step is followed by a verification file. These verification files can check if any job failed but also can generate a summary of the results that gives a general overview of how the step went. The verification files are described in more detail in a [later section](#verification-scripts)
 
-There are only two verification files that must be run one is the `00_fastq_file_check.R` and `04_STAR_result_check.R`. The first file gives information about the size of the files that can be used to estimate data requirements when running jobs in the cluster. The second one shows the results of the alignment, which is a key step for the analysis. If something goes wrong this file should be an alarm for you. 
+There are only two verification files that must be run one is the `00_fastq_file_check.R` and `04_STAR_result_check.R`. The first file gives information about the size of the files that can be used to estimate data requirements when running jobs in the cluster. The second one shows the results of the alignment, which is a key step for the analysis. If something goes wrong this file should be an alarm for you.  
 
 After running the whole pipeline, you should have a folder in BigData with the folders represented in the following figure. These steps will be discussed in more detail in the [following section](#how-this-project-should-be-run).
 
@@ -57,6 +56,11 @@ After running the whole pipeline, you should have a folder in BigData with the f
 *Folders are generated in BigData personal folder after running the pipeline.*
 
 # How this project should be run
+
+In this section, we will discuss the different pipeline steps, previously mentioned. The following figure shows a general view of differentially expressed genes pipeline. 
+
+![Fig3](/Schematics/Pipeline_flow.png)
+*Complete differentially expressed genes pipeline workflow for AC lab.*
 
 ## First steps
 
@@ -83,7 +87,7 @@ The trimming step is optional, in most cases, we use [cutadapt](https://cutadapt
 
 In some cases, the trimming is not optional as it happens with SMARTer Stranded Total RNA-Seq kit v2-Pico input Mammalian when the insert size is smaller than 150 bps. This trimming is described in the script, `02_TRIMMING.R`.
 
-## Trimmed fastq quality control
+## Trimmed fastqs quality control
 
 The quality control of the trimmed reads must be performed to check the changes. This step is exactly equal to the [previous section](#fastq-quality-control) but running the scripts `03_FASTQC.R` and `03_MULTIFASTQC.R`.
 
@@ -98,6 +102,9 @@ The alignment result must be transformed into a gene count matrix with the rows 
 ## Differentially expressed genes analysis 
 
 > **Note**: *Consult the [Differential gene expression workshop](https://github.com/hbctraining/DGE_workshop) for an overview of the DEGs analysis*  
+
+
+The differentially expressed genes analysis 
 
 `05_DEGs_v1_qc.R`
 `05_DEGs_v2_DESeq2.R`
@@ -118,12 +125,20 @@ you can find a workshop given by Harvard
 
 # Verification scripts
 
-In the script folder, you can find the following scripts: `00_fastq_file.R`, `01_fastqc_job_check.R`, `02_trimmed_fastq_job_check.R`, `02_trimmed_fastq_result_check.R`, `03_fastqc_job_check.R`, `04_STAR_job_check.R` and `04_STAR_result_check.R`. As you can see, we can differentiate between three types of files which include *_file*, *_job_check* and *_result_check*. 
+In the script folder, you can find the following scripts 
+`00_fastq_file.R`, `01_fastqc_job_check.R`, `02_trimmed_fastq_job_check.R`, `02_trimmed_fastq_result_check.R`, `03_fastqc_job_check.R`, `04_STAR_job_check.R` and `04_STAR_result_check.R`. 
+
+As you can see, we can differentiate between three types of files which include *_file*, *_job_check* and *_result_check*. 
 - *_file* : There is only one script with this pattern which is 00_fastq_file.R. As a result, you can see the size of each file and should be run while you run 00_Sample_info script. The result will give you valuable information to change parameters such as memory and time while running programs such as FASTQC, cutadapt or STAR in Rocky, among other applications. 
 - *_job_check* : After running jobs in Rocky, run the corresponding script to verify each job was **completed**. If one job fails, you just have to consult the .err or the .out file to verify the error and then adjust the .sh to run it again.
 - *_result_check* : These scripts produce the following outputs, one file with how the trimmed fastqs were affected, another with the results of the alignment (how good the mapping to the genome was) and one compeling the trimming results with the alignment results. 
 **04_STAR_result_check.R MUST BE RUN TO FOLLOW THE ANALYSIS**
 
+# Log files
+
+The log files are another result of the scripts and are saved in the log folder. These log files are files used to save paths, variables, contrasts, colors, etc which will be used in other steps of the analysis. It's used to save all the relevant information of each step, to avoid errors due to a variable appearing in more than one script and as a way to increase reproducibility. 
+
+The log files generated if you run all the scripts are `0_Sample_info_DATE.log`, `4_STAR_DATE.log`, `4_STAR_GeneCounts_DATE.log`, `5_DEG_qc_DATE.log`, `5_DEG_v2_DESeq2_DATE.log`, `5_DEG_v2_DESeq2_NoFilter_DATE.log`, `5_DEG_v2_EdgeR_DATE.log`, `5_DEG_v2_limma-voom_DATE.log` and ``5_DEG_v3_Methodscompare_DATE.log`. 
 
 # Additional information
 
