@@ -19,6 +19,7 @@
     - [Check corrupt files](#biohazard-check-corrupt-files)
     - [Project_information.md](#page_with_curl-project_informationmd)
 - [References](#book-references)
+- [Software version](#gear-software-version)
 
 
 # Introduction
@@ -177,3 +178,12 @@ In the folder Schematics, you can find a markdown file named `Project_informatio
  * Love, M.I., Anders, S. and Huber, W. 2023. [Analyzing RNA-seq data with DESeq2](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#log-fold-change-shrinkage-for-visualization-and-ranking)
 
 
+# :gear: Software version
+
+FastQC v0.12.0
+
+cutadapt version 4.3
+
+STAR version 2.7.10a
+
+R version 4.2.1 (Rocky)
