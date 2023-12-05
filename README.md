@@ -1,4 +1,4 @@
-# Differentially expressed genes pipeline
+# :dna: Differentially expressed genes pipeline :dna:
 
 :dna::computer: Differentially expressed genes analysis workflow from scratch for the AC lab.
 
