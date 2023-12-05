@@ -105,24 +105,45 @@ The alignment result must be transformed into a gene count matrix with the rows 
 > **Note**: *Consult the [Differential gene expression workshop](https://github.com/hbctraining/DGE_workshop) for an overview of the DEGs analysis*  
 
 
-The differentially expressed genes analysis 
-
-`05_DEGs_v1_qc.R`
-`05_DEGs_v2_DESeq2.R`
-`05_DEGs_v2_EdgeR.R`
-`05_DEGs_v2_limma-voom.R`
-`05_DEGs_v2_Wilcoxon.R`
-`05_DEGs_v3_Comparison.R`
-
-
-
-
-
-
-you can find a workshop given by Harvard 
+The differentially expressed genes analysis presents different steps, (1) quality control of the samples, (2) applying DESeq2 and/or other methods per contrast for DEGs and (3) comparing the results among different methods. 
 
 ![Fig4](/Schematics/DEG_flow.png)
 *Differentially expressed genes analysis summary*
+
+The first step is to perform quality control (`05_DEGs_v1_qc.R`) among all the samples without considering the treatment. As a result, plots and data tables. The plots, saved in :open_file_folder: QC, will highlight if there are outliers or another source variance in the data that is not explained by the experimental condition. 
+
+In a folder named :open_file_folder: Results, the data tables are saved and all relevant information in the following analysis will be saved here. The results files are metadata, filtered data and transformed data (VST/RLOG, CPM) for raw and filtered data. The filtered data is based on `filterByExprs()` in the `EdgeR` package which is applied to all the data. This step is key for EdgeR and limma-voom.
+
+The second step is to apply one or different methods, which are DESeq2 (`05_DEGs_v2_DESeq2.R`), EdgeR (`05_DEGs_v2_EdgeR.R`), limma-voom (`05_DEGs_v2_limma-voom.R`) and Wilcoxon test (`05_DEGs_v2_Wilcoxon.R`), to obtain the DEGs. The method used for the analysis can be chosen due to several reasons, here you can find a summary table. 
+
+| Method | Data | Group of interest |
+|:----------:|:---------:|:------------:| 
+| DESeq2 | Cell lines/Model organism | Researchers |
+| EdgeR | Cell lines/Model organism | Computational team |
+| limma-voom | Cell lines/Model organism | Computational team |
+| Wilcoxon | Clinical data | Computational team |
+
+> **Note**: DESeq2 method is applied on raw counts (DESeq2_NoFilter) and filtered counts (DESeq2). **The results given to the researchers are the obtain based on the raw countsafter applying DESeq2**.
+
+This step is specific per each comparison, so a subset of the matrix is made for the analysis. 
+As a result, a folder with the name of the comparison is generated and inside this folder, you can find different folders with the name of the method used and Results folder.
+In the folder with the method name, all the figures for that method are saved. In the Results folder, the contrast result for this comparison and method is saved.
+
+However, all the contrast results per method are saved and compiled in three different files saved in the Result folder outside the comparison. These files are: 
+
+- `Method_Project_name;All_VSTblindFALSE_padj_fdrcutoff_lfc_lfccutoff.xlsx` **This is the file given to the researchers**. It includes each comparison in separate sheets. Take a brief look at how the table should look like.
+
+![Fig6](/Schematics/output_xlsx.png)
+
+- `Method_Project_name;All_VSTblindFALSE_padj_fdrcutoff_lfc_lfccutoff.txt` This file contains the same information as before but with all the comparisons in it. This file is key for following analyses such as trajectories. 
+
+- `Summary_tab_Method_Project_name_padj_fdrcutoff_lfc_lfccutoff.csv` Summary of the design formula, DEGs, upregulated and downregulated genes of all comparisons. Offers a quick view of the numeric results.
+
+The third step compares the results among the different methods (`05_DEGs_v3_Comparison.R`). The figures are saved in a folder named Comparison and the data is saved in both Results folders. This step is optional. 
+
+As a result, of running this part of the pipeline you will obtain the following folders. In purple are marked the folders in which relevant figures to the researchers are found. In addition, the only xlsx file found in Results must be given to. 
+
+![Fig7](/Schematics/05_DEG_folder.png)
 
 # :open_file_folder: Verification scripts
 
@@ -139,7 +160,7 @@ As you can see, we can differentiate between three types of files which include 
 
 The log files are another result of the scripts and are saved in the log folder. These log files are files used to save paths, variables, contrasts, colors, etc which will be used in other steps of the analysis. It's used to save all the relevant information of each step, to avoid errors due to a variable appearing in more than one script and as a way to increase reproducibility. 
 
-The log files generated if you run all the scripts are `0_Sample_info_DATE.log`, `4_STAR_DATE.log`, `4_STAR_GeneCounts_DATE.log`, `5_DEG_qc_DATE.log`, `5_DEG_v2_DESeq2_DATE.log`, `5_DEG_v2_DESeq2_NoFilter_DATE.log`, `5_DEG_v2_EdgeR_DATE.log`, `5_DEG_v2_limma-voom_DATE.log` and ``5_DEG_v3_Methodscompare_DATE.log`. 
+The log files generated if you run all the scripts are `0_Sample_info_DATE.log`, `4_STAR_DATE.log`, `4_STAR_GeneCounts_DATE.log`, `5_DEG_qc_DATE.log`, `5_DEG_v2_DESeq2_DATE.log`, `5_DEG_v2_DESeq2_NoFilter_DATE.log`, `5_DEG_v2_EdgeR_DATE.log`, `5_DEG_v2_limma-voom_DATE.log` and `5_DEG_v3_Methodscompare_DATE.log`. 
 
 # :mag_right: Additional information
 
@@ -157,7 +178,7 @@ The information in the following folders are:
 
 ## :biohazard: Check corrupt files
 
-First things first, verify that the fastqs you will be using are not corrupt. You can run the following code
+First things first, verify that the fastqs you will be using are not corrupt. You can run the following different codes to see if the files are corrupted. 
 
 ```
 cd /drives/w/DATA_shared/PROJECT_NAME/FASTQs/
