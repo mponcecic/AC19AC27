@@ -6,19 +6,19 @@
 
 - [Introduction](#introduction)
 - [How this project should be run](#how-this-project-should-be-run)
-
     - [First steps](#first-steps)
     - [Fastq quality control](#fastq-quality-control)
     - [Trimming](#trimming)
     - [Trimmed fastqs quality control](#trimmed-fastqs-quality-control)
     - [Mapping reads](#mapping-reads)
     - [Differentially expressed genes analysis](#differentially-expressed-genes-analysis)
-- [Verification scripts](#verification-scripts)
-- [Log files](#log-files)
-- [Additional information](#additional-information)
-    - [Big Data folders](#big-data-folders)
-    - [Check corrupt files](#check-corrupt-files)
-    - [Project_information.md](#project_informationmd)
+- [Verification scripts](#open_file_folder-verification-scripts)
+- [Log files](#open_file_folder-log-files)
+- [Additional information](#mag_right-additional-information)
+    - [Big Data folders](#open_file_folder-big-data-folders)
+    - [Check corrupt files](#biohazard-check-corrupt-files)
+    - [Project_information.md](#page_with_curl-project_informationmd)
+- [References](#book-references)
 
 
 # Introduction
@@ -140,7 +140,7 @@ The log files are another result of the scripts and are saved in the log folder.
 
 The log files generated if you run all the scripts are `0_Sample_info_DATE.log`, `4_STAR_DATE.log`, `4_STAR_GeneCounts_DATE.log`, `5_DEG_qc_DATE.log`, `5_DEG_v2_DESeq2_DATE.log`, `5_DEG_v2_DESeq2_NoFilter_DATE.log`, `5_DEG_v2_EdgeR_DATE.log`, `5_DEG_v2_limma-voom_DATE.log` and ``5_DEG_v3_Methodscompare_DATE.log`. 
 
-# Additional information
+# :mag_right: Additional information
 
 ## :open_file_folder: Big Data folders
 
@@ -154,7 +154,7 @@ The information in the following folders are:
 - R_Rocky: R libraries to run the scripts in Rocky
 - Fastq files corresponding to the project, which can be found in other folders but will be usually found in DATA_shared. 
 
-## Check corrupt files
+## :biohazard: Check corrupt files
 
 First things first, verify that the fastqs you will be using are not corrupt. You can run the following code
 
@@ -166,11 +166,11 @@ md5sum -c *gz > check.txt
 cksum *gz > check.txt
 ```
 
-## Project_information.md
+## :page_with_curl: Project_information.md
 
 In the folder Schematics, you can find a markdown file named `Project_information` in which you can include a summary of every step of the analysis, as well as, the project information. This file can be set as the README in the new GitHub project, it could be used as a quick view of all project information, comparisons made, problems, etc.
 
-# References
+# :book: References
 
 * Harvard Chan Bioinformatics Core (HBC). 2022. [Differential gene expression workshop](https://github.com/hbctraining/DGE_workshop)
  
