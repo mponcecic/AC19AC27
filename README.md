@@ -67,7 +67,7 @@ In this section, we will discuss the different pipeline steps, previously mentio
 
 First, clone this GitHub repository and create a local copy for modifying the scripts to run your project, as well as, creating a R project. For cloning the GitHub repository, click on the following [link](https://docs.github.com/es/repositories/creating-and-managing-repositories/cloning-a-repository)
 
-Second, read the Library_Preparation_Report.pdf which can be found in the project folder with the fastq files and will be used in the first script and fill the `00_Sample_info.R`. This script will create a folder in BigData with the project names, cloning the folders utils and generating the `Sample_info.csv` which will be used in several parts of the pipeline. This script involves different manual adjustments, read the script for detailed information.
+Second, read the Library_Preparation_Report.pdf which can be found in the project folder with the fastq files and will be used in the first script and fill the `00_Sample_info.R`. This script will create a folder in BigData with the project names, cloning the folders utils and generating the `Sample_info.csv` which will be used in several parts of the pipeline. This script involves **different manual adjustments**, read the script for detailed information.
 
 ## :heavy_check_mark: Fastq quality control
 
@@ -110,9 +110,9 @@ The differentially expressed genes analysis presents different steps, (1) qualit
 ![Fig4](/Schematics/DEG_flow.png)
 *Differentially expressed genes analysis summary*
 
-The first step is to perform quality control (`05_DEGs_v1_qc.R`) among all the samples without considering the treatment. As a result, plots and data tables. The plots, saved in :open_file_folder: QC, will highlight if there are outliers or another source variance in the data that is not explained by the experimental condition. 
+The first step is to perform quality control (`05_DEGs_v1_qc.R`) among all the samples without considering the treatment. As a result, plots and data tables. The plots, saved in QC folder, will highlight if there are outliers or another source variance in the data that is not explained by the experimental condition. 
 
-In a folder named :open_file_folder: Results, the data tables are saved and all relevant information in the following analysis will be saved here. The results files are metadata, filtered data and transformed data (VST/RLOG, CPM) for raw and filtered data. The filtered data is based on `filterByExprs()` in the `EdgeR` package which is applied to all the data. This step is key for EdgeR and limma-voom.
+In a folder named Results, the data tables are saved and all relevant information in the following analysis will be saved here. The results files are metadata, filtered data and transformed data (VST/RLOG, CPM) for raw and filtered data. The filtered data is based on `filterByExprs()` in the `EdgeR` package which is applied to all the data. This step is key for EdgeR and limma-voom.
 
 The second step is to apply one or different methods, which are DESeq2 (`05_DEGs_v2_DESeq2.R`), EdgeR (`05_DEGs_v2_EdgeR.R`), limma-voom (`05_DEGs_v2_limma-voom.R`) and Wilcoxon test (`05_DEGs_v2_Wilcoxon.R`), to obtain the DEGs. The method used for the analysis can be chosen due to several reasons, here you can find a summary table. 
 
