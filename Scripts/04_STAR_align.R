@@ -26,8 +26,8 @@
 # Genome index appropriate for your data in the following folder: 
 #         /vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Indexes
 # 
-# The genome index are available for human and mouse with read length of 51, 101
-# and 151. 
+# The genome indexes are available for human and mouse with a read length of 51, 
+# 101 and 151. 
 
 
 #################################################################################

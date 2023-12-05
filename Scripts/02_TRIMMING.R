@@ -9,7 +9,7 @@
 # Trimmed the fastq file prior to mapping with STAR. This step is optional. 
 # In this script, we can perform a standard trimming and a more specific trimming 
 # from the projects sequenced with the SMARTer Stranded Total RNA-Seq kit v2 - 
-# Pico input Mammalian when the insert size smaller than 150 bps. Common steps 
+# Pico input Mammalian when the insert is size smaller than 150 bps. Common steps 
 # are: 
 #
 # The first step is to remove the adapters from both reads simultaneously which 

@@ -28,7 +28,7 @@
 ## Gene Counts (ReadsPerGene.out.tab) 
 
 # Column 1. Gene ID
-# Column 2. counts for unstraned RNA-seq
+# Column 2. counts for unstranded RNA-seq
 # Column 3. counts for 1st read strand aligned with RNA
 # Column 4. counts for 2nd read strand aligned with RNA 
 
