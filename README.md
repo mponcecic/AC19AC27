@@ -6,12 +6,12 @@
 
 - [Introduction](#introduction)
 - [How this project should be run](#how-this-project-should-be-run)
-    - [First steps](#first-steps)
-    - [Fastq quality control](#fastq-quality-control)
-    - [Trimming](#trimming)
-    - [Trimmed fastqs quality control](#trimmed-fastqs-quality-control)
+    - [First steps](#star-first-steps)
+    - [Fastq quality control](#heavy_check_mark-fastq-quality-control)
+    - [Trimming](#scissors-trimming)
+    - [Trimmed fastq quality control](#heavy_check_mark-trimmed-fastqs-quality-control)
     - [Mapping reads](#mapping-reads)
-    - [Differentially expressed genes analysis](#differentially-expressed-genes-analysis)
+    - [Differentially expressed genes analysis](#dnatrophy-differentially-expressed-genes-analysis)
 - [Verification scripts](#open_file_folder-verification-scripts)
 - [Log files](#open_file_folder-log-files)
 - [Additional information](#mag_right-additional-information)
@@ -62,13 +62,13 @@ In this section, we will discuss the different pipeline steps, previously mentio
 ![Fig3](/Schematics/Pipeline_flow.png)
 *Complete differentially expressed genes pipeline workflow for AC lab.*
 
-## First steps
+## :star: First steps
 
 First, clone this GitHub repository and create a local copy for modifying the scripts to run your project, as well as, creating a R project. For cloning the GitHub repository, click on the following [link](https://docs.github.com/es/repositories/creating-and-managing-repositories/cloning-a-repository)
 
 Second, read the Library_Preparation_Report.pdf which can be found in the project folder with the fastq files and will be used in the first script and fill the `00_Sample_info.R`. This script will create a folder in BigData with the project names, cloning the folders utils and generating the `Sample_info.csv` which will be used in several parts of the pipeline. This script involves different manual adjustments, read the script for detailed information.
 
-## Fastq quality control
+## :heavy_check_mark: Fastq quality control
 
 The quality control of the raw reads is performed using [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/). FastQC aims to provide a simple way to do some quality control checks on raw sequence data coming from high throughput sequencing pipelines. It provides a modular set of analyses that can be used to give a quick impression of whether your data has any problems of which you should be aware before doing any further analysis. This should be done with `01_FASTQC.R` and the `01_MULTIFASTQC.R` generates a summary report with all the information from FastQC using [fastqcr](https://github.com/kassambara/fastqcr). 
 
@@ -81,17 +81,17 @@ Common problems that can appear in the raw counts
 
 The overrepresented and adapter sequences can be trimmed off in the following steps.
 
-## Trimming
+## :scissors: Trimming
 
 The trimming step is optional, in most cases, we use [cutadapt](https://cutadapt.readthedocs.io/en/stable/), which finds and removes adapter sequences, primers, poly-A tails and other types of unwanted sequences from your high-throughput sequencing reads. Indeed, we do not filter adapters only, but low-quality bps and small reads which will increase the percentage of aligned reads.
 
 In some cases, the trimming is not optional as it happens with SMARTer Stranded Total RNA-Seq kit v2-Pico input Mammalian when the insert size is smaller than 150 bps. This trimming is described in the script, `02_TRIMMING.R`.
 
-## Trimmed fastqs quality control
+## :heavy_check_mark: Trimmed fastqs quality control
 
 The quality control of the trimmed reads must be performed to check the changes. This step is exactly equal to the [previous section](#fastq-quality-control) but running the scripts `03_FASTQC.R` and `03_MULTIFASTQC.R`.
 
-## Mapping reads
+## :dna: Mapping reads
 
 The read alignment is performed using Spliced Transcripts Alignment to a Reference ([STAR](https://github.com/alexdobin/STAR)). STAR is a fast RNA-seq read mapper, with support for splice-junction and fusion read detection. STAR aligns reads by finding the maximal mappable prefix hits between reads (or read pairs) and the genome, using a Suffix Array index (also known as genome indexes). The script performing this step is `04_STAR_align.R`. 
 
@@ -99,7 +99,7 @@ In addition, the script `04_STAR_genome_index.R` aims to generate genome indexes
 
 The alignment result must be transformed into a gene count matrix with the rows being the Ensembl identifier of the gene and the columns, the sample names. To accomplish this be careful with the data strandedness defined by the library preparation method. The **strandedness** is discussed in more detail in the script, `04_STAR_GeneCounts.R`.
 
-## Differentially expressed genes analysis 
+## :dna::trophy: Differentially expressed genes analysis 
 
 > **Note**: *Consult the [Differential gene expression workshop](https://github.com/hbctraining/DGE_workshop) for an overview of the DEGs analysis*  
 
