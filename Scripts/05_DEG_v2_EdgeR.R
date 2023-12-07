@@ -159,12 +159,6 @@ specie <- logfile$Organism
 # Method used to study DEGs
 analysis <- "EdgeR"
 
-# Summary table results
-sum_res <- data.frame()
-
-# Create Workbook
-exc <- createWorkbook()
-
 
 ################################################################################
 #                               LOAD DATA
@@ -201,9 +195,10 @@ gene_names <- annot[match(rownames(raw_counts), annot$Ensembl), ]
 print(dim(gene_names))
 
 
-## Final results txt 
-# Data frame with all the comparison results 
-final_data <- data.frame()
+
+################################################################################
+#                             DATA PROCESSING
+################################################################################
 
 # Change name
 raw_genes <- raw_counts
@@ -219,6 +214,25 @@ colnames(raw_genes) <- col_raw
 # Ensembl id column to merge with results
 raw_genes$Ensembl <- rownames(raw_genes)
 
+
+
+################################################################################
+#                             CREATE DATAFRAMES
+################################################################################
+
+# Summary of the different comparisons results for this analysis found in the 
+# 05_DEG_ANALYSIS/Result folder
+sum_res <- data.frame()
+
+# Create Workbook for the researchers
+# Each sheet corresponds to one of the comparison results
+# Columns: Name, Symbol, Ensembl, DEG, Direction, logFC, padj, variables, 
+# normalized counts, raw count
+exc <- createWorkbook()
+
+# Final results in *.txt
+# Data frame with all the comparison results, same as exc
+final_data <- data.frame()
 
 
 ################################################################################
@@ -265,7 +279,7 @@ for (i in 1:length(contrast)){
   
   
   ##############################################################################
-  #                               Load Data
+  #                             Data processing
   ##############################################################################
   
   
@@ -530,12 +544,6 @@ for (i in 1:length(contrast)){
   result2$Comparison <- name
   result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
   final_data <- rbind(final_data, result2)
-  
-  # Differential expressed genes
-  # colnames(m) <- paste("CPM", colnames(m), sep = "_")
-  # sel <- cbind(df, m)
-  # sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
-  # write.table(data, paste(dir_output, "/", ref, ";DEGs_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
   
 }
 
