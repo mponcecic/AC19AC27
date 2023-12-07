@@ -65,7 +65,35 @@ In this section, we will discuss the different pipeline steps, previously mentio
 
 ## :star: First steps
 
-First, clone this GitHub repository and create a local copy for modifying the scripts to run your project, as well as, creating a R project. For cloning the GitHub repository, click on the following [link](https://docs.github.com/es/repositories/creating-and-managing-repositories/cloning-a-repository)
+First, (1) create a GitHub repository with the project name, (2) clone this GitHub repository and (3) create a R project. For cloning the GitHub repository, you can follow this setps suign Git Bash or the command line:
+
+```
+# Step 0. Set directory 
+cd /path/to/folder
+
+# Running from command line: Initiate Git
+git init
+
+# Step 1. Clone the repository in to a different destination folder
+git clone --branch=main <repo-url> <new-directory-name>
+
+# Step 2. Move to the destination folder
+cd /new-directory-name/
+
+# Step 3. Change to the new the repository
+git remote set-url origin <new-repo-url>
+git remote -v
+
+# Step 4. Push all the files to the new repository
+git push 
+```
+
+See an example using Git Bash:
+![Github](/Schematics/gitconf.png)
+
+For creating the R project, open RStudio and click on File > New Project > Existing directory > Choose folder <new-directory-name>. It's done! The project folder should look like the following image:
+![folder](/Schematics/folderconf.png)
+
 
 Second, read the Library_Preparation_Report.pdf which can be found in the project folder with the fastq files and will be used in the first script and fill the `00_Sample_info.R`. This script will create a folder in BigData with the project names, cloning the folders utils and generating the `Sample_info.csv` which will be used in several parts of the pipeline. This script involves **different manual adjustments**, read the script for detailed information.
 
