@@ -202,6 +202,7 @@ for (i in 1:length(samples)) {
     filename <- paste(job_name,".sh",sep='');
     cat(
       c("#!/bin/sh"),
+      c("#SBATCH  --export=ALL"),
       paste("#SBATCH --job-name=",job_name,sep=''),
       paste("#SBATCH --partition=",partition,sep=''),
       paste("#SBATCH --cpus-per-task=",cpu,sep=''),
@@ -230,6 +231,7 @@ for (i in 1:length(samples)) {
     filename <- paste(job_name,".sh",sep='');
     cat(
       c("#!/bin/sh"),
+      c("#SBATCH  --export=ALL"),
       paste("#SBATCH --job-name=",job_name,sep=''),
       paste("#SBATCH --partition=",partition,sep=''),
       paste("#SBATCH --cpus-per-task=",cpu,sep=''),

@@ -395,6 +395,7 @@ for (i in 1:length(samples_names)) {
   filename <- paste(job_name,".sh",sep='');
   cat(
     c("#!/bin/sh"),
+    c("#SBATCH  --export=ALL"),
     paste("#SBATCH --job-name=",job_name,sep=''),
     paste("#SBATCH --partition=",partition,sep=''),
     c("#SBATCH --ntasks=1"),

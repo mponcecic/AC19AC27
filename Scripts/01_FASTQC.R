@@ -89,6 +89,7 @@ for (i in 1:length(samples)) {
   filename <- paste(name.job,".sh",sep='');
   cat(
     c("#!/bin/sh"),
+    c("#SBATCH  --export=ALL"),
     paste("#SBATCH --job-name=",name.job,sep=''),
     paste("#SBATCH --partition=",cluster,sep=''),
     paste("#SBATCH --cpus-per-task=",cpu,sep=''),
