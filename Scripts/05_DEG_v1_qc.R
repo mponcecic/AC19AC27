@@ -613,6 +613,11 @@ if(group_n < 30){
 }else{
   mk <- as.data.frame(assay(rlog(dds, blind = FALSE)))}
 
+# 3. Normalization
+# 
+# Normalized counts with log2 transformation
+norm_counts <- as.data.frame(log2(counts(dds, normalized = TRUE)+1))
+
 
 # DESeq2
 # ----------------------------------------------------------------------------
@@ -682,8 +687,9 @@ write.table(df, paste(dir_output,"/GeneCount_filter_mincount_", min_count, "_min
 write.table(mk, paste(dir_output,"/GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
 write.table(m1, paste(dir_output,"/GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   
-# Save transform data with blind = TRUE
+# Save normalized counts
 write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, ".txt", sep = ""))
+writ.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, ".txt", sep = ""))
   
 # Save QC file information
 logdate <- format(Sys.time(), "%Y%m%d")

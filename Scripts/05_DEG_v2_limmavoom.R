@@ -205,13 +205,12 @@ print(dim(gene_names))
 
 # Change name
 raw_genes <- raw_counts
-# Normalized counts
-raw_norm <- log2(raw_genes+1)
+
 # Generate column names
-col_raw <- c(colnames(raw_genes), paste("CPM", colnames(m_vst), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
+col_raw <- c(colnames(raw_genes), paste("CPM", colnames(m_vst), sep = "_"))
 
 # Bind raw, vst/rlog and normalized counts
-raw_genes <- cbind(raw_genes, m_vst, raw_norm)  
+raw_genes <- cbind(raw_genes, m_vst)  
 colnames(raw_genes) <- col_raw
 
 # Ensembl id column to merge with results
@@ -297,10 +296,6 @@ for (i in 1:length(contrast)){
   # Transformed data per comparison
   res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
   
-  # Normalized counts: log2(x + 1)
-  # To add in the result table
-  res_norm <- log2(gene_counts+1)
-  colnames(res_norm) <- paste("Norm", colnames(res_norm), sep = "_")
   
   # Select the contrast levels
   color_l <- color_list
