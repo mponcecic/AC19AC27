@@ -162,9 +162,9 @@ analysis <- "DESeq2"
 # Variance transformation method used 
 md <- logfile$Variance
 
-# Summary table results
+# Summary of the different comparisons results for this analysis found in the 
+# 05_DEG_ANALYSIS/Result folder
 sum_res <- data.frame()
-
 
 
 ################################################################################
@@ -186,24 +186,33 @@ genome$Name <- paste(genome$Symbol, genome$Ensembl, sep = "_")
 print(dim(genome))
 
 
+
+################################################################################
+#                   DESeq with filtered or raw data
+################################################################################
+
 for (h in 1:2) {
   
-  # Create Workbook
-  exc <- createWorkbook()
-  
-  # Load gene count matrix and select folder name
   if(h == 1){
-    raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
+    # FILTERED COUNTS
     analysis <- "DESeq2"
-    # Load transformed data 
+    # Load data
+    raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
     m_vst <- read.table(file = paste(dir_infiles, "GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   } else {
-    raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
+    # RAW COUNTS
     analysis <- "DESeq2_NoFilter"
-    #Load transformed data 
+    # Load data
+    raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
     m_vst <- read.table(file = paste(dir_infiles, "GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
   }
   print(dim(raw_counts))
+  
+  
+  
+  ################################################################################
+  #                             DATA PROCESSING
+  ################################################################################
   
   
   # Annotate all the genes in the matrix with the Symbol annotation
@@ -215,10 +224,6 @@ for (h in 1:2) {
   gene_names <- annot[match(rownames(raw_counts), annot$Ensembl), ]
   print(dim(gene_names))
   
-  
-  ## Final results txt 
-  # Data frame with all the comparison results 
-  final_data <- data.frame()
   
   # Change name
   raw_genes <- raw_counts
@@ -233,8 +238,23 @@ for (h in 1:2) {
   
   # Ensembl id column to merge with results
   raw_genes$Ensembl <- rownames(raw_genes)
-
-
+  
+  
+  
+  ################################################################################
+  #                             CREATE DATAFRAMES
+  ################################################################################
+  
+  # Create Workbook for the researchers
+  # Each sheet corresponds to one of the comparison results
+  # Columns: Name, Symbol, Ensembl, DEG, Direction, logFC, padj, variables, 
+  # normalized counts, raw count
+  exc <- createWorkbook()
+  
+  # Final results in *.txt
+  # Data frame with all the comparison results, same as exc
+  final_data <- data.frame()
+  
   
   ################################################################################
   #                               COMPARISONS
@@ -277,7 +297,7 @@ for (h in 1:2) {
     
     
     ##############################################################################
-    #                               Load Data
+    #                              Data processing
     ##############################################################################
     
     
@@ -613,12 +633,6 @@ for (h in 1:2) {
     result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
     final_data <- rbind(final_data, result2)
     
-    # # Differential expressed genes
-    # colnames(m) <- paste(md, colnames(m), sep = "_")
-    # sel <- cbind(df, m)
-    # sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
-    # write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)  
-    # 
   }
   
   # Save Workbook
