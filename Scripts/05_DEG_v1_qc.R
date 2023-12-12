@@ -602,7 +602,10 @@ df <- gene_counts[keep,]
 # 1. Create DESeq object
 dds <- DESeqDataSetFromMatrix(countData = raw_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
 
-# 2. Variance stabilization methods in log2 scale to interpret the data
+# 2. Estimate size factor
+dds <- estimateSizeFactors(dds)
+
+# 3. Variance stabilization methods in log2 scale to interpret the data
 # 
 # blind set FALSE, because we want the method to know to which group each sample 
 # belongs to. 
@@ -613,7 +616,7 @@ if(group_n < 30){
 }else{
   mk <- as.data.frame(assay(rlog(dds, blind = FALSE)))}
 
-# 3. Normalization
+# 4. Normalization
 # 
 # Normalized counts with log2 transformation
 norm_counts <- as.data.frame(log2(counts(dds, normalized = TRUE)+1))
