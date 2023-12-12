@@ -444,7 +444,7 @@ for (i in 1:length(contrast)){
   # All comparisons results
   result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
   result2$Comparison <- name
-  result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, DEG, Direction, logFC, padj, pvalue, everything())
+  result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, padj, pvalue, everything())
   final_data <- rbind(final_data, result2)
   
 }
@@ -455,8 +455,12 @@ saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_
 
 
 # Save all comparisons 
-colnames(final_data) <- c("Name", "Symbol", "Ensembl", "DEG", "Direction", "logFC", "padj", "pvalue", col_raw)
-write.table(final_data, file = paste(dir_infiles, "/", analysis, "_", project, ";All_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
+colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "logFC", "padj", "pvalue", col_raw)
+write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_CPM", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+
+# Save selected genes in all comparison
+final_data <- final_data[which(final_data$DEG == "YES"), ]
+write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_CPM", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")

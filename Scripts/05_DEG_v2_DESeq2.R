@@ -620,7 +620,7 @@ for (h in 1:2) {
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
     data <- cbind(data, res_norm)
-    data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
     write.table(data, paste(dir_files, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
 
     # Save data in the workbook
@@ -639,8 +639,13 @@ for (h in 1:2) {
   saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
-  colnames(final_data) <- c("Name", "Symbol", "Ensembl", "DEG", "Direction", "logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
-  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = "", eol = "\t", row.names = FALSE, col.names = TRUE)
+  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
+  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  
+  # Save selected genes in all comparison
+  final_data <- final_data[which(final_data$DEG == "YES"), ]
+  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  
   
   
   ################################################################################
