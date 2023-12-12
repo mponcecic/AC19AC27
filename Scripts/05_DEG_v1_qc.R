@@ -692,7 +692,7 @@ write.table(m1, paste(dir_output,"/GeneCount_filter_", md, "_blindFALSE_", proje
   
 # Save normalized counts
 write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, ".txt", sep = ""))
-writ.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, ".txt", sep = ""))
+write.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, ".txt", sep = ""))
   
 # Save QC file information
 logdate <- format(Sys.time(), "%Y%m%d")
