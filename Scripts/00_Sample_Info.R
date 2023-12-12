@@ -61,7 +61,7 @@ files <- "W:/DATA_shared/AC-XX_TotalRNAseq/"
 dir_in <- files
   
 # First and last sample found in the Library Preparation pdf table which is 
-# usually in page 5.
+# usually in page 5, corresponding to the firs column which can be Library ID or GAP ID
 # This is a key step to generate a data frame based on the table from the pdf
 first_sample <- "AC-XX_XX"
 last_sample <- "AC-XX_XX"
@@ -186,13 +186,15 @@ data <- data %>% select(V5, V6, V9) %>% arrange(desc(V5))
 colnames(data) <- c("Sample", "Organism", "RIN")
 
 # Add the condition variable
+# Caution: the condition variable should added using data[trt] or using the name 
+# of the condition saved in the variable trt i.e trt = Time;  data$Time 
 # Be careful adding the comparison levels
 data[trt] <- factor(c(rep("Control", 4), rep("4", 4), rep("48", 4), rep("24", 4)), levels = lvl_order, ordered = TRUE)
 
 # Optional
 # Some sequencing projects migth include information from different tissues, projects, ...
 # You can add this information as a new variable or generate two separet csv files
-data <- data %>% mutate(Ind = sub(".*E", "E", data$Sample)) %>% arrange(Time)
+# data <- data %>% mutate(Ind = sub(".*E", "E", data$Sample)) %>% arrange(Time)
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Save data as sample information 

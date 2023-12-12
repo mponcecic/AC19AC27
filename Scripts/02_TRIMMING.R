@@ -148,17 +148,17 @@ U <- "3"
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output directories 
-dir_outfiles <- paste(path, project_name, sep = "")
+dir_out <- paste(path, project_name, sep = "")
 
 # Load log file 
-logfile <- read.table(paste(dir_outfiles, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(dir_outfiles, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory
 dir_infiles <- paste(logfile$filedirRocky, "FASTQs", sep = "")
 
 # Create output directory
-dir.create(file.path(dir_outfiles,"02_TRIMMED"))
-dir_outfiles <- paste(dir_outfiles,"/02_TRIMMED",sep='')
+dir.create(file.path(dir_out,"02_TRIMMED"))
+dir_outfiles <- paste(dir_out,"/02_TRIMMED",sep='')
 setwd(dir_outfiles)
 
 
@@ -263,7 +263,7 @@ for (i in 1:length(samples)) {
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
-log_data$project_name <- project
+log_data$project_name <- project_name
 log_data$outputdir <- dir_outfiles
 log_data$inputdir <- dir_infiles
 log_data$Library <- seq_library
@@ -275,7 +275,7 @@ log_data$nucR1 <- u
 log_data$nucR2 <- U
 
 
-write.table(as.data.frame(log_data), paste(dir_outfiles, "/log/2_Trimming_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(dir_out, "/log/2_Trimming_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 
 q()
