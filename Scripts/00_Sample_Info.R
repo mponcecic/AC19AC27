@@ -235,6 +235,7 @@ log_data$covariance <- paste(var_exp, collapse = ",")
 log_data$path <- dir_out
 log_data$filedir <- dir_in
 log_data$filedirRocky <- files_rocky
+log_data$local_dir <- local_dir
 log_data$Organism <- org
 log_data$read <- read
 log_data$contrasts <- paste(unlist(contrast), collapse = ",")
