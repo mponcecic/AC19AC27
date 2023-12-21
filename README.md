@@ -75,7 +75,7 @@ cd /path/to/folder
 git init
 
 # Step 1. Clone the repository in to a different destination folder
-git clone --branch=main <repo-url> <new-directory-name>
+git clone --branch=main https://github.com/AC-lab-pipelines/DEG_Reference <new-directory-name>
 
 # Step 2. Move to the destination folder
 cd /new-directory-name/
