@@ -328,7 +328,7 @@ if(trmd == TRUE){
   pattern2 = "_2_trmd.fastq.gz"
 }else{
   # Load log file 
-  logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+  logfile <- read.table(paste(path, project_name, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
   
   # Input directory
   dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
