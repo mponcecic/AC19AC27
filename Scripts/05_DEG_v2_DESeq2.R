@@ -630,7 +630,7 @@ for (h in 1:2) {
     # All comparisons results
     result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
     result2$Comparison <- name
-    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
     final_data <- rbind(final_data, result2)
     
   }
