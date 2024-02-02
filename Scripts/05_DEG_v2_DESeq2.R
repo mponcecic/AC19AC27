@@ -620,7 +620,7 @@ for (h in 1:2) {
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
     data <- cbind(data, res_norm)
-    data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
     write.table(data, paste(dir_files, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
 
     # Save data in the workbook
@@ -630,7 +630,7 @@ for (h in 1:2) {
     # All comparisons results
     result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
     result2$Comparison <- name
-    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
     final_data <- rbind(final_data, result2)
     
   }
@@ -639,7 +639,7 @@ for (h in 1:2) {
   saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
-  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
+  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
   write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
   # Save selected genes in all comparison
