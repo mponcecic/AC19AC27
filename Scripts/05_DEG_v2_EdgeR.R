@@ -378,7 +378,7 @@ for (i in 1:length(contrast)){
   
   # Change columns names to plot data 
   res <- res[match(rownames(gene_counts), rownames(res)),]
-  colnames(res) <- c("logFC", "logCPM", "pvalue", "padj")
+  colnames(res) <- c("log2FC", "logCPM", "pvalue", "padj")
   
   
   # MA plot 
