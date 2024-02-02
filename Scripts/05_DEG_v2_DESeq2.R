@@ -473,7 +473,7 @@ for (h in 1:2) {
     res <- cbind(res, shrklogFC)
     
     # Change columns names to plot data 
-    colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj", "shrklogFC")
+    colnames(res) <- c("MeanExp","log2FC", "lfcSE", "stat", "pvalue", "padj", "shrklogFC")
     
     # MA plot 
     pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
