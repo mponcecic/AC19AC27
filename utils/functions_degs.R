@@ -528,6 +528,7 @@ heatmap_plot <- function(m, metadata, trt, color_l, callback = function(hc, ...)
              fontsize_col = font_col,
              border_color = NA,
              treeheight_row = 0,
+             clustering_method = "ward.D2", 
              clustering_callback = callback) 
     
   } else {
@@ -543,6 +544,7 @@ heatmap_plot <- function(m, metadata, trt, color_l, callback = function(hc, ...)
              fontsize_col = font_col,
              border_color = NA,
              treeheight_row = 0,
+             clustering_method = "ward.D2", 
              clustering_callback = callback)
   }
   
