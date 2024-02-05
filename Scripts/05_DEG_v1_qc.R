@@ -122,15 +122,18 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "XXX"
+project <- "AC65"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/user/"
+path <- "W:/ulazcano/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20231129"
+logdate <- "20240103"
+
+#Analysis ID. Crated using a timestap to trace all de outputs belongin to a certain setup
+analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
 
 
 ### Pre-processing cutoffs
@@ -309,8 +312,8 @@ dir.create(file.path(dir_out, "QC"), showWarnings = FALSE)
 dir_fig <- paste(dir_out, "/QC", sep='')
 
 # Results folder
-dir.create(file.path(dir_out, "Results"), showWarnings = FALSE)
-dir_output <- paste(dir_out, "/Results", sep='')
+dir.create(file.path(paste(dir_out, "Results_",analysis_ID,sep='')), showWarnings = FALSE)
+dir_output <- paste(dir_out, "/Results_",analysis_ID, sep='')
 
 
 ################################################################################
@@ -354,37 +357,36 @@ if(!is.null(var_exp)){
 
 ### Verify the order of the columns are the same as the sample information file #### 
 raw_counts <- raw_counts[, match(sample_info$Sample, colnames(raw_counts))]
-gene_counts <- raw_counts[, match(sample_info$Sample, colnames(raw_counts))]
 
-
-if(sum(rownames(sample_info) == colnames(gene_counts)) != ncol(gene_counts)){
+if(sum(rownames(sample_info) == colnames(raw_counts)) != ncol(raw_counts)){
   cat("ERROR: Samples in count matrix are not ordered", "REORDER COUNT MATRIX COLUMNS", sep = "\n")
 }else{print("Samples in count matrix are ordered")
-  gene_counts <- raw_counts[, match(sample_info$Sample, colnames(raw_counts))]
+  raw_counts <- raw_counts[, match(sample_info$Sample, colnames(raw_counts))]
 }
   
 
 #### Filter #### 
 # Number of samples
-n <- ncol(gene_counts)
+n <- ncol(raw_counts)
 
 # Filter genes with no counts based on the number of samples
 # This is a common filtering step for all the comparison levels
-gene_counts <- gene_counts[which(rowSums(gene_counts) >= 10),]
-label <- "filtering_10"
+#Disable first filter 2024/01/05 and add one that filters all NA only 
+#gene_counts <- gene_counts[which(rowSums(gene_counts) >= 10),]
+#label <- "filtering_10"
+raw_counts <-  raw_counts[(rowSums(raw_counts) != 0), ]
 
 ## Statistical summary
-print(label)
 cat(paste("Total genes in raw count:", dim(raw_counts)[1]))
-cat(paste("Total genes in gene count:", dim(gene_counts)[1]))
+#cat(paste("Total genes in gene count:", dim(gene_counts)[1]))
 print("There is NA data?")
-print(is.na(gene_counts) %>% table())
+print(is.na(raw_counts) %>% table())
 
 
 ## Barplot verification the quality of the gene counts
-bp <- data.frame(Samples = colnames(gene_counts),
+bp <- data.frame(Samples = colnames(raw_counts),
                  trt = sample_info[trt],
-                 Values = as.vector(colSums(gene_counts)))
+                 Values = as.vector(colSums(raw_counts)))
 
 ggplot(bp, aes(x = factor(Samples, levels = sample_info$Sample), y = Values, fill = !!as.name(trt)))+
   geom_bar(stat = "identity")+
@@ -415,8 +417,9 @@ print(design_cond)
   
   
 ##############################################################################
-#                           Data transformation 
+#                           DATA VERIFICATION 
 ##############################################################################
+# Check data consistency 
 
 # Step 1: Create DESeq object
 # ----------------------------------------------------------------------------
@@ -427,7 +430,7 @@ print(design_cond)
 #     associated to the samples valuable to perform the contrast. The row names
 #     must be the samples names
 # - Design formula with the experimental conditions and the covariates 
-dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
+dds <- DESeqDataSetFromMatrix(countData = raw_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
   
   
 # Step 2: Variance stabilizing transformation
@@ -464,11 +467,12 @@ dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, de
 group_n <- max(as.vector(tabulate(sample_info[[trt]])))
 
 if(group_n < 30){
-  m <- as.data.frame(assay(vst(dds, blind = TRUE)))
-  md <- "VST"
+  raw_counts_blindTRUE <- as.data.frame(assay(vst(dds, blind = TRUE)))
+  #m <- as.data.frame(assay(vst(dds, blind = TRUE)))
+  Variance_Stabilization_Type <- "VST"
 }else{
-  m <- as.data.frame(assay(rlog(dds, blind = TRUE)))
-  md <- "RLOG"}
+  raw_counts_blindTRUE <- as.data.frame(assay(rlog(dds, blind = TRUE)))
+  Variance_Stabilization_Type <- "RLOG"}
 
 # Step 3: Stack matrix
 # ----------------------------------------------------------------------------
@@ -476,7 +480,7 @@ if(group_n < 30){
 # Modify the matrix to easily plot it
 m_s <- stack(m)
 m_s_mod <- m_s
-m_s_mod[trt] <- rep(sample_info[[trt]], each = dim(gene_counts)[1])
+m_s_mod[trt] <- rep(sample_info[[trt]], each = dim(raw_counts)[1])
 
 
 ##############################################################################
@@ -573,29 +577,19 @@ dev.off()
 #                   GENE COUNT FILTERING AND NORMALIZATION
 ##############################################################################
 
-
-##############################################################################
-#                               Filtering
-##############################################################################
-
-## Filter gene count matrix per each comparison
-#
-# This data will be used when running DESeq2, EdgeR, limma-voom and Wilcoxon to
-# perform the test for the differentially expressed genes
-keep <- filter_genecounts(gene_counts, sample_info, trt, min_count = min_count, min_prop = min_prop, n_large = n_large, min_total = min_total)
-df <- gene_counts[keep,]
-
-
 ##############################################################################
 #                           Data transformation
 ##############################################################################
-
-# Normalized filtered gene counts for the DEG analysis following steps. This
+# Two analysis paths. On the one and we have the DESeq2 analysis with NO FILERED data to
+# try to maximize DESeq2 potential. On the other hand FILTERED data for DESeq2, EdgeR and limmavoom (Wilcoxon)
+# Normalized and filtered gene counts for the DEG analysis are performed in following steps. This
 # transformation is different based on the method used to perform the analysis.
 # The methods used are DESeq2, EdgeR, limma-voom and Wilcoxon test
+# In all the cases blind=FALSE 
 
-
-
+##############################################################################
+#                             NO FILTERED
+##############################################################################
 # DESeq2: Raw counts
 # ----------------------------------------------------------------------------
 
@@ -612,9 +606,9 @@ dds <- estimateSizeFactors(dds)
 # Options: VST for samples size group smaller than 30. 
 
 if(group_n < 30){
-  mk <- as.data.frame(assay(vst(dds, blind = FALSE)))
+  raw_counts_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
 }else{
-  mk <- as.data.frame(assay(rlog(dds, blind = FALSE)))}
+  raw_counts_blindFALSE <- as.data.frame(assay(rlog(dds, blind = FALSE)))}
 
 # 4. Normalization
 # 
@@ -624,29 +618,40 @@ norm_counts <- as.data.frame(log2(counts(dds, normalized = TRUE)+1))
 
 # DESeq2
 # ----------------------------------------------------------------------------
-  
+
+
+##############################################################################
+#                               Filtering
+##############################################################################
+
+## Filter gene count matrix per each comparison
+#
+# This data will be used when running DESeq2, EdgeR, limma-voom and Wilcoxon to
+# perform the test for the differentially expressed genes
+keep <- filter_genecounts(raw_counts, sample_info, trt, min_count = min_count, min_prop = min_prop, n_large = n_large, min_total = min_total)
+filtered_counts <- raw_counts[keep,]
+
 # 1. Create DESeq object
-dds <- DESeqDataSetFromMatrix(countData = df, colData = sample_info, design =  eval(parse(text = design_cond)))
+dds <- DESeqDataSetFromMatrix(countData = filtered_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
   
 # 2. Variance stabilization methods in log2 scale to interpret the data
-# 
 # blind set FALSE, because we want the method to know to which group each sample 
 # belongs to. 
 # Options: VST for samples size group smaller than 30. 
   
 if(group_n < 30){
-  m1 <- as.data.frame(assay(vst(dds, blind = FALSE)))
-  md <- "VST"
+  filtered_counts_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
+  Variance_Stabilization_Type <- "VST"
 }else{
-  m1 <- as.data.frame(assay(rlog(dds, blind = FALSE)))
-  md <- "RLOG"}
+  filtered_counts_blindFALSE <- as.data.frame(assay(rlog(dds, blind = FALSE)))
+  Variance_Stabilization_Type <- "RLOG"}
   
   
 # EdgeR/limma-voom
 # ----------------------------------------------------------------------------
   
 # 1. Create DGEList object
-deg <- DGEList(counts = df, group = sample_info[,trt])
+deg <- DGEList(counts = filtered_counts, group = sample_info[,trt])
 if(!is.null(var_exp)){deg$samples[var_exp] <- sample_info[,var_exp]}
   
   
@@ -678,17 +683,17 @@ logcpm <- as.data.frame(logcpm)
 write.table(sample_info, paste(dir_output, "/Metadata_", project,".txt", sep = ""))
   
 # Save gene counts
-write.table(gene_counts, paste(dir_output,"/GeneCount_", label ,"_", project,".txt", sep = ""))
+write.table(raw_counts, paste(dir_output,"/GeneCount_", label ,"_", project,".txt", sep = ""))
   
 # Save transform data with blind = TRUE
-write.table(m, paste(dir_output,"/GeneCount_", md , "_blindTRUE_", project, ".txt", sep = ""))
+write.table(raw_counts_blindTRUE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type , "_blindTRUE_", project, ".txt", sep = ""))
+  
+# Save filtered data with blind = FALSE
+write.table(filtered_counts, paste(dir_output,"/GeneCount_filtered", "_", project, ".txt", sep = ""))
   
 # Save transform data with blind = FALSE
-write.table(df, paste(dir_output,"/GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
-  
-# Save transform data with blind = FALSE
-write.table(mk, paste(dir_output,"/GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
-write.table(m1, paste(dir_output,"/GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
+write.table(raw_counts_blindFALSE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type, "_blindFALSE_", project, ".txt", sep = ""))
+write.table(filtered_counts_blindFALSE, paste(dir_output,"/GeneCount_filtered_", Variance_Stabilization_Type, "_blindFALSE_", project, ".txt", sep = ""))
   
 # Save normalized counts
 write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, ".txt", sep = ""))
@@ -701,7 +706,7 @@ sum_contrast$Date <- Sys.time()
 sum_contrast$Genes <- dim(gene_counts)[1]
 sum_contrast$GenesFiltered <- dim(df)[1] 
 sum_contrast$design <- design_cond
-sum_contrast$Transformation <- md
+sum_contrast$Transformation <- Variance_Stabilization_Type
 write.table(sum_contrast, paste(dir_output, "/QC_result_", project,".txt", sep = ""), row.names = FALSE, eol = "\r")
   
 
@@ -714,6 +719,7 @@ write.table(sum_contrast, paste(dir_output, "/QC_result_", project,".txt", sep =
 # Save log file information
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
+log_data$Analysis_ID <- Analysis_ID
 log_data$Date <- Sys.time()
 log_data$project_name <- project
 log_data$Organism <- logfile$Organism
@@ -729,7 +735,7 @@ log_data$min_prop <- min_prop
 log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
-log_data$Variance <- md
+log_data$Variance <- Variance_Stabilization_Type
 log_data$contrast <- logfile$contrast
 log_data$colortrt <- paste(color_list[[trt]], collapse = ",")
 log_data$colorheat <- paste(color_list[["Heatmap"]], collapse = ",")
