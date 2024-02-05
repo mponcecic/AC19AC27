@@ -247,7 +247,7 @@ for (h in 1:2) {
   
   # Create Workbook for the researchers
   # Each sheet corresponds to one of the comparison results
-  # Columns: Name, Symbol, Ensembl, DEG, Direction, logFC, padj, variables, 
+  # Columns: Name, Symbol, Ensembl, DEG, Direction, log2FC, padj, variables, 
   # normalized counts, raw count
   exc <- createWorkbook()
   
@@ -469,11 +469,11 @@ for (h in 1:2) {
     # Shrinkage log2 fold change 
     lfcresl <- lfcShrink(dds, contrast = contrast[[i]], type = "ashr")
     lfcres <- as.data.frame(lfcresl)
-    shrklogFC <- lfcres$log2FoldChange 
-    res <- cbind(res, shrklogFC)
+    shrklog2FC <- lfcres$log2FoldChange 
+    res <- cbind(res, shrklog2FC)
     
     # Change columns names to plot data 
-    colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj", "shrklogFC")
+    colnames(res) <- c("MeanExp","log2FC", "lfcSE", "stat", "pvalue", "padj", "shrklog2FC")
     
     # MA plot 
     pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
@@ -504,16 +504,16 @@ for (h in 1:2) {
     ## Significative genes
     # Events with p-val NA are saved too
     # Based on the alpha and log2 FC thresholds  
-    res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$logFC) > lfc_cutoff] <- "YES"
-    res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$logFC) <= lfc_cutoff] <- "NO"
+    res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$log2FC) > lfc_cutoff] <- "YES"
+    res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$log2FC) <= lfc_cutoff] <- "NO"
     res_df$DEG[is.na(res_df$DEG)] <- "NO"
     
     ## Gene direction
     # Contains if DEGs are up (Upregulated) or downregulated (Downregulated)
     # Based on the alpha and log2 FC 
-    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC > lfc_cutoff] <- "Upregulated"
-    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC < -lfc_cutoff] <- "Downregulated"
-    res_df$Direction[res_df$padj > fdr_cutoff & res_df$logFC <= lfc_cutoff] <- "Not significant"
+    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC > lfc_cutoff] <- "Upregulated"
+    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC < -lfc_cutoff] <- "Downregulated"
+    res_df$Direction[res_df$padj > fdr_cutoff & res_df$log2FC <= lfc_cutoff] <- "Not significant"
     res_df$Direction[is.na(res_df$Direction)] <- "Not significant"
     
     
@@ -620,7 +620,7 @@ for (h in 1:2) {
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
     data <- cbind(data, res_norm)
-    data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
     write.table(data, paste(dir_files, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
 
     # Save data in the workbook
@@ -630,7 +630,7 @@ for (h in 1:2) {
     # All comparisons results
     result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
     result2$Comparison <- name
-    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
     final_data <- rbind(final_data, result2)
     
   }
@@ -639,7 +639,7 @@ for (h in 1:2) {
   saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
-  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
+  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklog2FC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
   write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
   # Save selected genes in all comparison

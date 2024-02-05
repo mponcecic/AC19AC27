@@ -185,10 +185,10 @@ wilcoxon_test <- function(count_cpm, correction, metadata, trt, contrast){
   padj <- p.adjust(pvalue, method = correction)
   
   # Log2 Fold Change
-  logFC <- log2(rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][2])]])/rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][3])]]))
+  log2FC <- log2(rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][2])]])/rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][3])]]))
   
   # Final result
-  wilcoxon <- data.frame(logFC = logFC, pvalue = pvalue, padj = padj)
+  wilcoxon <- data.frame(log2FC = log2FC, pvalue = pvalue, padj = padj)
   return(wilcoxon)
 }
 
@@ -331,7 +331,7 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   # In both graphs, a horizontal line with the intercept in 0 is added.
   # 
   # Point symbols can change from a dot (16) to a triangle when they are out of 
-  # the y-axis limits, when logFC is positive the triangle point up (2) and 
+  # the y-axis limits, when log2FC is positive the triangle point up (2) and 
   # negative, the triangle point down (6)
   # 
   # This function is based on `MAplot` from DESeq2 which was dapted from 
@@ -342,8 +342,8 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   test.col <- "padj"
   
   # Y axis column
-  lfc.col <- "logFC"
-  ylab <- "log fold change"
+  lfc.col <- "log2FC"
+  ylab <- "log 2 fold change"
   
   # Select X axis column and label for the different methods and DEGs color
   if (analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
@@ -355,8 +355,8 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   } else {   
     # EdgeR and limma-voom
     # X axis column
-    counts.col <- "logCPM"
-    xlab <- "Counts per million"
+    counts.col <- "log2CPM"
+    xlab <- "log 2 Counts per million"
     # Color DEGs
     colSig <- ifelse(analysis == "EdgeR", "red4", "darkgreen")
   } 
@@ -563,7 +563,7 @@ hist_verif <- function(res_df = res_df, df = df){
   
   # All the genes
   # Histogram log 2 FC distribution
-  A <- ggplot(data = res_df, aes(x = logFC)) +
+  A <- ggplot(data = res_df, aes(x = log2FC)) +
     geom_histogram( fill = "#6696CC", color = "black")+
     labs(x = "log2FC", y = "Counts")+
     theme(text = element_text(size = 6))
@@ -575,7 +575,7 @@ hist_verif <- function(res_df = res_df, df = df){
   
   # DEGs
   # Histogram log 2 FC distribution 
-  C <- ggplot(data = df, aes(x = logFC)) +
+  C <- ggplot(data = df, aes(x = log2FC)) +
     geom_histogram( fill = "#6696CC", color = "black")+
     labs(x = "log2FC", y = "Counts")+
     theme(text = element_text(size = 6))
@@ -618,7 +618,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   
   
   # Volcano plot with the DEGs in blue and the non-significant in grey
-  A <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = DEG))+
+  A <- ggplot(data = data, aes(x = log2FC, y = -log10(padj), col = DEG))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
@@ -628,7 +628,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   
   # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey
-  B <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = Direction))+
+  B <- ggplot(data = data, aes(x = log2FC, y = -log10(padj), col = Direction))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
@@ -638,7 +638,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   
   # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey, with gene names for the degs
-  C <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = Direction, label = deglabel))+
+  C <- ggplot(data = data, aes(x = log2FC, y = -log10(padj), col = Direction, label = deglabel))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
@@ -674,9 +674,9 @@ waterfall_plot <- function(data, color_list) {
   # Remove genes with duplicated gene ID
   wf <- df[which(!(duplicated(df$Ensembl))),]
   # Sort the data based on the log2 FC
-  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$logFC, decreasing = FALSE)])
+  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$log2FC, decreasing = FALSE)])
   
-  ggplot(wf, aes(x = Ensembl, y = logFC, fill = Direction)) +
+  ggplot(wf, aes(x = Ensembl, y = log2FC, fill = Direction)) +
     geom_bar(stat = "identity")+
     scale_fill_manual(values = as.vector(color_l$Direction)[-2])+
     xlab("Differentially expressed genes")+
@@ -703,12 +703,12 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
   # Remove genes with duplicated gene ID
   wf <- df[which(!(duplicated(df$Ensembl))),]
   # Sort the data based on the log2 FC
-  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$logFC, decreasing = FALSE)])
+  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$log2FC, decreasing = FALSE)])
   
   # Select the top 30 genes 
   wf_sel <- rbind(wf[1:top,], wf[(dim(wf)[1]-top):dim(wf)[1],]) 
   
-  ggplot(wf_sel, aes(x = logFC, y = Ensembl, fill = Direction)) +
+  ggplot(wf_sel, aes(x = log2FC, y = Ensembl, fill = Direction)) +
     geom_bar( stat = "identity") +
     xlab("Log2 Fold Change") +
     ylab("Gene name") +

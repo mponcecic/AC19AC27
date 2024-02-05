@@ -227,7 +227,7 @@ sum_res <- data.frame()
 
 # Create Workbook for the researchers
 # Each sheet corresponds to one of the comparison results
-# Columns: Name, Symbol, Ensembl, DEG, Direction, logFC, padj, variables, 
+# Columns: Name, Symbol, Ensembl, DEG, Direction, log2FC, padj, variables, 
 # normalized counts, raw count
 exc <- createWorkbook()
 
@@ -337,7 +337,7 @@ for (i in 1:length(contrast)){
   # 
   # This step is common between EdgeR and limma-voom 
   # 
-  # Minimized the logFC between samples for most genes using weighted Trimmed Mean of M-values 
+  # Minimized the log2FC between samples for most genes using weighted Trimmed Mean of M-values 
   # between each pair of samples (TMM method) to normalized the gene counts based 
   # on the library size.
   # Corrects for sequencing detph, RNA composition and gene length
@@ -351,7 +351,7 @@ for (i in 1:length(contrast)){
   # ----------------------------------------------------------------------------
   #
   # Run voom transformation 
-  # Transform count data to log2-counts per million (logCPM), estimate the mean-variance 
+  # Transform count data to log2-counts per million (log2CPM), estimate the mean-variance 
   # relationship and use this to compute appropriate observation-level weights. The 
   # data are then ready for linear modelling.
   
@@ -380,7 +380,7 @@ for (i in 1:length(contrast)){
   res <- topTable(tmp, adjust.method = correction, n = dim(gene_counts)[1])
   res <- res[match(rownames(gene_counts), rownames(res)),]
   # Change columns names to plot data 
-  colnames(res) <- c("logFC", "logCPM", "t", "pvalue", "padj", "B")
+  colnames(res) <- c("log2FC", "log2CPM", "t", "pvalue", "padj", "B")
   
   
   # MA plot 
@@ -406,16 +406,16 @@ for (i in 1:length(contrast)){
   ## Significative genes
   # Events with p-val NA are saved too
   # Based on the alpha and log2 FC thresholds  
-  res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$logFC) > lfc_cutoff] <- "YES"
-  res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$logFC) <= lfc_cutoff] <- "NO"
+  res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$log2FC) > lfc_cutoff] <- "YES"
+  res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$log2FC) <= lfc_cutoff] <- "NO"
   res_df$DEG[is.na(res_df$DEG)] <- "NO"
   
   ## Gene direction
   # Contains if DEGs are up (Upregulated) or downregulated (Downregulated)
   # Based on the alpha and log2 FC 
-  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC > lfc_cutoff] <- "Upregulated"
-  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC < -lfc_cutoff] <- "Downregulated"
-  res_df$Direction[res_df$padj > fdr_cutoff & res_df$logFC <= lfc_cutoff] <- "Not significant"
+  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC > lfc_cutoff] <- "Upregulated"
+  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC < -lfc_cutoff] <- "Downregulated"
+  res_df$Direction[res_df$padj > fdr_cutoff & res_df$log2FC <= lfc_cutoff] <- "Not significant"
   res_df$Direction[is.na(res_df$Direction)] <- "Not significant"
   
   
@@ -524,7 +524,7 @@ for (i in 1:length(contrast)){
   # All results
   colnames(res_log2) <- paste("CPM", colnames(res_log2), sep = "_")
   data <- cbind(result, res_log2)
-  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
+  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, log2FC, pvalue, log2CPM, t, padj, B, everything())
   write.table(data, paste(dir_files, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
 
   # Save data in the workbook
@@ -534,7 +534,7 @@ for (i in 1:length(contrast)){
   # All comparisons results
   result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
   result2$Comparison <- name
-  result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
+  result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, pvalue, log2CPM, t, padj, B, everything())
   final_data <- rbind(final_data, result2)
   
 }
@@ -545,7 +545,7 @@ saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_
 
 
 # Save all comparisons 
-colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "logFC", "pvalue", "logCPM", "t", "padj", "B", col_raw)
+colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "pvalue", "log2CPM", "t", "padj", "B", col_raw)
 write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_CPM", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
 
 # Save selected genes in all comparison
