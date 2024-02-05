@@ -59,7 +59,7 @@ files_rocky <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-XX_TotalRNAseq/"
 files <- "W:/DATA_shared/AC-XX_TotalRNAseq/"
 # Select input directory
 dir_in <- files
-  
+
 # First and last sample found in the Library Preparation pdf table which is 
 # usually in page 5, corresponding to the firs column which can be Library ID or GAP ID
 # This is a key step to generate a data frame based on the table from the pdf
@@ -241,6 +241,5 @@ log_data$read <- read
 log_data$contrasts <- paste(unlist(contrast), collapse = ",")
 
 write.table(as.data.frame(log_data), paste(dir_log, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
-
 
 
