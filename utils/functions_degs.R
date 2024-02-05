@@ -185,10 +185,10 @@ wilcoxon_test <- function(count_cpm, correction, metadata, trt, contrast){
   padj <- p.adjust(pvalue, method = correction)
   
   # Log2 Fold Change
-  logFC <- log2(rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][2])]])/rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][3])]]))
+  log2FC <- log2(rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][2])]])/rowMeans(count_cpm[,metadata$Sample[which(metadata[,trt] == contrast[[i]][3])]]))
   
   # Final result
-  wilcoxon <- data.frame(logFC = logFC, pvalue = pvalue, padj = padj)
+  wilcoxon <- data.frame(log2FC = log2FC, pvalue = pvalue, padj = padj)
   return(wilcoxon)
 }
 
@@ -331,7 +331,7 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   # In both graphs, a horizontal line with the intercept in 0 is added.
   # 
   # Point symbols can change from a dot (16) to a triangle when they are out of 
-  # the y-axis limits, when logFC is positive the triangle point up (2) and 
+  # the y-axis limits, when log2FC is positive the triangle point up (2) and 
   # negative, the triangle point down (6)
   # 
   # This function is based on `MAplot` from DESeq2 which was dapted from 
@@ -342,8 +342,8 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   test.col <- "padj"
   
   # Y axis column
-  lfc.col <- "logFC"
-  ylab <- "log fold change"
+  lfc.col <- "log2FC"
+  ylab <- "log 2 fold change"
   
   # Select X axis column and label for the different methods and DEGs color
   if (analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
@@ -355,8 +355,8 @@ MA_plot <- function(res, analysis, fdr_cutoff){
   } else {   
     # EdgeR and limma-voom
     # X axis column
-    counts.col <- "logCPM"
-    xlab <- "Counts per million"
+    counts.col <- "log2CPM"
+    xlab <- "log 2 Counts per million"
     # Color DEGs
     colSig <- ifelse(analysis == "EdgeR", "red4", "darkgreen")
   } 
@@ -433,9 +433,8 @@ pca_plot <- function(m, trt, metadata, color_l) {
   print(dim(m_t))
   m_pca <- prcomp(m_t, scale. = TRUE)
   
-  # Save output
-  pca1 <- m_pca$x
-  pca2 <- m_pca$rotation
+  
+  var_perc <- get_eigenvalue(m_pca)[,2]
   
   # Scree plot
   # Percentage of variances explained by each principal component
@@ -443,33 +442,42 @@ pca_plot <- function(m, trt, metadata, color_l) {
   
   # PC1 vs PC2
   pca_1vs2 <- fviz_pca_ind(m_pca, axes = c(1, 2),
-                           geom.ind = "text", repel = TRUE, labelsize = 4,
-                           col.ind = metadata[[trt]],
-                           addEllipses = TRUE, ellipse.level = 0.95,
+                           geom.ind = c("point", "text"), 
+                           pointshape = 21, labelsize = 4, repel = TRUE, mean.point = FALSE, 
+                           col.ind = metadata[[trt]],  fill.ind = metadata[[trt]],
+                           addEllipses = FALSE, ellipse.level = 0.95,
                            title = "") +
     scale_color_manual(values = color_l[[trt]]) +
     scale_fill_manual(values = color_l[[trt]]) +
-    theme(legend.position = "none")
+    labs(x = paste("PC1 (", round(var_perc[1],2),"% of variance)", sep = ""), y = paste("PC2 (", round(var_perc[2],2),"% of variance)", sep = ""))+
+    theme(legend.position = "none", axis.line = element_line(colour = "black"), axis.text = element_text(size = 6),
+          panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), plot.background = element_blank())
   
   # PC1 vs PC3
   pca_1vs3 <- fviz_pca_ind(m_pca, axes = c(1, 3),
-                           geom.ind = "text", repel = TRUE, labelsize = 4,
-                           col.ind = metadata[[trt]],
-                           addEllipses = TRUE, ellipse.level = 0.95,
+                           geom.ind = c("point", "text"),  
+                           pointshape = 21, labelsize = 4, repel = TRUE, mean.point = FALSE, 
+                           col.ind = metadata[[trt]], fill.ind = metadata[[trt]],
+                           addEllipses = FALSE, ellipse.level = 0.95,
                            legend.title = "Treatment", title = "") +
     scale_color_manual(values = color_l[[trt]]) +
     scale_fill_manual(values = color_l[[trt]]) +
-    theme(legend.position = "none")
+    labs(x = paste("PC1 (", round(var_perc[1],2),"% of variance)", sep = ""), y = paste("PC3 (", round(var_perc[3],2),"% of variance)", sep = ""))+
+    theme(legend.position = "none", axis.line = element_line(colour = "black"), axis.text = element_text(size = 6),
+          panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), plot.background = element_blank())
   
   # PC1 vs PC4
   pca_1vs4 <- fviz_pca_ind(m_pca, axes = c(1, 4),
-                           geom.ind = "text", repel = TRUE, labelsize = 4,
-                           col.ind = metadata[[trt]],
-                           addEllipses = TRUE, ellipse.level = 0.95,
+                           geom.ind = c("point", "text"),  
+                           pointshape = 21, labelsize = 4, repel = TRUE, mean.point = FALSE, 
+                           col.ind = metadata[[trt]], fill.ind = metadata[[trt]],
+                           addEllipses = FALSE, ellipse.level = 0.95,
                            legend.title = "Treatment", title = "") +
     scale_color_manual(values = color_l[[trt]]) +
     scale_fill_manual(values = color_l[[trt]]) +
-    theme(legend.position = "none")
+    labs(x = paste("PC1 (", round(var_perc[1],2),"% of variance)", sep = ""), y = paste("PC4 (", round(var_perc[4],2),"% of variance)", sep = ""))+
+    theme(legend.position = "none", axis.line = element_line(colour = "black"), axis.text = element_text(size = 6),
+          panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), plot.background = element_blank())
   
   # Return the plots
   return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4))
@@ -520,6 +528,7 @@ heatmap_plot <- function(m, metadata, trt, color_l, callback = function(hc, ...)
              fontsize_col = font_col,
              border_color = NA,
              treeheight_row = 0,
+             clustering_method = "ward.D2", 
              clustering_callback = callback) 
     
   } else {
@@ -535,6 +544,7 @@ heatmap_plot <- function(m, metadata, trt, color_l, callback = function(hc, ...)
              fontsize_col = font_col,
              border_color = NA,
              treeheight_row = 0,
+             clustering_method = "ward.D2", 
              clustering_callback = callback)
   }
   
@@ -555,7 +565,7 @@ hist_verif <- function(res_df = res_df, df = df){
   
   # All the genes
   # Histogram log 2 FC distribution
-  A <- ggplot(data = res_df, aes(x = logFC)) +
+  A <- ggplot(data = res_df, aes(x = log2FC)) +
     geom_histogram( fill = "#6696CC", color = "black")+
     labs(x = "log2FC", y = "Counts")+
     theme(text = element_text(size = 6))
@@ -567,7 +577,7 @@ hist_verif <- function(res_df = res_df, df = df){
   
   # DEGs
   # Histogram log 2 FC distribution 
-  C <- ggplot(data = df, aes(x = logFC)) +
+  C <- ggplot(data = df, aes(x = log2FC)) +
     geom_histogram( fill = "#6696CC", color = "black")+
     labs(x = "log2FC", y = "Counts")+
     theme(text = element_text(size = 6))
@@ -610,7 +620,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   
   
   # Volcano plot with the DEGs in blue and the non-significant in grey
-  A <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = DEG))+
+  A <- ggplot(data = data, aes(x = log2FC, y = -log10(padj), col = DEG))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
@@ -620,7 +630,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   
   # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey
-  B <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = Direction))+
+  B <- ggplot(data = data, aes(x = log2FC, y = -log10(padj), col = Direction))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
@@ -630,7 +640,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   
   # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey, with gene names for the degs
-  C <- ggplot(data = data, aes(x = logFC, y = -log10(padj), col = Direction, label = deglabel))+
+  C <- ggplot(data = data, aes(x = log2FC, y = -log10(padj), col = Direction, label = deglabel))+
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
@@ -666,9 +676,9 @@ waterfall_plot <- function(data, color_list) {
   # Remove genes with duplicated gene ID
   wf <- df[which(!(duplicated(df$Ensembl))),]
   # Sort the data based on the log2 FC
-  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$logFC, decreasing = FALSE)])
+  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$log2FC, decreasing = FALSE)])
   
-  ggplot(wf, aes(x = Ensembl, y = logFC, fill = Direction)) +
+  ggplot(wf, aes(x = Ensembl, y = log2FC, fill = Direction)) +
     geom_bar(stat = "identity")+
     scale_fill_manual(values = as.vector(color_l$Direction)[-2])+
     xlab("Differentially expressed genes")+
@@ -695,12 +705,12 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
   # Remove genes with duplicated gene ID
   wf <- df[which(!(duplicated(df$Ensembl))),]
   # Sort the data based on the log2 FC
-  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$logFC, decreasing = FALSE)])
+  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$log2FC, decreasing = FALSE)])
   
   # Select the top 30 genes 
   wf_sel <- rbind(wf[1:top,], wf[(dim(wf)[1]-top):dim(wf)[1],]) 
   
-  ggplot(wf_sel, aes(x = logFC, y = Ensembl, fill = Direction)) +
+  ggplot(wf_sel, aes(x = log2FC, y = Ensembl, fill = Direction)) +
     geom_bar( stat = "identity") +
     xlab("Log2 Fold Change") +
     ylab("Gene name") +

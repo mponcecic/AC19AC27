@@ -44,7 +44,7 @@ project_name <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-path <- "/vols/GPArkaitz_bigdata/mponce/"
+path <- "/vols/GPArkaitz_bigdata/user/"
 # path <- "W:/mponce/"
 
 # Date of the log file 0_Sample_info_XXX.txt
@@ -59,7 +59,7 @@ memory <- c("3")
 
 
 # Load log file 
-logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(path, project_name, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory 
 dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
@@ -89,6 +89,7 @@ for (i in 1:length(samples)) {
   filename <- paste(name.job,".sh",sep='');
   cat(
     c("#!/bin/sh"),
+    c("#SBATCH  --export=ALL"),
     paste("#SBATCH --job-name=",name.job,sep=''),
     paste("#SBATCH --partition=",cluster,sep=''),
     paste("#SBATCH --cpus-per-task=",cpu,sep=''),

@@ -44,8 +44,8 @@ project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 
 # Local directory with Git folders 
@@ -59,9 +59,9 @@ files_rocky <- "/vols/GPArkaitz_bigdata/DATA_shared/AC-XX_TotalRNAseq/"
 files <- "W:/DATA_shared/AC-XX_TotalRNAseq/"
 # Select input directory
 dir_in <- files
-  
+
 # First and last sample found in the Library Preparation pdf table which is 
-# usually in page 5.
+# usually in page 5, corresponding to the firs column which can be Library ID or GAP ID
 # This is a key step to generate a data frame based on the table from the pdf
 first_sample <- "AC-XX_XX"
 last_sample <- "AC-XX_XX"
@@ -141,7 +141,7 @@ file.copy(from = file.path(local_dir, file_list), to = dir_utils)
 
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 # Load functions 
 source(paste(path, project, "/utils/function_pdf_to_tab.R", sep = ""))
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
@@ -186,13 +186,15 @@ data <- data %>% select(V5, V6, V9) %>% arrange(desc(V5))
 colnames(data) <- c("Sample", "Organism", "RIN")
 
 # Add the condition variable
+# Caution: the condition variable should added using data[trt] or using the name 
+# of the condition saved in the variable trt i.e trt = Time;  data$Time 
 # Be careful adding the comparison levels
 data[trt] <- factor(c(rep("Control", 4), rep("4", 4), rep("48", 4), rep("24", 4)), levels = lvl_order, ordered = TRUE)
 
 # Optional
 # Some sequencing projects migth include information from different tissues, projects, ...
 # You can add this information as a new variable or generate two separet csv files
-data <- data %>% mutate(Ind = sub(".*E", "E", data$Sample)) %>% arrange(Time)
+# data <- data %>% mutate(Ind = sub(".*E", "E", data$Sample)) %>% arrange(Time)
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Save data as sample information 
@@ -233,11 +235,11 @@ log_data$covariance <- paste(var_exp, collapse = ",")
 log_data$path <- dir_out
 log_data$filedir <- dir_in
 log_data$filedirRocky <- files_rocky
+log_data$local_dir <- local_dir
 log_data$Organism <- org
 log_data$read <- read
 log_data$contrasts <- paste(unlist(contrast), collapse = ",")
 
 write.table(as.data.frame(log_data), paste(dir_log, "/0_Sample_info_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
-
 
 

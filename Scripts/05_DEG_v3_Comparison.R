@@ -22,19 +22,19 @@ project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 # Date of the log file 5_DEG_qc_xxxxx.log
-logdate <- "20231110"
+logdate <- "20231204"
 
 # Select the methods you want to compare
 # analysis_list <- c("DESeq2", "EdgeR", "limma-voom", "Wilcoxon")
-analysis_list <- c("DESeq2", "EdgeR", "limma-voom")
+analysis_list <- c("EdgeR", "limma-voom")
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 # Load functions scripts
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
@@ -44,9 +44,12 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
 
-# Output directory
+# Main directory
 # dir_out <- paste(path, project, sep = "")   # Default option
-dir_out <- paste(path, project, sep = "")
+dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
+
+# Output directory 
+dir_output <- paste(dir_out, "/Results", sep = "")
 
 # Experimental condition
 # Choose only one condition per script
@@ -132,6 +135,14 @@ for (p in 2:length(analysis_list)) {for (t in 1:(p - 1)) {comparison[length(comp
 exc <- createWorkbook()
 
 
+################################################################################
+#                               LOAD DATA 
+################################################################################
+
+
+## Load metadata file 
+sample_info <- read.table(paste(dir_output, "/Metadata_", project, ".txt", sep = ""))
+
 
 
 ################################################################################
@@ -141,7 +152,6 @@ exc <- createWorkbook()
 
 for (i in 1:length(contrast)){
   
-  
   # Contrast 
   name <- paste(contrast[[i]][2], "vs", contrast[[i]][3], sep = "")
   print(name)
@@ -149,6 +159,7 @@ for (i in 1:length(contrast)){
   # Contrast levels 
   control <- contrast[[i]][3]
   experimental <- contrast[[i]][2]
+  comp_lvl <- c(control, experimental)
   
   # Select the contrast levels and method colors
   color_l <- color_list
@@ -171,17 +182,13 @@ for (i in 1:length(contrast)){
   #                         Create working directories
   ##############################################################################
   
-  
-  # Load output directory
-  dir_outfolder <- paste(dir_out, "/05_DEG_ANALYSIS/", name, sep='')
-  setwd(dir_outfolder)
-  
-  # Result folder
-  dir_output <- paste(dir_outfolder, "/Results", sep='')
+  # Load input directory
+  dir_outfolder <- paste(dir_out, "/", name, sep='')
+  dir_infiles <- paste(dir_outfolder, "/Results", sep = "")
   
   # Method comparison figures folder
-  dir.create(file.path(dir_outfolder , "Method_comparison"), showWarnings = FALSE)
-  dir_fig <- paste(dir_outfolder ,"/Method_comparison", sep='')
+  dir.create(file.path(dir_outfolder , "Comparison"), showWarnings = FALSE)
+  dir_fig <- paste(dir_outfolder ,"/Comparison", sep='')
   
   
   ##############################################################################
@@ -190,11 +197,11 @@ for (i in 1:length(contrast)){
   
   
   # Load sample information per comparison
-  metadata <- read.table(paste(dir_output, "/Metadata_", name, "_", project, ".txt", sep = ""))
+  metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
   metadata[,trt] <- factor(metadata[,trt], levels = c(control, experimental))
   
   # Load QC_result_name_project.txt
-  file_trs <- read.table(paste(dir_output,"/QC_result_", name, "_", project,".txt", sep = ""), header = TRUE)
+  file_trs <- read.table(paste(dir_output,"/QC_result_", project,".txt", sep = ""), header = TRUE)
   md <- file_trs$Transformation
   
   # Load differentially expressed genes results
@@ -203,29 +210,29 @@ for (i in 1:length(contrast)){
     # Select analysis
     analysis <- analysis_list[j]
     
-    # Results annotation 
-    ref <- paste(analysis, "_", name, "_", project, sep = "")
+    # Reference
+    ref <- paste(analysis, name ,project, sep = "_")
     
     # Load results
     # Select the statistic columns per each analysis
     if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
-      df <- read.table(paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
+      df <- read.table(paste(dir_infiles, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), header = TRUE)
       col_nam <- c("logFC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue")
     } else if(analysis == "EdgeR"){
-      df <- read.table(paste(dir_output, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      df <- read.table(paste(dir_infiles, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
       col_nam <- c("logFC", "padj", "logCPM", "pvalue")
     } else if(analysis == "limma-voom"){
-      col_nam <- c("logFC", "padj", "logCPM", "t", "padj", "B")
-      df <- read.table(paste(dir_output, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
+      col_nam <- c("logFC", "pvalue", "logCPM", "t", "padj", "B")
+      df <- read.table(paste(dir_infiles, "/", ref, ";All_CPM_", threshold,".txt", sep = ""), header = TRUE)
     } else {
       col_nam <- c("logFC", "pvalue", "padj")}
-    
+
+     
     genes <- df %>% mutate(Method = analysis) %>% select(Name, Symbol, Ensembl, Method, DEG, logFC, padj, Direction, metadata$Sample)
     data <- rbind(data, genes)
-    print(dim(df))
-    
+
     # Results summary table 
-    sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(genes$DEG == "YES"), length(genes$Direction == "Upregulated"), length(genes$Direction == "Downregulated")))
+    sum_tab <- rbind(sum_tab, c(name, analysis, nrow(genes), length(which(genes$DEG == "YES")), length(which(genes$Direction == "Upregulated")), length(which(genes$Direction == "Downregulated"))))
     
     # Rename statistics with the method used
     colnames(df)[which(colnames(df) %in% col_nam)] <- paste(col_nam, analysis, sep = "_")
@@ -278,18 +285,18 @@ for (i in 1:length(contrast)){
     
     # Scatterplot
     ggplot(m, aes(x = A, y = B))+
-      geom_point(alpha = 0.4)
+      geom_point(alpha = 0.4)+
+      labs(x = comp[1], y = comp[2], title = "log2 Fold Change")
     ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_",  name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
     
     # Scatterplot with colors
     ggplot(m, aes(x = A, y = B, color = Significance))+
       geom_point(alpha = 0.4)+
-      labs(x = comp[1], y = comp[2], title = "log2 Fold Change")+ 
-      theme(legend.position = "bottom", legend.box = "horizontal")
-    ggsave(paste(dir_fig, "/Corr_", paste(comp, collapse = "_vs_"), "_sig_", name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
+      labs(x = comp[1], y = comp[2], title = "log2 Fold Change", color = "")+ 
+      theme(legend.position = "bottom", legend.box = "horizontal", legend.text = element_text(size = 6))
+    ggsave(paste(dir_fig, "/Corr_Sig_", paste(comp, collapse = "_vs_"), "_", name, "_", project, ".pdf", sep = ""), plot = last_plot(), height = 4, width = 4, bg = "white")
     
   }
-  
   
   
   ##############################################################################
@@ -334,7 +341,7 @@ for (i in 1:length(contrast)){
   unq_tab <- dup_tab[dup_tab$Freq == 1,]
   
   # Data frame of unique events
-  unq_events <- deg_data[which(data_de$Ensembl %in% unq_tab$Var1),]
+  unq_events <- data_de[which(data_de$Ensembl %in% unq_tab$Var1),]
   
   
   
@@ -348,11 +355,13 @@ for (i in 1:length(contrast)){
   A <- ggplot(data, aes(x = padj, fill = Method)) +
     geom_density(alpha = 0.5)+
     scale_fill_manual(values = color_l$Shared)+
-    labs(x = "adjusted p-value", y = "Counts")
+    labs(x = "adjusted p-value", y = "Counts")+
+    theme(legend.position = "none")
   B <- ggplot(data, aes(x = logFC, fill = Method)) +
-    geom_density(alpha = 0.5)+
+    geom_density(alpha = 0.5, )+
     scale_fill_manual(values = color_l$Shared)+
-    labs(x = "log2FC", y = "Counts")
+    labs(x = "log2FC", y = "Counts")+
+    theme(legend.position = "none")
   fig <- ggarrange(A, B, ncol = 2, nrow = 1, widths = 10, heights = 5)
   ggsave(filename = paste("00_Histogram_verif_", paste(analysis_list, collapse = "_"), ".pdf", sep = ""), path = dir_fig, plot = fig, width = 4, height = 2, bg = "white")
   
@@ -394,8 +403,8 @@ for (i in 1:length(contrast)){
   
   # Order output
   result_tab <- result_tab %>% select(Name, Symbol, Ensembl, analysis_list, everything())
-  write.table(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".txt", sep = ""))
-  write.xlsx(result_tab, paste(dir_output, "/", name, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".xlsx", sep = ""), overwrite = TRUE)
+  # write.table(result_tab, paste(dir_infiles, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".txt", sep = ""))
+  # write.xlsx(result_tab, paste(dir_infiles, "/", name, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save data in the workbook
   addWorksheet(exc, name)
@@ -404,10 +413,10 @@ for (i in 1:length(contrast)){
   }
 
 # Save workbook
-saveWorkbook(exc, file =  paste(dir_outfolder, "/", project, ";", paste(analysis_list, collapse = "_"), "_", fdr_cutoff, "_", lfc_cutoff, ".xlsx", sep = ""), overwrite = TRUE)
+saveWorkbook(exc, file =  paste(dir_output, "/", project, ";", paste(analysis_list, collapse = "_"), "_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Summary table 
-write.csv(sum_tab, paste(dir_outfolder, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_tab, paste(dir_output, "/Comparison_result_table_", project, ".csv", sep = ""), row.names = FALSE)
 
 
 ################################################################################

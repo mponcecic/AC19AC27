@@ -55,15 +55,15 @@ project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 # Date of the log file 5_DEG_qc_XXXX.log
-logdate <- "20231110"
+logdate <- "20231204"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 # Load functions scripts
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
@@ -99,7 +99,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 # var_exp <- NULL
-var_exp <- logfile$Varexp
+var_exp <-  unlist(strsplit(logfile$Varexp, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -161,9 +161,6 @@ specie <- logfile$Organism
 # Method used to study DEGs
 analysis <- "limma-voom"
 
-# Summary table results
-sum_res <- data.frame()
-
 
 ################################################################################
 #                               LOAD DATA
@@ -191,6 +188,7 @@ ref_genome <- read.table(paste(anot_path, "/DATA_shared/Genomes_Rocky/DEG_Annota
 genome <- ref_genome[which(ref_genome$Specie == specie), -4]
 genome$Name <- paste(genome$Symbol, genome$Ensembl, sep = "_")
 print(dim(genome))
+
 # Annotate all the genes in the matrix with the Symbol annotation
 # CAUTION: Symbol id present more than one Ensembl identifier. 
 # I propose to perform the analysis using the Ensembl identifier, if not the 
@@ -198,6 +196,44 @@ print(dim(genome))
 annot <- genome[which(genome$Ensembl %in% rownames(raw_counts)),]
 gene_names <- annot[match(rownames(raw_counts), annot$Ensembl), ]
 print(dim(gene_names))
+
+
+################################################################################
+#                             DATA PROCESSING
+################################################################################
+
+
+# Change name
+raw_genes <- raw_counts
+
+# Generate column names
+col_raw <- c(colnames(raw_genes), paste("CPM", colnames(m_vst), sep = "_"))
+
+# Bind raw, vst/rlog and normalized counts
+raw_genes <- cbind(raw_genes, m_vst)  
+colnames(raw_genes) <- col_raw
+
+# Ensembl id column to merge with results
+raw_genes$Ensembl <- rownames(raw_genes)
+
+
+################################################################################
+#                             CREATE DATAFRAMES
+################################################################################
+
+# Summary of the different comparisons results for this analysis found in the 
+# 05_DEG_ANALYSIS/Result folder
+sum_res <- data.frame()
+
+# Create Workbook for the researchers
+# Each sheet corresponds to one of the comparison results
+# Columns: Name, Symbol, Ensembl, DEG, Direction, log2FC, padj, variables, 
+# normalized counts, raw count
+exc <- createWorkbook()
+
+# Final results in *.txt
+# Data frame with all the comparison results, same as exc
+final_data <- data.frame()
 
 
 
@@ -234,9 +270,10 @@ for (i in 1:length(contrast)){
   dir_outfolder <- paste(dir_out, "/", name, sep='')
   setwd(dir_outfolder)
   
-  # Data folder
-  dir.create(file.path(dir_out , "/Results"), showWarnings = FALSE)
-  dir_output <- paste(dir_out,"/Results", sep='')
+  # Save files with comparison results separate
+  dir.create(file.path(dir_outfolder , "Results"), showWarnings = FALSE)
+  dir_files <- paste(dir_outfolder, "/Results", sep='')
+  
   # Figures folder
   dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
   dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
@@ -244,7 +281,7 @@ for (i in 1:length(contrast)){
   
   
   ##############################################################################
-  #                               Load Data
+  #                           Data processing
   ##############################################################################
   
   
@@ -258,6 +295,7 @@ for (i in 1:length(contrast)){
   
   # Transformed data per comparison
   res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
+  
   
   # Select the contrast levels
   color_l <- color_list
@@ -299,7 +337,7 @@ for (i in 1:length(contrast)){
   # 
   # This step is common between EdgeR and limma-voom 
   # 
-  # Minimized the logFC between samples for most genes using weighted Trimmed Mean of M-values 
+  # Minimized the log2FC between samples for most genes using weighted Trimmed Mean of M-values 
   # between each pair of samples (TMM method) to normalized the gene counts based 
   # on the library size.
   # Corrects for sequencing detph, RNA composition and gene length
@@ -313,7 +351,7 @@ for (i in 1:length(contrast)){
   # ----------------------------------------------------------------------------
   #
   # Run voom transformation 
-  # Transform count data to log2-counts per million (logCPM), estimate the mean-variance 
+  # Transform count data to log2-counts per million (log2CPM), estimate the mean-variance 
   # relationship and use this to compute appropriate observation-level weights. The 
   # data are then ready for linear modelling.
   
@@ -342,7 +380,7 @@ for (i in 1:length(contrast)){
   res <- topTable(tmp, adjust.method = correction, n = dim(gene_counts)[1])
   res <- res[match(rownames(gene_counts), rownames(res)),]
   # Change columns names to plot data 
-  colnames(res) <- c("logFC", "logCPM", "t", "pvalue", "padj", "B")
+  colnames(res) <- c("log2FC", "log2CPM", "t", "pvalue", "padj", "B")
   
   
   # MA plot 
@@ -368,16 +406,16 @@ for (i in 1:length(contrast)){
   ## Significative genes
   # Events with p-val NA are saved too
   # Based on the alpha and log2 FC thresholds  
-  res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$logFC) > lfc_cutoff] <- "YES"
-  res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$logFC) <= lfc_cutoff] <- "NO"
+  res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$log2FC) > lfc_cutoff] <- "YES"
+  res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$log2FC) <= lfc_cutoff] <- "NO"
   res_df$DEG[is.na(res_df$DEG)] <- "NO"
   
   ## Gene direction
   # Contains if DEGs are up (Upregulated) or downregulated (Downregulated)
   # Based on the alpha and log2 FC 
-  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC > lfc_cutoff] <- "Upregulated"
-  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC < -lfc_cutoff] <- "Downregulated"
-  res_df$Direction[res_df$padj > fdr_cutoff & res_df$logFC <= lfc_cutoff] <- "Not significant"
+  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC > lfc_cutoff] <- "Upregulated"
+  res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC < -lfc_cutoff] <- "Downregulated"
+  res_df$Direction[res_df$padj > fdr_cutoff & res_df$log2FC <= lfc_cutoff] <- "Not significant"
   res_df$Direction[is.na(res_df$Direction)] <- "Not significant"
   
   
@@ -443,9 +481,9 @@ for (i in 1:length(contrast)){
   plot_pcas <- pca_plot(m0, trt, metadata, color_l)
   
   ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
-  ggsave(filename = paste(deparse(substitute(pca_1vs2)), ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-  ggsave(filename = paste(deparse(substitute(pca_1vs3)), ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
-  ggsave(filename = paste(deparse(substitute(pca_1vs4)), ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
   
   ## HEATMAP
   plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
@@ -486,24 +524,37 @@ for (i in 1:length(contrast)){
   # All results
   colnames(res_log2) <- paste("CPM", colnames(res_log2), sep = "_")
   data <- cbind(result, res_log2)
-  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, pvalue, logCPM, t, padj, B, everything())
+  data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, log2FC, pvalue, log2CPM, t, padj, B, everything())
+  write.table(data, paste(dir_files, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
+
+  # Save data in the workbook
+  addWorksheet(exc, name)
+  writeData(exc, data, sheet = name)
   
-  write.table(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
-  write.xlsx(data, paste(dir_output, "/", ref, ";All_CPM_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
-  
-  # Differential expressed genes
-  colnames(m) <- paste("CPM", colnames(m), sep = "_")
-  sel <- cbind(df, m)
-  sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, logCPM, pvalue, everything())
-  write.table(data, paste(dir_output, "/", ref, ";DEGs_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
-  
+  # All comparisons results
+  result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
+  result2$Comparison <- name
+  result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, pvalue, log2CPM, t, padj, B, everything())
+  final_data <- rbind(final_data, result2)
   
 }
 
 
+# Save Workbook
+saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+
+
+# Save all comparisons 
+colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "pvalue", "log2CPM", "t", "padj", "B", col_raw)
+write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_CPM", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+
+# Save selected genes in all comparison
+final_data <- final_data[which(final_data$DEG == "YES"), ]
+write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_CPM", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
-write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_res, paste(dir_infiles, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
 
 
 ################################################################################

@@ -26,8 +26,8 @@
 # Genome index appropriate for your data in the following folder: 
 #         /vols/GPArkaitz_bigdata/DATA_shared/Genomes_Rocky/Indexes
 # 
-# The genome index are available for human and mouse with read length of 51, 101
-# and 151. 
+# The genome indexes are available for human and mouse with a read length of 51, 
+# 101 and 151. 
 
 
 #################################################################################
@@ -291,8 +291,8 @@ project_name <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-path <- "/vols/GPArkaitz_bigdata/mponce/"
-# path <- "W:/mponce/"
+path <- "/vols/GPArkaitz_bigdata/user/"
+# path <- "W:/user/"
 
 # Trimmed fastq/ raw fastqs
 trmd <- TRUE
@@ -328,7 +328,7 @@ if(trmd == TRUE){
   pattern2 = "_2_trmd.fastq.gz"
 }else{
   # Load log file 
-  logfile <- read.table(paste(path, project_name, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+  logfile <- read.table(paste(path, project_name, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
   
   # Input directory
   dir_infiles <- paste(logfile$filedirRocky, "/FASTQs", sep = "")
@@ -395,6 +395,7 @@ for (i in 1:length(samples_names)) {
   filename <- paste(job_name,".sh",sep='');
   cat(
     c("#!/bin/sh"),
+    c("#SBATCH  --export=ALL"),
     paste("#SBATCH --job-name=",job_name,sep=''),
     paste("#SBATCH --partition=",partition,sep=''),
     c("#SBATCH --ntasks=1"),

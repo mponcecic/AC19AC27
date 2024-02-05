@@ -15,7 +15,7 @@
 
 ### Interactive job ###
 # Ask for a node and wait until it allocates one to you
-salloc -N 1 -n 1 --mem=G -t 00:30:00 --partition=FAST --job-name=interactive 
+salloc -N 1 -n 1 --mem=3GB -t 00:45:00 --partition=FAST --job-name=interactive 
 
 # Enter the node you were asign to
 ssh c01

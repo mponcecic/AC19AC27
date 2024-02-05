@@ -28,7 +28,7 @@
 ## Gene Counts (ReadsPerGene.out.tab) 
 
 # Column 1. Gene ID
-# Column 2. counts for unstraned RNA-seq
+# Column 2. counts for unstranded RNA-seq
 # Column 3. counts for 1st read strand aligned with RNA
 # Column 4. counts for 2nd read strand aligned with RNA 
 
@@ -123,8 +123,8 @@ project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 # Select column to obtain the raw counts
 strand <- 4
@@ -132,7 +132,7 @@ strand <- 4
 
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 
 # Input and output directory

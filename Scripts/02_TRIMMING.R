@@ -9,7 +9,7 @@
 # Trimmed the fastq file prior to mapping with STAR. This step is optional. 
 # In this script, we can perform a standard trimming and a more specific trimming 
 # from the projects sequenced with the SMARTer Stranded Total RNA-Seq kit v2 - 
-# Pico input Mammalian when the insert size smaller than 150 bps. Common steps 
+# Pico input Mammalian when the insert is size smaller than 150 bps. Common steps 
 # are: 
 #
 # The first step is to remove the adapters from both reads simultaneously which 
@@ -95,8 +95,8 @@ project_name <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-path <- "/vols/GPArkaitz_bigdata/mponce/"
-# path <- "W:/mponce/"
+path <- "/vols/GPArkaitz_bigdata/user/"
+# path <- "W:/user/"
 
 
 # Date of the log file 0_Sample_info_XXX.log
@@ -148,17 +148,17 @@ U <- "3"
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output directories 
-dir_outfiles <- paste(path, project_name, sep = "")
+dir_out <- paste(path, project_name, sep = "")
 
 # Load log file 
-logfile <- read.table(paste(dir_outfiles, "/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+logfile <- read.table(paste(dir_outfiles, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
 
 # Input directory
 dir_infiles <- paste(logfile$filedirRocky, "FASTQs", sep = "")
 
 # Create output directory
-dir.create(file.path(dir_outfiles,"02_TRIMMED"))
-dir_outfiles <- paste(dir_outfiles,"/02_TRIMMED",sep='')
+dir.create(file.path(dir_out,"02_TRIMMED"))
+dir_outfiles <- paste(dir_out,"/02_TRIMMED",sep='')
 setwd(dir_outfiles)
 
 
@@ -202,6 +202,7 @@ for (i in 1:length(samples)) {
     filename <- paste(job_name,".sh",sep='');
     cat(
       c("#!/bin/sh"),
+      c("#SBATCH  --export=ALL"),
       paste("#SBATCH --job-name=",job_name,sep=''),
       paste("#SBATCH --partition=",partition,sep=''),
       paste("#SBATCH --cpus-per-task=",cpu,sep=''),
@@ -230,6 +231,7 @@ for (i in 1:length(samples)) {
     filename <- paste(job_name,".sh",sep='');
     cat(
       c("#!/bin/sh"),
+      c("#SBATCH  --export=ALL"),
       paste("#SBATCH --job-name=",job_name,sep=''),
       paste("#SBATCH --partition=",partition,sep=''),
       paste("#SBATCH --cpus-per-task=",cpu,sep=''),
@@ -261,7 +263,7 @@ for (i in 1:length(samples)) {
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
-log_data$project_name <- project
+log_data$project_name <- project_name
 log_data$outputdir <- dir_outfiles
 log_data$inputdir <- dir_infiles
 log_data$Library <- seq_library
@@ -273,7 +275,7 @@ log_data$nucR1 <- u
 log_data$nucR2 <- U
 
 
-write.table(as.data.frame(log_data), paste(dir_outfiles, "/log/2_Trimming_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(dir_out, "/log/2_Trimming_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 
 q()

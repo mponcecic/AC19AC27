@@ -36,8 +36,8 @@ project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Output and input directories SSH 
@@ -60,7 +60,7 @@ samples_names <- gsub("_fastqc.zip", "", samples)
 
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 
 

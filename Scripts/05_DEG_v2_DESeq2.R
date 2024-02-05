@@ -50,19 +50,19 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC70"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 # Date of the log file 5_DEG_qc_XXXX.log
-logdate <- "20231129"
+logdate <- "20231204"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 # Load functions scripts
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
@@ -97,7 +97,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 # var_exp <- NULL
-var_exp <- logfile$Varexp
+var_exp <-  unlist(strsplit(logfile$Varexp, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -162,9 +162,9 @@ analysis <- "DESeq2"
 # Variance transformation method used 
 md <- logfile$Variance
 
-# Summary table results
+# Summary of the different comparisons results for this analysis found in the 
+# 05_DEG_ANALYSIS/Result folder
 sum_res <- data.frame()
-
 
 
 ################################################################################
@@ -187,21 +187,32 @@ print(dim(genome))
 
 
 
+################################################################################
+#                   DESeq with filtered or raw data
+################################################################################
+
 for (h in 1:2) {
   
-  # Load gene count matrix and select folder name
   if(h == 1){
-    raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
+    # FILTERED COUNTS
     analysis <- "DESeq2"
-    # Load transformed data 
+    # Load data
+    raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
     m_vst <- read.table(file = paste(dir_infiles, "GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   } else {
-    raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
+    # RAW COUNTS
     analysis <- "DESeq2_NoFilter"
-    #Load transformed data 
+    # Load data
+    raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
     m_vst <- read.table(file = paste(dir_infiles, "GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
   }
   print(dim(raw_counts))
+  
+  
+  
+  ################################################################################
+  #                             DATA PROCESSING
+  ################################################################################
   
   
   # Annotate all the genes in the matrix with the Symbol annotation
@@ -213,6 +224,36 @@ for (h in 1:2) {
   gene_names <- annot[match(rownames(raw_counts), annot$Ensembl), ]
   print(dim(gene_names))
   
+  
+  # Change name
+  raw_genes <- raw_counts
+  # Normalized counts
+  raw_norm <- log2(raw_genes+1)
+  # Generate column names
+  col_raw <- c(colnames(raw_genes), paste(md, colnames(m_vst), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
+  
+  # Bind raw, vst/rlog and normalized counts
+  raw_genes <- cbind(raw_genes, m_vst, raw_norm)  
+  colnames(raw_genes) <- col_raw
+  
+  # Ensembl id column to merge with results
+  raw_genes$Ensembl <- rownames(raw_genes)
+  
+  
+  
+  ################################################################################
+  #                             CREATE DATAFRAMES
+  ################################################################################
+  
+  # Create Workbook for the researchers
+  # Each sheet corresponds to one of the comparison results
+  # Columns: Name, Symbol, Ensembl, DEG, Direction, log2FC, padj, variables, 
+  # normalized counts, raw count
+  exc <- createWorkbook()
+  
+  # Final results in *.txt
+  # Data frame with all the comparison results, same as exc
+  final_data <- data.frame()
   
   
   ################################################################################
@@ -245,9 +286,10 @@ for (h in 1:2) {
     dir_outfolder <- paste(dir_out, "/", name, sep='')
     setwd(dir_outfolder)
     
-    # Data folder
-    dir.create(file.path(dir_out , "/Results"), showWarnings = FALSE)
-    dir_output <- paste(dir_out,"/Results", sep='')
+    # Save files with comparison results separate
+    dir.create(file.path(dir_outfolder , "Results"), showWarnings = FALSE)
+    dir_files <- paste(dir_outfolder, "/Results", sep='')
+
     # Figures folder
     dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
     dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
@@ -255,19 +297,24 @@ for (h in 1:2) {
     
     
     ##############################################################################
-    #                               Load Data
+    #                              Data processing
     ##############################################################################
     
     
     # Metadata
     metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
-    metadata[,trt] <- factor(metadata[,trt])
+    metadata[,trt] <- factor(metadata[,trt], levels = c(comp_lvl))
     
     # Gene count matrix per comparison
     gene_counts <- raw_counts[, metadata$Sample]
     
     # Transformed data per comparison
     res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
+    
+    # Normalized counts: log2(x + 1)
+    # To add in the result table
+    res_norm <- log2(gene_counts+1)
+    colnames(res_norm) <- paste("Norm", colnames(res_norm), sep = "_")
     
     # Select the contrast levels
     color_l <- color_list
@@ -348,6 +395,38 @@ for (h in 1:2) {
     
     # Step 3: Contrast genes with Wald test
     # ----------------------------------------------------------------------------
+    # 
+    # Why independent filtering set TRUE?
+    # 
+    # Manual information:
+    # 
+    # The goal of independent filtering is to filter out those tests from the 
+    # procedure that have no, or little chance of showing significant evidence, 
+    # without even looking at their test statistic. Typically, this results in 
+    # increased detection power at the same experiment-wide type I error. Here, 
+    # we measure experiment-wide type I error in terms of the false discovery rate.
+    # 
+    # The results function of the DESeq2 package performs independent filtering 
+    # by default using the mean of normalized counts as a filter statistic. A 
+    # threshold on the filter statistic is found which optimizes the number of 
+    # adjusted p values lower than a significance level alpha (we use the standard 
+    # variable name for significance level, though it is unrelated to the dispersion 
+    # parameter α). The adjusted p values for the genes which do not pass the 
+    # filter threshold are set to NA
+    # 
+    # The default independent filtering is performed using the filtered_p function 
+    # of the genefilter package. The filter threshold value and the number of 
+    # rejections at each quantile of the filter statistic are available as 
+    # metadata of the object returned by results.
+    # 
+    # Personal interpretation:
+    # Independent filtering is a step applied after the analysis which increases 
+    # the statistical power of the results. It estimates a parameter named theta 
+    # which is used as a threshold and based on the mean of normalized counts, count 
+    # normalization used un DESeq2. This value will change from one data set to 
+    # another. The filtering of the adjusted pvalues is based on the gene counts 
+    # which mean of normalized counts overcome the theta statistics. The ones 
+    # which do not overcome this threshold are set to NA.
     
     # Log2 fold change result table for an specific comparison
     resl <- results(object = dds,                      # DESeqDataSet  
@@ -390,11 +469,11 @@ for (h in 1:2) {
     # Shrinkage log2 fold change 
     lfcresl <- lfcShrink(dds, contrast = contrast[[i]], type = "ashr")
     lfcres <- as.data.frame(lfcresl)
-    shrklogFC <- lfcres$log2FoldChange 
-    res <- cbind(res, shrklogFC)
+    shrklog2FC <- lfcres$log2FoldChange 
+    res <- cbind(res, shrklog2FC)
     
     # Change columns names to plot data 
-    colnames(res) <- c("MeanExp","logFC", "lfcSE", "stat", "pvalue", "padj", "shrklogFC")
+    colnames(res) <- c("MeanExp","log2FC", "lfcSE", "stat", "pvalue", "padj", "shrklog2FC")
     
     # MA plot 
     pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
@@ -425,16 +504,16 @@ for (h in 1:2) {
     ## Significative genes
     # Events with p-val NA are saved too
     # Based on the alpha and log2 FC thresholds  
-    res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$logFC) > lfc_cutoff] <- "YES"
-    res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$logFC) <= lfc_cutoff] <- "NO"
+    res_df$DEG[res_df$padj <= fdr_cutoff & abs(res_df$log2FC) > lfc_cutoff] <- "YES"
+    res_df$DEG[res_df$padj > fdr_cutoff & abs(res_df$log2FC) <= lfc_cutoff] <- "NO"
     res_df$DEG[is.na(res_df$DEG)] <- "NO"
     
     ## Gene direction
     # Contains if DEGs are up (Upregulated) or downregulated (Downregulated)
     # Based on the alpha and log2 FC 
-    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC > lfc_cutoff] <- "Upregulated"
-    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$logFC < -lfc_cutoff] <- "Downregulated"
-    res_df$Direction[res_df$padj > fdr_cutoff & res_df$logFC <= lfc_cutoff] <- "Not significant"
+    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC > lfc_cutoff] <- "Upregulated"
+    res_df$Direction[res_df$padj <= fdr_cutoff & res_df$log2FC < -lfc_cutoff] <- "Downregulated"
+    res_df$Direction[res_df$padj > fdr_cutoff & res_df$log2FC <= lfc_cutoff] <- "Not significant"
     res_df$Direction[is.na(res_df$Direction)] <- "Not significant"
     
     
@@ -461,7 +540,6 @@ for (h in 1:2) {
     m <- res_log2[which(rownames(res_log2) %in% df$Ensembl), ]
     
     if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
-    
     
     
     ##############################################################################
@@ -497,9 +575,9 @@ for (h in 1:2) {
     plot_pcas <- pca_plot(m0, trt, metadata, color_l)
     
     ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs2)), ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs3)), ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs4)), ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
     
     ## HEATMAP
     plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
@@ -536,23 +614,38 @@ for (h in 1:2) {
     # Summary table
     sum_line <- c(name, analysis, design_cond, md, dim(gene_counts)[1], dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
     sum_res <- rbind(sum_res, sum_line)
-    
+ 
     
     # All results
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
-    data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+    data <- cbind(data, res_norm)
+    data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
+    write.table(data, paste(dir_files, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
+
+    # Save data in the workbook
+    addWorksheet(exc, name)
+    writeData(exc, data, sheet = name)
     
-    write.table(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
-    write.xlsx(data, paste(dir_output, "/", ref, ";All_", md, "blindFALSE_", threshold,".xlsx", sep = ""), overwrite = TRUE)
-    
-    # Differential expressed genes
-    colnames(m) <- paste(md, colnames(m), sep = "_")
-    sel <- cbind(df, m)
-    sel <- sel %>% select(Name, Symbol, Ensembl, DEG, Direction, logFC, padj, MeanExp, lfcSE, stat, pvalue, everything())
-    write.table(data, paste(dir_output, "/", ref, ";DEGs_", md, "blindFALSE", threshold,".txt", sep = ""), row.names = FALSE)  
+    # All comparisons results
+    result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
+    result2$Comparison <- name
+    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
+    final_data <- rbind(final_data, result2)
     
   }
+  
+  # Save Workbook
+  saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+  
+  # Save all comparisons 
+  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklog2FC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
+  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  
+  # Save selected genes in all comparison
+  final_data <- final_data[which(final_data$DEG == "YES"), ]
+  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  
   
   
   ################################################################################
@@ -593,7 +686,7 @@ for (h in 1:2) {
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
-write.csv(sum_res, paste(dir_output, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_res, paste(dir_infiles, "/Summary_tab_DESeq2_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
  
 
 

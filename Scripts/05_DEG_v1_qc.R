@@ -122,12 +122,12 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC70"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
-# path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+# path <- "/vols/GPArkaitz_bigdata/user/"
+path <- "W:/user/"
 
 # Date of the log file 0_Sample_info_XXXX.log
 logdate <- "20231129"
@@ -146,7 +146,7 @@ outliers <- NULL
 # Filtering the data can be an option but in most cases lowly expressed genes are 
 # filtered. The filtering method is based on the function filterByExpr from edgeR.
 # As a result. a unique matrix per each comparison is obtain and given to DESeq2, 
-# limma-voom, EdgeR and Wilcoxon. However, there is a primary filterin step in 
+# limma-voom, EdgeR and Wilcoxon. However, there is a primary filtering step in 
 # which we remove the genes with 0 counts.
 # 
 # Two filtering methods are propose based on the data type, which can be clinical or 
@@ -173,7 +173,6 @@ n_large <- 30
 # Proportion
 min_prop <- 0.7
 
-
 ### Threshold criteria 
 
 ## Significance level
@@ -189,7 +188,7 @@ fdr_cutoff <- 0.05      # Default option
 
 ## Log2 fold change threshold
 # Be careful the you have to make sure that the threshold is always refereed as 
-# log2 fold change and not fold change <------
+# log2 fold change and not fold change 
 lfc_cutoff <- log2(1.5)         # Default option
 
 ## Multiple test correction
@@ -200,22 +199,21 @@ correction <- "BH"
 
 
 # Color list
-# Better to choose colors manual but there is a function named *color_palette* 
-# which selects the colors for the condition
-# Optional:
+# Option 1: Let the pipeline choose the colors
+# Function named *color_palette* selects the colors for the condition
 color_list <- list(Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
-# color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"), 
-#                    Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
-#                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
-#                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
-# names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")
+# Option 2: Select your own colors
+color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"),
+                   Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
+                   Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
+                   Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 # Load functions scripts
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
@@ -251,7 +249,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 # var_exp <- NULL
-var_exp <- logfile$covariance
+var_exp <- unlist(strsplit(logfile$covariance, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -260,7 +258,8 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 
 ## Generate color list
 # Automatically generate the colors for the treatment condition
-if(length(color_list)<4){color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")}
+# Change condition name, to make sure that fits the trt name
+if(length(color_list)<4){color_list <- color_palette(color_list, trt, lvl_ord, palette = "Dark2")}else{names(color_list) <- c(trt, "Heatmap", "Direction", "Shared")}
 
 # ggplot2 theme 
 theme_DEGs <- theme_bw()+ theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black"), panel.grid = element_blank())
@@ -286,11 +285,9 @@ raw_counts <- read.table(file = dir_infiles, sep = "\t",  header = TRUE, strings
 
 print(dim(raw_counts))
 print(dim(data_info))
-print(dim(genome))
 
 print(head(raw_counts))
 print(head(data_info))
-print(head(genome))
 
 
 
@@ -605,7 +602,10 @@ df <- gene_counts[keep,]
 # 1. Create DESeq object
 dds <- DESeqDataSetFromMatrix(countData = raw_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
 
-# 2. Variance stabilization methods in log2 scale to interpret the data
+# 2. Estimate size factor
+dds <- estimateSizeFactors(dds)
+
+# 3. Variance stabilization methods in log2 scale to interpret the data
 # 
 # blind set FALSE, because we want the method to know to which group each sample 
 # belongs to. 
@@ -615,6 +615,11 @@ if(group_n < 30){
   mk <- as.data.frame(assay(vst(dds, blind = FALSE)))
 }else{
   mk <- as.data.frame(assay(rlog(dds, blind = FALSE)))}
+
+# 4. Normalization
+# 
+# Normalized counts with log2 transformation
+norm_counts <- as.data.frame(log2(counts(dds, normalized = TRUE)+1))
 
 
 # DESeq2
@@ -662,6 +667,7 @@ deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, su
 logcpm <- cpm(deg, log = TRUE, normalized.lib.sizes = TRUE)
 logcpm <- as.data.frame(logcpm)
   
+
   
 ################################################################################
 #                               SAVE DATA           
@@ -684,8 +690,9 @@ write.table(df, paste(dir_output,"/GeneCount_filter_mincount_", min_count, "_min
 write.table(mk, paste(dir_output,"/GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
 write.table(m1, paste(dir_output,"/GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   
-# Save transform data with blind = TRUE
+# Save normalized counts
 write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, ".txt", sep = ""))
+write.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, ".txt", sep = ""))
   
 # Save QC file information
 logdate <- format(Sys.time(), "%Y%m%d")
