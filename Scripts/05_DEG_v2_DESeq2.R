@@ -473,7 +473,11 @@ for (h in 1:2) {
     res <- cbind(res, shrklog2FC)
     
     # Change columns names to plot data 
+<<<<<<< HEAD
     colnames(res) <- c("MeanExp","log2FC", "lfcSE", "stat", "pvalue", "padj", "shrklog2FC")
+=======
+    colnames(res) <- c("MeanExp","log2FC", "lfcSE", "stat", "pvalue", "padj", "shrklogFC")
+>>>>>>> ad9641c52ca4dae07df1d823dfd004ac6c435d49
     
     # MA plot 
     pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
@@ -620,7 +624,11 @@ for (h in 1:2) {
     colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
     data <- cbind(data, res_norm)
+<<<<<<< HEAD
     data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
+=======
+    data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+>>>>>>> ad9641c52ca4dae07df1d823dfd004ac6c435d49
     write.table(data, paste(dir_files, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
 
     # Save data in the workbook
@@ -630,7 +638,11 @@ for (h in 1:2) {
     # All comparisons results
     result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
     result2$Comparison <- name
+<<<<<<< HEAD
     result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
+=======
+    result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklogFC, MeanExp, lfcSE, stat, pvalue, everything())
+>>>>>>> ad9641c52ca4dae07df1d823dfd004ac6c435d49
     final_data <- rbind(final_data, result2)
     
   }
@@ -639,7 +651,11 @@ for (h in 1:2) {
   saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
+<<<<<<< HEAD
   colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklog2FC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
+=======
+  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklogFC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
+>>>>>>> ad9641c52ca4dae07df1d823dfd004ac6c435d49
   write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
   # Save selected genes in all comparison
