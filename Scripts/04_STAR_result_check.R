@@ -88,7 +88,7 @@ for (i in 1:length(samples_names)){
 
 
 #Load trimming check
-if(timming == TRUE){trim_file <- read.csv(file = paste(output_dir, "/", project_name,"_Trimming_check.csv", sep = ""), header = TRUE)
+if(trimming == TRUE){trim_file <- read.csv(file = paste(output_dir, "/", project_name,"_Trimming_check.csv", sep = ""), header = TRUE)
 colnames(trim_file) <- gsub("\\.", " ", colnames(trim_file))
 colnames(trim_file) <- gsub("   ", " < ", colnames(trim_file))
 
