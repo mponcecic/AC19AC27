@@ -141,7 +141,7 @@ file.copy(from = file.path(local_dir, file_list), to = dir_utils)
 
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 # Load functions 
 source(paste(path, project, "/utils/function_pdf_to_tab.R", sep = ""))
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))

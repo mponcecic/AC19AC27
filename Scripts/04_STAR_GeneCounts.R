@@ -132,7 +132,7 @@ strand <- 4
 
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 
 # Input and output directory

@@ -62,7 +62,7 @@ logdate <- "20231204"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 # Load functions scripts
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
