@@ -1,7 +1,6 @@
 ################################################################################
 #                 DIFFERENTIALLY EXPRESSED GENES SCRIPT
 ################################################################################
-#Prueba
 
 # Summary 
 #------------
@@ -462,7 +461,6 @@ for (i in 1:2){
   dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
   
   
-  
   # Step 2: Variance stabilizing transformation
   # ----------------------------------------------------------------------------
   # 
@@ -519,10 +517,19 @@ for (i in 1:2){
   m_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
   vsd_type <- "VST"
   
-  # Step 3: Stack matrix
+  # Step 3: Normalization
   # ----------------------------------------------------------------------------
   # 
-  # Modify the matrix to easily plot it
+  # The normalization method is DESeq2's median of ratios in which counts divided 
+  # by sample-specific size factors determined by median ratio of gene counts 
+  # relative to geometric mean per gene. 
+  # 
+  # Accounting for sequencing depth and RNA composition
+  norm_counts <- as.data.frame(counts(dds, normalized = TRUE))
+  
+  # Step 4: Stack matrix
+  # ----------------------------------------------------------------------------
+  # Matrix to plot the data
   m_blindTRUE_s <- stack(m_blindTRUE)
   m_blindTRUE_s_mod <- m_blindTRUE_s
   m_blindTRUE_s_mod[trt] <- rep(sample_info[[trt]], each = dim(raw_counts)[1])
@@ -646,6 +653,10 @@ for (i in 1:2){
     
     # Step 3: Counts per million normalization method 
     # ----------------------------------------------------------------------------
+    # 
+    # In the counts per million method, counts are scaled by total number of reads
+    # 
+    # Accounting for sequencing depth
     cpm_counts <- cpm(deg, log = FALSE, normalized.lib.sizes = TRUE)
     cpm_counts <- as.data.frame(cpm_counts)
     
