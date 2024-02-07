@@ -198,7 +198,6 @@ for (h in 1:2) {
     analysis <- "DESeq2"
     # Load data
     raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
-    m_vst <- read.table(file = paste(dir_infiles, "GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
   } else {
     # RAW COUNTS
     analysis <- "DESeq2_NoFilter"
