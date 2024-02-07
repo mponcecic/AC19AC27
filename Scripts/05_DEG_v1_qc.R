@@ -613,6 +613,7 @@ if(group_n < 30){
 # 4. Normalization
 # 
 # Normalized counts with log2 transformation
+##################### AÑADIR NORMALIZACION CON FILRADO SY NO FILRADOS
 norm_counts <- as.data.frame(log2(counts(dds, normalized = TRUE)+1))
 
 
@@ -680,24 +681,26 @@ logcpm <- as.data.frame(logcpm)
   
   
 # Save metadata information
-write.table(sample_info, paste(dir_output, "/Metadata_", project,".txt", sep = ""))
+write.table(sample_info, paste(dir_output, "/Metadata_", project,analysis_ID,".txt", sep = ""))
   
 # Save gene counts
-write.table(raw_counts, paste(dir_output,"/GeneCount_", label ,"_", project,".txt", sep = ""))
+write.table(raw_counts, paste(dir_output,"/GeneCount_", label ,"_", project,analysis_ID,".txt", sep = ""))
   
 # Save transform data with blind = TRUE
-write.table(raw_counts_blindTRUE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type , "_blindTRUE_", project, ".txt", sep = ""))
+write.table(raw_counts_blindTRUE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type , "_blindTRUE_", project, analysis_ID,".txt", sep = ""))
   
 # Save filtered data with blind = FALSE
-write.table(filtered_counts, paste(dir_output,"/GeneCount_filtered", "_", project, ".txt", sep = ""))
+write.table(filtered_counts, paste(dir_output,"/GeneCount_filtered", "_", project, analysis_ID,".txt", sep = ""))
   
 # Save transform data with blind = FALSE
-write.table(raw_counts_blindFALSE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type, "_blindFALSE_", project, ".txt", sep = ""))
-write.table(filtered_counts_blindFALSE, paste(dir_output,"/GeneCount_filtered_", Variance_Stabilization_Type, "_blindFALSE_", project, ".txt", sep = ""))
+write.table(raw_counts_blindFALSE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type, "_blindFALSE_", project, analysis_ID,".txt", sep = ""))
+write.table(filtered_counts_blindFALSE, paste(dir_output,"/GeneCount_filtered_", Variance_Stabilization_Type, "_blindFALSE_", project, analysis_ID,".txt", sep = ""))
   
 # Save normalized counts
-write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, ".txt", sep = ""))
-write.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, ".txt", sep = ""))
+write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, analysis_ID,".txt", sep = ""))
+############################AÑADIR NORMALIZADO FILRADO Y NO FILTRADO
+write.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, analysis_ID,".txt", sep = ""))
+write.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, analysis_ID,".txt", sep = ""))
   
 # Save QC file information
 logdate <- format(Sys.time(), "%Y%m%d")
@@ -707,7 +710,7 @@ sum_contrast$Genes <- dim(gene_counts)[1]
 sum_contrast$GenesFiltered <- dim(df)[1] 
 sum_contrast$design <- design_cond
 sum_contrast$Transformation <- Variance_Stabilization_Type
-write.table(sum_contrast, paste(dir_output, "/QC_result_", project,".txt", sep = ""), row.names = FALSE, eol = "\r")
+write.table(sum_contrast, paste(dir_output, "/QC_result_", project,analysis_ID,".txt", sep = ""), row.names = FALSE, eol = "\r")
   
 
 
@@ -719,7 +722,7 @@ write.table(sum_contrast, paste(dir_output, "/QC_result_", project,".txt", sep =
 # Save log file information
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
-log_data$Analysis_ID <- Analysis_ID
+log_data$analysis_ID <- analysis_ID
 log_data$Date <- Sys.time()
 log_data$project_name <- project
 log_data$Organism <- logfile$Organism
