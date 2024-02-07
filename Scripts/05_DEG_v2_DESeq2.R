@@ -71,11 +71,17 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 # Load log file 
 logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
 
+
+# Analysis ID for tracing of analysis
+analysis_ID <- log_data$analysis_ID
+
+
 # Output directory
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
 
 # Input directory. Raw gene counts  
-dir_infiles <- paste(dir_out, "/Results/", sep = "")
+dir_infiles <- paste(dir_out, "/Results_",analysis_ID,"/", sep = "")
+
 
 # Experimental condition
 # Choose only one condition per script
@@ -160,7 +166,7 @@ specie <- logfile$Organism
 analysis <- "DESeq2"
 
 # Variance transformation method used 
-md <- logfile$Variance
+Variance_Stabilization_Type <- logfile$Variance
 
 # Summary of the different comparisons results for this analysis found in the 
 # 05_DEG_ANALYSIS/Result folder
@@ -198,16 +204,16 @@ for (h in 1:2) {
     analysis <- "DESeq2"
     # Load data
     raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
-    m_vst <- read.table(file = paste(dir_infiles, "GeneCount_filter_", md, "_blindFALSE_", project, ".txt", sep = ""))
+    vst_blindFALSE_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_", Variance_Stabilization_Type, "_blindFALSE_", project, ".txt", sep = ""))
   } else {
     # RAW COUNTS
     analysis <- "DESeq2_NoFilter"
     # Load data
     raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
-    m_vst <- read.table(file = paste(dir_infiles, "GeneCount_", md, "_blindFALSE_", project, ".txt", sep = ""))
+    vst_blindFALSE_counts <- read.table(file = paste(dir_infiles, "GeneCount_", Variance_Stabilization_Type, "_blindFALSE_", project, ".txt", sep = ""))
   }
   print(dim(raw_counts))
-  
+  print(dim(vst_blindFALSE_counts))
   
   
   ################################################################################
@@ -230,10 +236,10 @@ for (h in 1:2) {
   # Normalized counts
   raw_norm <- log2(raw_genes+1)
   # Generate column names
-  col_raw <- c(colnames(raw_genes), paste(md, colnames(m_vst), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
+  col_raw <- c(colnames(raw_genes), paste(Variance_Stabilization_Type, colnames(vst_blindFALSE_counts), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
   
   # Bind raw, vst/rlog and normalized counts
-  raw_genes <- cbind(raw_genes, m_vst, raw_norm)  
+  raw_genes <- cbind(raw_genes, vst_blindFALSE_counts, raw_norm)  
   colnames(raw_genes) <- col_raw
   
   # Ensembl id column to merge with results
@@ -309,7 +315,7 @@ for (h in 1:2) {
     gene_counts <- raw_counts[, metadata$Sample]
     
     # Transformed data per comparison
-    res_log2 <- m_vst[which(rownames(m_vst) %in% rownames(gene_counts)), metadata$Sample]
+    res_log2 <- vst_blindFALSE_counts[which(rownames(vst_blindFALSE_counts) %in% rownames(gene_counts)), metadata$Sample]
     
     # Normalized counts: log2(x + 1)
     # To add in the result table
@@ -612,16 +618,16 @@ for (h in 1:2) {
     
     
     # Summary table
-    sum_line <- c(name, analysis, design_cond, md, dim(gene_counts)[1], dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
+    sum_line <- c(name, analysis, design_cond, Variance_Stabilization_Type, dim(gene_counts)[1], dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
     sum_res <- rbind(sum_res, sum_line)
  
     
     # All results
-    colnames(res_log2) <- paste(md, colnames(res_log2), sep = "_")
+    colnames(res_log2) <- paste(Variance_Stabilization_Type, colnames(res_log2), sep = "_")
     data <- cbind(result, res_log2)
     data <- cbind(data, res_norm)
     data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
-    write.table(data, paste(dir_files, "/", ref, ";All_", md, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
+    write.table(data, paste(dir_files, "/", ref, ";All_", Variance_Stabilization_Type, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
 
     # Save data in the workbook
     addWorksheet(exc, name)
@@ -636,15 +642,15 @@ for (h in 1:2) {
   }
   
   # Save Workbook
-  saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+  saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", Variance_Stabilization_Type, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
   colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklog2FC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
-  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", Variance_Stabilization_Type, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
   # Save selected genes in all comparison
   final_data <- final_data[which(final_data$DEG == "YES"), ]
-  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_", md, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_", Variance_Stabilization_Type, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
   
   
@@ -672,7 +678,7 @@ for (h in 1:2) {
   log_data$fdr_cutoff <- fdr_cutoff
   log_data$lfc_cutoff <- lfc_cutoff
   log_data$correction <- correction
-  log_data$Variance <- md
+  log_data$Variance <- Variance_Stabilization_Type
   log_data$contrast <- paste(unlist(contrast), collapse = ",")
   log_data$colortrt <- paste(color_list[[1]], collapse = ",")
   log_data$colorheat <- paste(color_list[[2]], collapse = ",")
