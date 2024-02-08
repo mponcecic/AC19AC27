@@ -121,19 +121,15 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC65"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/ulazcano/"
+path <- "W:/user/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20240103"
-
-#Analysis ID. Crated using a timestap to trace all de outputs belongin to a certain setup
-analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
-
+logdate <- "20231212"
 
 ### Pre-processing cutoffs
 
@@ -207,12 +203,11 @@ color_list <- list(Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4
                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 # # Option 2: Select your own colors
-# color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"),
+# color_list <- list(trt = c(`0` = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"),
 #                    Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
 #                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
 #                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 # Load libraries
 source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
@@ -220,6 +215,9 @@ source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 # Load functions scripts
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
+# Analysis ID 
+# Created using a timestap to trace all de outputs belonging to a certain setup
+analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
 
 # Load log file 
 logfile <- read.table(paste(path, project, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
@@ -249,8 +247,8 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-var_exp <- NULL
-#var_exp <- unlist(strsplit(logfile$covariance, split = ","))
+# var_exp <- NULL
+var_exp <- unlist(strsplit(logfile$covariance, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -270,6 +268,9 @@ theme_set(theme_DEGs)
 # Columns are Comparison, Method, Genes, Upregulated and Downregulated
 out_df <- data.frame()
 
+
+# Create a workbook for pca data
+exc_pca <- createWorkbook()
 
 
 ################################################################################
@@ -301,17 +302,21 @@ print(head(data_info))
 # classified in Results and Figures. 
 
 # Create output directory
-dir.create(file.path(dir_out,"05_DEG_ANALYSIS"))
+dir.create(file.path(dir_out,"05_DEG_ANALYSIS"), showWarnings = FALSE)
 dir_out <- paste(dir_out,"/05_DEG_ANALYSIS", sep='')
 setwd(dir_out)
 
+# Output directory with the ID
+dir.create(file.path(dir_out, analysis_ID))
+dir_ID <- paste(dir_out, "/", analysis_ID, sep = "")
+
 # Quality control figures folder
-dir.create(file.path(dir_out, "QC"), showWarnings = FALSE)
-dir_fig <- paste(dir_out, "/QC", sep='')
+dir.create(file.path(dir_ID, "QC"), showWarnings = FALSE)
+dir_fig <- paste(dir_ID, "/QC", sep='')
 
 # Results folder
-dir.create(file.path(paste(dir_out, "/Results_",analysis_ID,sep='')), showWarnings = FALSE)
-dir_output <- paste(dir_out, "/Results_",analysis_ID, sep='')
+dir.create(file.path(dir_ID, "Results"), showWarnings = FALSE)
+dir_output <- paste(dir_ID, "/Results", sep='')
 
 
 ################################################################################
@@ -439,6 +444,9 @@ for (i in 1:2){
     filter_lab <- "filtered"
   }
   
+  print(filter_lab)
+  print(dim(gene_counts))
+  
   # Final output
   df <- gene_counts
   df$Ensembl <- rownames(df)
@@ -459,10 +467,14 @@ for (i in 1:2){
   #     must be the samples names
   # - Design formula with the experimental conditions and the covariates 
   dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
-
-  # Estimate size factor
+  
+  
+  # Step 2: Estimate size factor
+  # ----------------------------------------------------------------------------
   dds <- estimateSizeFactors(dds)
-  # Step 2: Variance stabilizing transformation
+  
+  
+  # Step 3: Variance stabilizing transformation
   # ----------------------------------------------------------------------------
   # 
   # Variance stabilization methods in log2 scale to interpret the data
@@ -518,7 +530,8 @@ for (i in 1:2){
   m_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
   vsd_type <- "VST"
   
-  # Step 3: Normalization
+  
+  # Step 4: Normalization
   # ----------------------------------------------------------------------------
   # 
   # The normalization method is DESeq2's median of ratios in which counts divided 
@@ -528,7 +541,8 @@ for (i in 1:2){
   # Accounting for sequencing depth and RNA composition
   norm_counts <- as.data.frame(counts(dds, normalized = TRUE))
   
-  # Step 4: Stack matrix
+  
+  # Step 5: Stack matrix
   # ----------------------------------------------------------------------------
   # Matrix to plot the data
   m_blindTRUE_s <- stack(m_blindTRUE)
@@ -570,7 +584,7 @@ for (i in 1:2){
   # -3.321928 which can be ignored because this is value is calculated from log2(0.1)
   # explained in the box above. This peak consists of all 0-values (inactive genes)
   # which isn’t very important to us now.
-  pdf(paste(dir_fig, "/02_Density_genecounts_", project, "_", filter_lab,".pdf", sep = ""), height = 5, width = 5, bg = "white")
+  pdf(paste(dir_fig, "/02_Density_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), height = 5, width = 5, bg = "white")
   plotDensity(m_blindTRUE, col = rep(color_list[[trt]], each = 4), xlab = "Log2(Counts)", ylab = "Density", main = "Expression Distribution")
   dev.off()
   
@@ -610,10 +624,14 @@ for (i in 1:2){
   ## PCA PLOTS
   plot_pcas <- pca_plot(m_blindTRUE, trt, sample_info, color_list)
   
-  ggsave(filename = paste("PCA_params_genecounts_", project, "_", filter_lab, "_scree.pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
+  ggsave(filename = paste("PCA_params_genecounts_", project, "_", filter_lab, "_scree", "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
   ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+  addWorksheet(exc_pca, paste("Rotation", filter_lab, sep = "_"))
+  addWorksheet(exc_pca, paste("GenesPCs", filter_lab, sep = "_"))
+  writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("Rotation", filter_lab, sep = "_"))
+  writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", filter_lab, sep = "_"))
   
   
   ## HEATMAP
@@ -634,7 +652,6 @@ for (i in 1:2){
     # ----------------------------------------------------------------------------
     deg <- DGEList(counts = gene_counts, group = sample_info[,trt])
     if(!is.null(var_exp)){deg$samples[var_exp] <- sample_info[,var_exp]}
-    print("Setp 1 EdgeR limma FILTERED done")
     
     
     # Step 2: Normalization
@@ -650,7 +667,6 @@ for (i in 1:2){
     # 
     # All the parameters used are the default options
     deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, sumTrim = 0.05, doWeighting = TRUE, Acutoff = -1e10, p = 0.75)
-    print("Setp 2 EdgeR limma FILTERED done")
     
     
     # Step 3: Counts per million normalization method 
@@ -661,7 +677,6 @@ for (i in 1:2){
     # Accounting for sequencing depth
     cpm_counts <- cpm(deg, log = FALSE, normalized.lib.sizes = TRUE)
     cpm_counts <- as.data.frame(cpm_counts)
-    print("Setp 3 EdgeR limma FILTERED done")
     
     
     
@@ -674,9 +689,9 @@ for (i in 1:2){
     df_cpm <- cbind(df, cpm_counts)
     }
   
-  colnames(m_blindTRUE) <- paste("VST_", colnames(m_blindTRUE))
-  colnames(m_blindFALSE) <- paste("VST_", colnames(m_blindFALSE))
-  colnames(norm_counts) <- paste("Norm_", colnames(norm_counts))
+  colnames(m_blindTRUE) <- paste("VST_", colnames(m_blindTRUE), sep = "")
+  colnames(m_blindFALSE) <- paste("VST_", colnames(m_blindFALSE), sep = "")
+  colnames(norm_counts) <- paste("Norm_", colnames(norm_counts), sep = "")
   
   counts_blindTRUE <- cbind(df, m_blindTRUE)
   counts_blindFALSE <- cbind(df, m_blindFALSE)
@@ -700,6 +715,8 @@ write.table(df_cpm, paste(dir_output,"/GeneCount_CPM_", project, "_", filter_lab
 # Save metadata information
 write.table(sample_info, paste(dir_output, "/Metadata_", project, "_", analysis_ID, ".txt", sep = ""))
 
+# Save PCA data
+saveWorkbook(exc_pca, file =  paste(dir_output, "/PCA_data_QC_", project, ";", vsd_type, "blindTRUE_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
 
 
 ################################################################################
@@ -708,7 +725,6 @@ write.table(sample_info, paste(dir_output, "/Metadata_", project, "_", analysis_
 
 
 # Save log file information
-logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$analysis_ID <- analysis_ID
 log_data$Date <- Sys.time()
@@ -734,9 +750,13 @@ log_data$colordir<-  paste(color_list[["Direction"]], collapse = ",")
 log_data$colorsh <- paste(color_list[["Shared"]], collapse = ",")
 
 
-write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_qc_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
+
+print("DEG Analysis ID")
+print(analysis_ID)
 
 
+print("Quality Control Analysis completed!")
 
 ################################################################################
 #                             FOLLOW THE ANALYSIS           
@@ -744,9 +764,9 @@ write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_qc_", logd
 
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# source(paste(path, project, "/Scripts/06_DEG_v2_DESeq2.R", sep = ""))
-# source(paste(path, project, "/Scripts/06_DEG_v2_EdgeR.R", sep = ""))
-# source(paste(path, project, "/Scripts/06_DEG_v2_limma.R", sep = ""))
-# source(paste(path, project, "/Script/06_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS
+# source(paste(path, project, "/Scripts/05_DEG_v2_DESeq2.R", sep = ""))
+# source(paste(path, project, "/Scripts/05_DEG_v2_EdgeR.R", sep = ""))
+# source(paste(path, project, "/Scripts/05_DEG_v2_limma.R", sep = ""))
+# source(paste(path, project, "/Script/05_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
