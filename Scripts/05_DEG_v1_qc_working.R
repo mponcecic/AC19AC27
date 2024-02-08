@@ -462,7 +462,6 @@ for (i in 1:2){
 
   # Estimate size factor
   dds <- estimateSizeFactors(dds)
-  print("Setp 1 done")
   # Step 2: Variance stabilizing transformation
   # ----------------------------------------------------------------------------
   # 
@@ -518,7 +517,6 @@ for (i in 1:2){
   m_blindTRUE <- as.data.frame(assay(vst(dds, blind = TRUE)))
   m_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
   vsd_type <- "VST"
-  print("Setp 2 done")
   
   # Step 3: Normalization
   # ----------------------------------------------------------------------------
@@ -529,18 +527,15 @@ for (i in 1:2){
   # 
   # Accounting for sequencing depth and RNA composition
   norm_counts <- as.data.frame(counts(dds, normalized = TRUE))
-  print("Setp 3 done")
   
   # Step 4: Stack matrix
   # ----------------------------------------------------------------------------
   # Matrix to plot the data
   m_blindTRUE_s <- stack(m_blindTRUE)
   m_blindTRUE_s_mod <- m_blindTRUE_s
-  #m_blindTRUE_s_mod[trt] <- rep(sample_info[[trt]], each = dim(raw_counts)[1])
   m_blindTRUE_s_mod[trt] <- rep(sample_info[[trt]], each = dim(gene_counts)[1])
-  
-  print("Setp 4 done")
-  
+
+
   ##############################################################################
   #                               QC Plots 
   ##############################################################################
@@ -627,8 +622,6 @@ for (i in 1:2){
   pdf(paste(dir_fig, "/Heatmap_zscore_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
   print(plot_heatmap)
   dev.off()
-  
-  print("QC plots done")
   
   
   ##############################################################################
