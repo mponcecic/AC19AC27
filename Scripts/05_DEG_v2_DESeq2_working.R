@@ -60,7 +60,7 @@ path <- "W:/user/"
 path <- "W:/mponce/"
 
 # Date of the log file 5_DEG_qc_XXXX.log
-analysis_ID <- ""
+# analysis_ID <- "20240208144005"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -241,6 +241,9 @@ for (h in 1:2) {
   # Columns: Name, Symbol, Ensembl, DEG, Direction, log2FC, padj, variables, 
   # normalized counts, raw count
   exc <- createWorkbook()
+  
+  # PCA data
+  exc_pca <- createWorkbook()
   
   # Final results in *.txt
   # Data frame with all the comparison results, same as exc
@@ -565,6 +568,11 @@ for (h in 1:2) {
     ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
     ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
     ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+    addWorksheet(exc_pca, paste("Rotation", name, sep = "_"))
+    addWorksheet(exc_pca, paste("GenesPCs", name, sep = "_"))  
+    writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("Rotation", filter_lab, sep = "_"))
+    writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", filter_lab, sep = "_"))
+    
     
     ## HEATMAP
     plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
@@ -623,16 +631,17 @@ for (h in 1:2) {
   }
   
   # Save Workbook
-  saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
+  saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
-  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklog2FC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
-  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  write.table(final_data, file = paste(dir_infiles, "/", analysis, "_", project, ";All_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
   # Save selected genes in all comparison
   final_data <- final_data[which(final_data$DEG == "YES"), ]
-  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  write.table(final_data, file = paste(dir_infiles, "/", analysis, "_", project, ";Selected_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
+  # Save PCA data
+  saveWorkbook(exc_pca, file =  paste(dir_infiles, "/PCA_data_", analysis, "_", project, ";", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
   
   
   ################################################################################
