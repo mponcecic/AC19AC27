@@ -121,14 +121,12 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-# project <- "XXX"
-project <- "AC58"
+project <- "XXX"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-# path <- "W:/user/"
-path <- "W:/mponce/"
+path <- "W:/user/"
 
 # Date of the log file 0_Sample_info_XXXX.log
 logdate <- "20231212"
@@ -201,14 +199,14 @@ correction <- "BH"
 # Color list
 # Option 1: Let the pipeline choose the colors
 # Function named *color_palette* selects the colors for the condition
-# color_list <- list(Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
-#                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
-#                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
-# Option 2: Select your own colors
-color_list <- list(trt = c(`0` = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"),
-                   Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
+color_list <- list(Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
+# # Option 2: Select your own colors
+# color_list <- list(trt = c(`0` = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"),
+#                    Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
+#                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
+#                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries

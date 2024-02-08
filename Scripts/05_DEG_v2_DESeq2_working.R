@@ -51,16 +51,15 @@
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
 project <- "XXX"
-project <- "AC58"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
 path <- "W:/user/"
-path <- "W:/mponce/"
+
 
 # Date of the log file 5_DEG_qc_XXXX.log
-# analysis_ID <- "20240208144005"
+analysis_ID <- "20240208144005"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -570,8 +569,8 @@ for (h in 1:2) {
     ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
     addWorksheet(exc_pca, paste("Rotation", name, sep = "_"))
     addWorksheet(exc_pca, paste("GenesPCs", name, sep = "_"))  
-    writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("Rotation", filter_lab, sep = "_"))
-    writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", filter_lab, sep = "_"))
+    writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("Rotation", name, sep = "_"))
+    writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", name, sep = "_"))
     
     
     ## HEATMAP
