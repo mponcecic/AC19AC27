@@ -121,15 +121,15 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC70"
+project <- "AC65"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/mponce/"
+path <- "W:/ulazcano/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20231215"
+logdate <- "20240103"
 
 #Analysis ID. Crated using a timestap to trace all de outputs belongin to a certain setup
 analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
@@ -249,8 +249,8 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-# var_exp <- NULL
-var_exp <- unlist(strsplit(logfile$covariance, split = ","))
+var_exp <- NULL
+#var_exp <- unlist(strsplit(logfile$covariance, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -310,7 +310,7 @@ dir.create(file.path(dir_out, "QC"), showWarnings = FALSE)
 dir_fig <- paste(dir_out, "/QC", sep='')
 
 # Results folder
-dir.create(file.path(paste(dir_out, "Results_",analysis_ID,sep='')), showWarnings = FALSE)
+dir.create(file.path(paste(dir_out, "/Results_",analysis_ID,sep='')), showWarnings = FALSE)
 dir_output <- paste(dir_out, "/Results_",analysis_ID, sep='')
 
 
@@ -426,7 +426,7 @@ print(design_cond)
 
 
 for (i in 1:2){
-  if(i = 1){
+  if(i == 1){
     filter_lab <- "nofilter"
     gene_counts <- raw_counts
   }else{
@@ -459,8 +459,10 @@ for (i in 1:2){
   #     must be the samples names
   # - Design formula with the experimental conditions and the covariates 
   dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
-  
-  
+
+  # Estimate size factor
+  dds <- estimateSizeFactors(dds)
+  print("Setp 1 done")
   # Step 2: Variance stabilizing transformation
   # ----------------------------------------------------------------------------
   # 
@@ -516,6 +518,7 @@ for (i in 1:2){
   m_blindTRUE <- as.data.frame(assay(vst(dds, blind = TRUE)))
   m_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
   vsd_type <- "VST"
+  print("Setp 2 done")
   
   # Step 3: Normalization
   # ----------------------------------------------------------------------------
@@ -526,14 +529,17 @@ for (i in 1:2){
   # 
   # Accounting for sequencing depth and RNA composition
   norm_counts <- as.data.frame(counts(dds, normalized = TRUE))
+  print("Setp 3 done")
   
   # Step 4: Stack matrix
   # ----------------------------------------------------------------------------
   # Matrix to plot the data
   m_blindTRUE_s <- stack(m_blindTRUE)
   m_blindTRUE_s_mod <- m_blindTRUE_s
-  m_blindTRUE_s_mod[trt] <- rep(sample_info[[trt]], each = dim(raw_counts)[1])
+  #m_blindTRUE_s_mod[trt] <- rep(sample_info[[trt]], each = dim(raw_counts)[1])
+  m_blindTRUE_s_mod[trt] <- rep(sample_info[[trt]], each = dim(gene_counts)[1])
   
+  print("Setp 4 done")
   
   ##############################################################################
   #                               QC Plots 
@@ -622,6 +628,7 @@ for (i in 1:2){
   print(plot_heatmap)
   dev.off()
   
+  print("QC plots done")
   
   
   ##############################################################################
@@ -634,6 +641,7 @@ for (i in 1:2){
     # ----------------------------------------------------------------------------
     deg <- DGEList(counts = gene_counts, group = sample_info[,trt])
     if(!is.null(var_exp)){deg$samples[var_exp] <- sample_info[,var_exp]}
+    print("Setp 1 EdgeR limma FILTERED done")
     
     
     # Step 2: Normalization
@@ -649,6 +657,7 @@ for (i in 1:2){
     # 
     # All the parameters used are the default options
     deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, sumTrim = 0.05, doWeighting = TRUE, Acutoff = -1e10, p = 0.75)
+    print("Setp 2 EdgeR limma FILTERED done")
     
     
     # Step 3: Counts per million normalization method 
@@ -659,6 +668,7 @@ for (i in 1:2){
     # Accounting for sequencing depth
     cpm_counts <- cpm(deg, log = FALSE, normalized.lib.sizes = TRUE)
     cpm_counts <- as.data.frame(cpm_counts)
+    print("Setp 3 EdgeR limma FILTERED done")
     
     
     
@@ -707,7 +717,7 @@ write.table(sample_info, paste(dir_output, "/Metadata_", project, "_", analysis_
 # Save log file information
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
-log_data$Analysis_ID <- Analysis_ID
+log_data$analysis_ID <- analysis_ID
 log_data$Date <- Sys.time()
 log_data$project_name <- project
 log_data$Organism <- logfile$Organism
