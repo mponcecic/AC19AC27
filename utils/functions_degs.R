@@ -491,11 +491,14 @@ pca_plot <- function(m, trt, metadata, color_l) {
   
   # Second: Scale data between 0 and 1
   # -----------------------------------
-  pca_vals <- sweep(pca_abs, 2, colSums(pca_abs), "/")
+  pca_vals <- as.data.frame(sweep(pca_abs, 2, colSums(pca_abs), "/"))
+  pca_vals <- pca_vals %>% mutate(ID = rownames(pca_vals)) %>% select(ID, everything())
   
+  pca_rot <- as.data.frame(m_pca$rotation)
+  pca_rot <- pca_rot %>% mutate(ID = rownames(pca_rot)) %>% select(ID, everything())
   
   # Return the plots
-  return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4, m_pca$rotation, pca_vals))
+  return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4, pca_rot, pca_vals))
 }
 
 
