@@ -433,7 +433,6 @@ pca_plot <- function(m, trt, metadata, color_l) {
   print(dim(m_t))
   m_pca <- prcomp(m_t, scale. = TRUE)
   
-  
   var_perc <- get_eigenvalue(m_pca)[,2]
   
   # Scree plot
@@ -479,8 +478,24 @@ pca_plot <- function(m, trt, metadata, color_l) {
     theme(legend.position = "none", axis.line = element_line(colour = "black"), axis.text = element_text(size = 6),
           panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), plot.background = element_blank())
   
+  
+  # How to get the contribution (%) of each parameter to a PC?
+  # 
+  # First: Select the "rotation" and absolute value
+  # --------------------------------------------------
+  # The rotation are the principal components (the eigenvectors of the covariance 
+  # matrix), in the original coordinate system. Typically a square matrix (unless 
+  # you truncate it by introducing tolerance) with the same number of dimensions 
+  # your original data had.
+  pca_abs <- abs(m_pca$rotation)
+  
+  # Second: Scale data between 0 and 1
+  # -----------------------------------
+  pca_vals <- sweep(pca_abs, 2, colSums(pca_abs), "/")
+  
+  
   # Return the plots
-  return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4))
+  return(list(pca_scree, pca_1vs2, pca_1vs3, pca_1vs4, m_pca$rotation, pca_vals))
 }
 
 
