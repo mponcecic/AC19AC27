@@ -50,16 +50,16 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "XXX"
+project <- "AC64"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/user/"
+path <- "W:/ulazcano/"
 
 
 # Date of the log file 5_DEG_qc_XXXX.log
-analysis_ID <- "20240208144005"
+analysis_ID <- "20240208171414"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -99,7 +99,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-# var_exp <- NULL
+#var_exp <- NULL
 var_exp <-  unlist(strsplit(logfile$Varexp, split = ","))
 
 # Contrast
@@ -114,6 +114,7 @@ if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$O
 
 
 # Filtering parameters 
+filter_lab <- logfile$filter_lab
 
 # Minimum number of counts per gene
 min_total <- logfile$min_total
@@ -203,7 +204,7 @@ for (h in 1:2) {
     # FILTERED COUNTS
     analysis <- "DESeq2"
     # Load data
-    raw_counts <- read.table(paste(dir_infiles, "/GeneCount_", vsd_type , "_blindFALSE_", project, "_filtered_", analysis_ID, ".txt", sep = ""))
+    raw_counts <- read.table(paste(dir_infiles, "/GeneCount_", vsd_type , "_blindFALSE_", project, "_",filter_lab,"_", analysis_ID, ".txt", sep = ""))
     
   } else {
     # RAW COUNTS

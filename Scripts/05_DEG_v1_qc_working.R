@@ -10,7 +10,7 @@
 # 
 # This analysis is divided in different scripts. First, perform the quality 
 # control of the data (05_DEG_v1_qc). Second, perform the methods to estimate the 
-# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom 
+# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom  
 # (05_DEG_v2_limma-voom) and Wilcoxon rank-sum test (05_DEG_v2_wilcoxon). Third,
 # compare the results among the different methods used using 05_DEG_v3_Comparison 
 # script.
@@ -121,15 +121,15 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "XXX"
+project <- "AC64"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/user/"
+path <- "W:/ulazcano/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20231212"
+logdate <- "20231222"
 
 ### Pre-processing cutoffs
 
@@ -247,8 +247,8 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-# var_exp <- NULL
-var_exp <- unlist(strsplit(logfile$covariance, split = ","))
+var_exp <- NULL
+# <- unlist(strsplit(logfile$covariance, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -347,6 +347,9 @@ if(is.null(outliers) == FALSE){
 
 
 #### Add covariates effects #### 
+# Message from DESeq2 
+# standard deviation larger than 5 (an arbitrary threshold to trigger this message).
+# Including numeric variables with large mean can induce collinearity with the intercept.
 if(!is.null(var_exp)){
   # Normal for EdgeR and limma-voom
   sample_info[, var_exp] <- data_info[, which(colnames(data_info) %in% var_exp)]
@@ -628,9 +631,9 @@ for (i in 1:2){
   ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
   ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
-  addWorksheet(exc_pca, paste("Rotation", filter_lab, sep = "_"))
+  addWorksheet(exc_pca, paste("R", filter_lab, sep = "_"))
   addWorksheet(exc_pca, paste("GenesPCs", filter_lab, sep = "_"))
-  writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("Rotation", filter_lab, sep = "_"))
+  writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("R", filter_lab, sep = "_"))
   writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", filter_lab, sep = "_"))
   
   
@@ -735,6 +738,7 @@ log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_ord, collapse =",")
 log_data$Outliers <- paste(outliers, collapse = ",") 
 log_data$Varexp <- paste(var_exp, collapse = ",") 
+log_data$filter_lab<-filter_lab
 log_data$min_count <- min_count
 log_data$min_total <- min_total
 log_data$n_large <- n_large
