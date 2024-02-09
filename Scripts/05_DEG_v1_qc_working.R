@@ -630,7 +630,7 @@ for (i in 1:2){
   ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
   addWorksheet(exc_pca, paste("Rotation", filter_lab, sep = "_"))
   addWorksheet(exc_pca, paste("GenesPCs", filter_lab, sep = "_"))
-  writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("Rotation", filter_lab, sep = "_"))
+  writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("R", filter_lab, sep = "_"))
   writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", filter_lab, sep = "_"))
   
   
