@@ -347,6 +347,9 @@ if(is.null(outliers) == FALSE){
 
 
 #### Add covariates effects #### 
+# Message from DESeq2 
+# standard deviation larger than 5 (an arbitrary threshold to trigger this message).
+# Including numeric variables with large mean can induce collinearity with the intercept.
 if(!is.null(var_exp)){
   # Normal for EdgeR and limma-voom
   sample_info[, var_exp] <- data_info[, which(colnames(data_info) %in% var_exp)]
