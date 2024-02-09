@@ -10,7 +10,7 @@
 # 
 # This analysis is divided in different scripts. First, perform the quality 
 # control of the data (05_DEG_v1_qc). Second, perform the methods to estimate the 
-# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom 
+# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom  
 # (05_DEG_v2_limma-voom) and Wilcoxon rank-sum test (05_DEG_v2_wilcoxon). Third,
 # compare the results among the different methods used using 05_DEG_v3_Comparison 
 # script.
@@ -121,15 +121,15 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "XXX"
+project <- "AC64"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/user/"
+path <- "W:/ulazcano/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20231212"
+logdate <- "20231222"
 
 ### Pre-processing cutoffs
 
@@ -247,8 +247,8 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-# var_exp <- NULL
-var_exp <- unlist(strsplit(logfile$covariance, split = ","))
+var_exp <- NULL
+# <- unlist(strsplit(logfile$covariance, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -735,6 +735,7 @@ log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_ord, collapse =",")
 log_data$Outliers <- paste(outliers, collapse = ",") 
 log_data$Varexp <- paste(var_exp, collapse = ",") 
+log_data$filter_lab<-filter_lab
 log_data$min_count <- min_count
 log_data$min_total <- min_total
 log_data$n_large <- n_large
