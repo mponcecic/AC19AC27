@@ -121,15 +121,15 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC64"
+project <- "AC58"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/ulazcano/"
+path <- "W:/mponce/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20231222"
+logdate <- "20240103"
 
 ### Pre-processing cutoffs
 
@@ -195,6 +195,8 @@ lfc_cutoff <- log2(1.5)         # Default option
 #   - FDR: Benjamini-Hochberg, and the q-value
 correction <- "BH"
 
+# Estimate covariate zscore in the design matrix for DESeq2
+zscore <- FALSE
 
 # Color list
 # Option 1: Let the pipeline choose the colors
@@ -413,7 +415,7 @@ ggsave(filename = paste("00_Barplot_rawcounts_", project, "_", analysis_ID, ".pd
 #   the model. If their values are equal the variable is not included in the 
 #   model.
 # 3. Create the design formula
-design_cond <- design_condition("DESeq2", trt, var_exp, metadata = sample_info)
+design_cond <- design_condition("DESeq2", zscore, trt, var_exp, metadata = sample_info)
 print(design_cond)
 
 
@@ -747,6 +749,7 @@ log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
 log_data$Variance <- vsd_type
+log_data$zscore <- zscore
 log_data$contrast <- logfile$contrast
 log_data$colortrt <- paste(color_list[[trt]], collapse = ",")
 log_data$colorheat <- paste(color_list[["Heatmap"]], collapse = ",")
@@ -766,9 +769,8 @@ print("Quality Control Analysis completed!")
 #                             FOLLOW THE ANALYSIS           
 ################################################################################
 
-
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# source(paste(path, project, "/Scripts/05_DEG_v2_DESeq2.R", sep = ""))
+source(paste(path, project, "/Scripts/05_DEG_v2_DESeq2_20240212.R", sep = ""))
 # source(paste(path, project, "/Scripts/05_DEG_v2_EdgeR.R", sep = ""))
 # source(paste(path, project, "/Scripts/05_DEG_v2_limma.R", sep = ""))
 # source(paste(path, project, "/Script/05_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS
