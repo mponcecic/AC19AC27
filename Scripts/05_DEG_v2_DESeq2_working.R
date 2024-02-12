@@ -125,8 +125,7 @@ n_large <- logfile$n_large
 # Proportion
 min_prop <- logfile$min_prop
 
-
-# Design matrix
+### Covariates zscore transformation for DESeq2
 zscore <- logfile$zscore
 
 ### Threshold criteria 
@@ -667,6 +666,7 @@ for (h in 1:2) {
   log_data$min_prop <- logfile$min_prop
   log_data$n_large <- logfile$n_large
   log_data$min_total <- log_data$min_total
+  log_data$zscore <- zscore
   log_data$fdr_cutoff <- fdr_cutoff
   log_data$lfc_cutoff <- lfc_cutoff
   log_data$correction <- correction

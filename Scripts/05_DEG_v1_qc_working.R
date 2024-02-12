@@ -171,6 +171,16 @@ n_large <- 30
 # Proportion
 min_prop <- 0.7
 
+
+### z score transformation
+# Select if we want the covariates to be zscore centered, if true _zscore covariates 
+# will be used in the model design
+#zscore <- FALSE
+zscore <- TRUE
+
+
+
+
 ### Threshold criteria 
 
 ## Significance level
@@ -195,7 +205,7 @@ lfc_cutoff <- log2(1.5)         # Default option
 #   - FDR: Benjamini-Hochberg, and the q-value
 correction <- "BH"
 
-# Estimate covariate zscore in the design matrix for DESeq2
+### Covariates zscore transformation for DESeq2
 zscore <- FALSE
 
 # Color list
@@ -745,6 +755,7 @@ log_data$min_count <- min_count
 log_data$min_total <- min_total
 log_data$n_large <- n_large
 log_data$min_prop <- min_prop
+log_data$zscore <- zscore
 log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
