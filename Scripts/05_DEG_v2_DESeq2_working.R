@@ -125,6 +125,8 @@ n_large <- logfile$n_large
 # Proportion
 min_prop <- logfile$min_prop
 
+### Zscore transformation
+zscore <- logfile$zscore
 
 
 ### Threshold criteria 
@@ -323,7 +325,7 @@ for (h in 1:2) {
     #   the model. If their values are equal the variable is not included in the 
     #   model.
     # 3. Create the design formula
-    design_cond <- design_condition("DESeq2", trt, var_exp, metadata)
+    design_cond <- design_condition(zscore,"DESeq2", trt, var_exp, metadata)
     print(design_cond)
     
     # Annotation for all the results 
@@ -665,6 +667,7 @@ for (h in 1:2) {
   log_data$min_prop <- logfile$min_prop
   log_data$n_large <- logfile$n_large
   log_data$min_total <- log_data$min_total
+  log_data$zscore <- zscore
   log_data$fdr_cutoff <- fdr_cutoff
   log_data$lfc_cutoff <- lfc_cutoff
   log_data$correction <- correction
