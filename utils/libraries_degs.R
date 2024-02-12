@@ -5,7 +5,6 @@
 
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(devtools))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(readxl))
 suppressPackageStartupMessages(require(openxlsx))
