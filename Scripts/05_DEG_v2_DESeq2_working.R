@@ -100,7 +100,8 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 #var_exp <- NULL
-var_exp <-  unlist(strsplit(logfile$Varexp, split = ","))
+if(is.na(logfile$Varexp)){var_exp <- NULL} else {outliers <- unlist(strsplit(logfile$Varexp, split = ","))}
+
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
