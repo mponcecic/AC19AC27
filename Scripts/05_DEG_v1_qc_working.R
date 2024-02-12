@@ -121,7 +121,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC64"
+project <- "AC58"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -170,6 +170,16 @@ min_count <- 10
 n_large <- 30
 # Proportion
 min_prop <- 0.7
+
+
+### z score transformation
+# Select if we want the covariates to be zscore centered, if true _zscore covariates 
+# will be used in the model design
+#zscore <- FALSE
+zscore <- TRUE
+
+
+
 
 ### Threshold criteria 
 
@@ -413,7 +423,7 @@ ggsave(filename = paste("00_Barplot_rawcounts_", project, "_", analysis_ID, ".pd
 #   the model. If their values are equal the variable is not included in the 
 #   model.
 # 3. Create the design formula
-design_cond <- design_condition("DESeq2", trt, var_exp, metadata = sample_info)
+design_cond <- design_condition(zscore,"DESeq2", trt, var_exp, metadata = sample_info)
 print(design_cond)
 
 
@@ -743,6 +753,7 @@ log_data$min_count <- min_count
 log_data$min_total <- min_total
 log_data$n_large <- n_large
 log_data$min_prop <- min_prop
+log_data$zscore <- zscore
 log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
