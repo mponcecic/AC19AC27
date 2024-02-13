@@ -179,8 +179,6 @@ min_prop <- 0.7
 zscore <- TRUE
 
 
-
-
 ### Threshold criteria 
 
 ## Significance level
@@ -205,8 +203,6 @@ lfc_cutoff <- log2(1.5)         # Default option
 #   - FDR: Benjamini-Hochberg, and the q-value
 correction <- "BH"
 
-### Covariates zscore transformation for DESeq2
-zscore <- FALSE
 
 # Color list
 # Option 1: Let the pipeline choose the colors
@@ -759,7 +755,6 @@ log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
 log_data$Variance <- vsd_type
-log_data$zscore <- zscore
 log_data$contrast <- logfile$contrast
 log_data$colortrt <- paste(color_list[[trt]], collapse = ",")
 log_data$colorheat <- paste(color_list[["Heatmap"]], collapse = ",")
