@@ -50,16 +50,16 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC64"
+#project <- "AC64"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/ulazcano/"
+#path <- "W:/ulazcano/"
 
 
 # Date of the log file 5_DEG_qc_XXXX.log
-analysis_ID <- "20240208171414"
+#analysis_ID <- "20240208171414"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -100,7 +100,8 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # Options
 # var_exp <- c("Age", "dv200")
 #var_exp <- NULL
-var_exp <-  unlist(strsplit(logfile$Varexp, split = ","))
+if(is.na(logfile$Varexp)){var_exp <- NULL} else {outliers <- unlist(strsplit(logfile$Varexp, split = ","))}
+
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -125,9 +126,8 @@ n_large <- logfile$n_large
 # Proportion
 min_prop <- logfile$min_prop
 
-### Zscore transformation
+### Covariates zscore transformation for DESeq2
 zscore <- logfile$zscore
-
 
 ### Threshold criteria 
 
@@ -325,7 +325,7 @@ for (h in 1:2) {
     #   the model. If their values are equal the variable is not included in the 
     #   model.
     # 3. Create the design formula
-    design_cond <- design_condition(zscore,"DESeq2", trt, var_exp, metadata)
+    design_cond <- design_condition("DESeq2", zscore, trt, var_exp, metadata)
     print(design_cond)
     
     # Annotation for all the results 
@@ -672,6 +672,7 @@ for (h in 1:2) {
   log_data$lfc_cutoff <- lfc_cutoff
   log_data$correction <- correction
   log_data$Variance <- vsd_type
+  log_data$zscore <- zscore
   log_data$contrast <- paste(unlist(contrast), collapse = ",")
   log_data$colortrt <- paste(color_list[[1]], collapse = ",")
   log_data$colorheat <- paste(color_list[[2]], collapse = ",")

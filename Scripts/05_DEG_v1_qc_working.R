@@ -126,10 +126,10 @@ project <- "AC58"
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/ulazcano/"
+path <- "W:/mponce/"
 
 # Date of the log file 0_Sample_info_XXXX.log
-logdate <- "20231222"
+logdate <- "20240103"
 
 ### Pre-processing cutoffs
 
@@ -177,8 +177,6 @@ min_prop <- 0.7
 # will be used in the model design
 #zscore <- FALSE
 zscore <- TRUE
-
-
 
 
 ### Threshold criteria 
@@ -257,8 +255,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-var_exp <- NULL
-# <- unlist(strsplit(logfile$covariance, split = ","))
+var_exp <- unlist(strsplit(logfile$covariance, split = ","))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -423,7 +420,7 @@ ggsave(filename = paste("00_Barplot_rawcounts_", project, "_", analysis_ID, ".pd
 #   the model. If their values are equal the variable is not included in the 
 #   model.
 # 3. Create the design formula
-design_cond <- design_condition(zscore,"DESeq2", trt, var_exp, metadata = sample_info)
+design_cond <- design_condition("DESeq2", zscore, trt, var_exp, metadata = sample_info)
 print(design_cond)
 
 
@@ -777,9 +774,8 @@ print("Quality Control Analysis completed!")
 #                             FOLLOW THE ANALYSIS           
 ################################################################################
 
-
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# source(paste(path, project, "/Scripts/05_DEG_v2_DESeq2.R", sep = ""))
+source(paste(path, project, "/Scripts/05_DEG_v2_DESeq2_20240212.R", sep = ""))
 # source(paste(path, project, "/Scripts/05_DEG_v2_EdgeR.R", sep = ""))
 # source(paste(path, project, "/Scripts/05_DEG_v2_limma.R", sep = ""))
 # source(paste(path, project, "/Script/05_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS

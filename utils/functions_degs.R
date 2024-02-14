@@ -62,20 +62,32 @@ create_contrast <- function(trt, lvl_ord) {
 #   model.
 # 3. Create the design formula
 
-design_condition <- function(analysis, trt, var_exp, metadata){
+# For limma-voom and EdgeR the design formula must have ~0 because:
+# Here, the 0+ in the model formula is an instruction not to include an intercept column and
+# instead to include a column for each group. The meaning of the contrast is to make the comparison 
+# -1*A + 1*B + 0*C, which is of course is simply B-A.
+
+design_condition <- function(analysis, zscore, trt, var_exp, metadata){
   
   var_design <- NULL
-  # Covariates  
+  
+  # Check there are covariates (var_exp)  
   if(is.null(var_exp) == FALSE){
     # Check if the covariates present equal values or not 
+    # The covariate values must change in order to be consider (Avoid colinearity)
     for (k in 1:length(var_exp)){if(length(unique(metadata[, var_exp[k]]))>1){var_design <- c(var_design, var_exp[k])}}
     # Design model for DESeq2
     if(analysis == "DESeq2"){
-      design_cond = ifelse(is.null(var_design) == FALSE, paste("~", paste(var_design, "_zscore", " +", sep = "", collapse = " "), trt, sep = " "), paste("~", trt, sep = " "))
+      if(is.null(var_design) == FALSE & zscore == TRUE){
+        design_cond <- paste("~", paste(var_design, "_zscore", " +", sep = "", collapse = " "), trt, sep = " ")
+      }else if(is.null(var_design) == FALSE & zscore == FALSE){
+        design_cond <- paste("~", paste(var_design, " +", sep = "", collapse = " "), trt, sep = " ")
+      }else{design_cond <- paste("~", trt, sep = " ")}
+      
     # Design model for limma-voom and EdgeR
     }else{design_cond <- ifelse(!is.null(var_design), paste("~ 0 +", paste0(var_design, "+", collapse = " "), trt), paste("~ 0 +", trt))}
     
-  # No Covariate
+  # No Covariates
   } else {design_cond = ifelse(analysis == "DESeq2", paste("~", trt), paste("~ 0 +", trt))}
   
   return(design_cond)
