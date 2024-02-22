@@ -59,7 +59,7 @@
 
 
 # Date of the log file 5_DEG_qc_XXXX.log
-#analysis_ID <- "20240208171414"
+analysis_ID <- "20240208171414"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -113,8 +113,7 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 # Remove the samples considered outliers
 if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$Outliers, collapse = ",")}
 
-
-# Filtering parameters 
+#Label of filtering
 filter_lab <- logfile$filter_lab
 
 # Minimum number of counts per gene
@@ -663,10 +662,11 @@ for (h in 1:2) {
   log_data$condition_order <- paste0(lvl_ord, collapse =",")
   log_data$Outliers <- paste(outliers, collapse = ",") 
   log_data$Varexp <- paste(var_exp, collapse = ",") 
+  log_data$filter_lab<-filter_lab
   log_data$min_count <- logfile$min_count
   log_data$min_prop <- logfile$min_prop
   log_data$n_large <- logfile$n_large
-  log_data$min_total <- log_data$min_total
+  log_data$min_total <- logfile$min_total
   log_data$zscore <- zscore
   log_data$fdr_cutoff <- fdr_cutoff
   log_data$lfc_cutoff <- lfc_cutoff
