@@ -139,6 +139,16 @@ logdate <- "20240103"
 outliers <- NULL
 
 
+### Z score transformation
+# 
+# The design formula contains one or more numeric variables that have mean or standard 
+# deviation larger than 5 (an arbitrary threshold to trigger this message).
+# 
+# Including numeric variables with large mean can induce collinearity with the intercept.  
+# Users should center and scale numeric variables in the design to improve GLM convergence.
+zscore <- FALSE
+
+
 # Filtering lowly expressed genes
 #
 # Filtering the data can be an option but in most cases lowly expressed genes are 
@@ -170,13 +180,6 @@ min_count <- 10
 n_large <- 30
 # Proportion
 min_prop <- 0.7
-
-
-### z score transformation
-# Select if we want the covariates to be zscore centered, if true _zscore covariates 
-# will be used in the model design
-#zscore <- FALSE
-zscore <- TRUE
 
 
 ### Threshold criteria 
