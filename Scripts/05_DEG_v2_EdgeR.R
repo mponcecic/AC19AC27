@@ -58,8 +58,9 @@ project <- "XXX"
 # path <- "/vols/GPArkaitz_bigdata/user/"
 path <- "W:/user/"
 
-# Date of the log file 5_DEG_qc_XXXX.log
-logdate <- "20231204"
+# analysis_ID of the log file 5_DEG_qc_XXXX.log
+analysis_ID <- ""
+
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -100,6 +101,9 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 # var_exp <- NULL
 var_exp <-  unlist(strsplit(logfile$Varexp, split = ","))
 
+#Label if filter was used and which
+filter_lab <- logfile$filter_lab
+ 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
 contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
@@ -112,6 +116,7 @@ if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$O
 
 
 # Filtering parameters 
+filter_lab <- logfile$filter_lab
 
 # Minimum number of counts per gene
 min_total <- logfile$min_total
@@ -527,7 +532,7 @@ for (i in 1:length(contrast)){
   colnames(res_log2) <- paste("CPM", colnames(res_log2), sep = "_")
   data <- cbind(result, res_log2)
   data <- data %>% select(Name, Symbol, Ensembl, DEG, Direction, log2FC, padj, log2CPM, pvalue, everything())
-  write.table(data, paste(dir_files, "/", ref, ";All_CPM_", threshold, ".txt", sep = ""), row.names = FALSE)
+  write.table(data, paste(dir_files, "/", ref, ";All_CPM_", threshold,"_", analysis_ID, ".txt", sep = ""), row.names = FALSE)
   
   # Save data in the workbook
   addWorksheet(exc, name)
@@ -543,19 +548,19 @@ for (i in 1:length(contrast)){
 
 
 # Save Workbook
-saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_CPM_", threshold, "_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
 
 # Save all comparisons 
 colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "log2CPM", "pvalue", col_raw)
-write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_CPM", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_CPM", threshold,"_", analysis_ID,".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
 
 # Save selected genes in all comparison
 final_data <- final_data[which(final_data$DEG == "YES"), ]
-write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_CPM", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_CPM", threshold,"_", analysis_ID, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
-write.csv(sum_res, paste(dir_infiles, "/Summary_tab_", analysis, "_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
+write.csv(sum_res, paste(dir_infiles, "/Summary_tab_", analysis, "_", project, "_", threshold,"_", analysis_ID, ".csv", sep = ""), row.names = FALSE)
 
 
 
@@ -567,6 +572,7 @@ write.csv(sum_res, paste(dir_infiles, "/Summary_tab_", analysis, "_", project, "
 logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$Date <- Sys.time()
+log_data$analysis_ID <- analysis_ID
 log_data$Directory <- dir_out
 log_data$Analysis <- analysis
 log_data$project_name <- project
@@ -575,10 +581,11 @@ log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_ord, collapse =",")
 log_data$Outliers <- paste(outliers, collapse = ",") 
 log_data$Varexp <- paste(var_exp, collapse = ",") 
+log_data$filter_lab<-filter_lab
 log_data$min_count <- logfile$min_count
 log_data$min_prop <- logfile$min_prop
 log_data$n_large <- logfile$n_large
-log_data$min_total <- log_data$min_total
+log_data$min_total <- logfile$min_total
 log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
@@ -588,5 +595,5 @@ log_data$colorheat <- paste(color_list[[2]], collapse = ",")
 log_data$colordir<-  paste(color_list[[3]], collapse = ",")
 log_data$colorsh <- paste(color_list[[4]], collapse = ",")
 
-write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_",  analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
