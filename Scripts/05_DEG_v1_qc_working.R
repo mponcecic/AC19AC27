@@ -258,7 +258,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-var_exp <- unlist(strsplit(logfile$covariance, split = ","))
+if(!is.na(logfile$covariance)){var_exp <- unlist(strsplit(logfile$covariance, split = ","))}else{var_exp <- NULL}
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
