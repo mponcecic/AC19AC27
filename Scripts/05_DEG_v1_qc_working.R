@@ -230,14 +230,19 @@ source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 # Created using a timestap to trace all de outputs belonging to a certain setup
 analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
 
-# Load log file 
-logfile <- read.table(paste(path, project, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
-
-# Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
 dir_out <- paste(path, project, sep = "")
+
+# Input directory. Raw gene counts  
+dir_infiles <- paste(dir_out, "/04_STAR/RawCounts_", project,".txt", sep = "")
+
+# Log file directory
+dir_log <- (dit_out, "/log/", sep = "")
+
+# Load log file 
+logfile <- read.table(paste(dir_log, "0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+
 
 # Experimental condition
 # Choose only one condition per script
@@ -765,7 +770,7 @@ log_data$colordir<-  paste(color_list[["Direction"]], collapse = ",")
 log_data$colorsh <- paste(color_list[["Shared"]], collapse = ",")
 
 
-write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_qc_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(dir_log, "5_DEG_qc_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
 print("DEG Analysis ID")
 print(analysis_ID)
@@ -778,7 +783,7 @@ print("Quality Control Analysis completed!")
 ################################################################################
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-source(paste(path, project, "/Scripts/05_DEG_v2_DESeq2_20240212.R", sep = ""))
+source(paste(dir_out, "/Scripts/05_DEG_v2_DESeq2_20240212.R", sep = ""))
 # source(paste(path, project, "/Scripts/05_DEG_v2_EdgeR.R", sep = ""))
 # source(paste(path, project, "/Scripts/05_DEG_v2_limma.R", sep = ""))
 # source(paste(path, project, "/Script/05_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS
