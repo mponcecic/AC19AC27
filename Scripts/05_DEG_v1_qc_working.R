@@ -238,7 +238,7 @@ dir_out <- paste(path, project, sep = "")
 dir_infiles <- paste(dir_out, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Log file directory
-dir_log <- (dit_out, "/log/", sep = "")
+dir_log <- paste(dit_out, "/log/", sep = "")
 
 # Load log file 
 logfile <- read.table(paste(dir_log, "0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
