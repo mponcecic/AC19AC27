@@ -350,7 +350,7 @@ row.names(sample_info) <- sample_info$Sample
 #### Remove outliers #### 
 if(is.null(outliers) == FALSE){
   sample_info <- sample_info[-which(rownames(sample_info) %in% outliers),]
-  raw_counts <- raw_counts[,-which(rownames(raw_counts) %in% outliers)]
+  raw_counts <- raw_counts[,-which(colnames(raw_counts) %in% outliers)]
   print(paste("Remove outliers:", outliers, sep = " ")); print(ncol(raw_counts))
   project <- paste(project, outliers, sep = "_", collapse = "_")
 }else{print("No sample was considered an outlier.")}
