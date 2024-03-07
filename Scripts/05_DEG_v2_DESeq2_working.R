@@ -69,16 +69,17 @@ source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
-# Load log file 
-logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", analysis_ID, ".log", sep = ""), header = TRUE)
-
-
 # Output directory
 dir_out <- paste(path, project, "/05_DEG_ANALYSIS/", analysis_ID, sep = "")
 
 # Input directory. Raw gene counts  
 dir_infiles <- paste(dir_out, "/Results", sep = "")
- 
+
+
+# Load log file 
+dir_log <- paste(path, project, "/log/", sep = "")
+logfile <- read.table(paste(dir_log ,"5_DEG_qc_", analysis_ID, ".log", sep = ""), header = TRUE)
+
 
 # Experimental condition
 # Choose only one condition per script
@@ -111,7 +112,12 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 
 # Outliers 
 # Remove the samples considered outliers
-if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$Outliers, collapse = ",")}
+if(is.na(logfile$Outliers)){
+  outliers <- NULL
+} else {
+  outliers <-  paste(logfile$Outliers, collapse = ",")
+  project <- paste(project, paste(outliers, collapse = "_"), sep = "_")}
+
 
 #Label of filtering
 filter_lab <- logfile$filter_lab
@@ -679,7 +685,7 @@ for (h in 1:2) {
   log_data$colordir<-  paste(color_list[[3]], collapse = ",")
   log_data$colorsh <- paste(color_list[[4]], collapse = ",")
   
-  write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
+  write.table(as.data.frame(log_data), paste(dir_log, "5_DEG_v2_", analysis, "_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
   
 }
 
