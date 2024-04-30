@@ -591,11 +591,10 @@ for (h in 1:2) {
     
     ## VOLCANO
     
-    volcano <- volcano_plot(res_df, color_list = color_l, lfc_cutoff, fdr_cutoff)
+    volcano <- volcano_plot(res_df, color_list = color_l, lfc_cutoff, fdr_cutoff, trt)
     
     ggsave(filename = paste("Volcano_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = volcano[[1]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste("Volcano_color_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = volcano[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste("Volcano_lablels_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = volcano[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste("Volcano_labels_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = volcano[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
     
     
     ## WATERFALL

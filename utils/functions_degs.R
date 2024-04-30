@@ -629,7 +629,7 @@ hist_verif <- function(res_df = res_df, df = df){
 ################################################################
 
 
-volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 0.05){
+volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 0.05, trt){
   
   # Volcano plots
   # 
@@ -648,15 +648,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
   data$deglabel <- NA
   data$deglabel[which(data$DEG == "YES")] <- data$Symbol[which(data$DEG == "YES")]
   
-  
-  # Volcano plot with the DEGs in blue and the non-significant in grey
-  A <- ggplot(data = data, aes(x = log2FC, y = -log10(padj), col = DEG))+
-    geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
-    geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
-    geom_point(size = 2, alpha = 0.6)+
-    scale_color_manual(values = c("grey", "blue"), labels = c("Not significant", "Significative"))+
-    labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)")+
-    theme(text = element_text(size = 6), axis.title = element_text(size = rel(1.25)), legend.position = "none")
+  volcano_color <- c("Downregulated" = as.character(color_l[[trt]][1]), "Not significant" = "grey", "Upregulated" = as.character(color_l[[trt]][2]))
   
   # Volcano plot with the DEGs in separate in two color for the up and downregulated 
   # genes, the non-significant in grey
@@ -664,7 +656,7 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_vline(xintercept = c(-lfc_cutoff, lfc_cutoff), col = "gray", linetype = 'dashed')+
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
-    scale_color_manual(values = as.vector(color_list$Direction))+
+    scale_color_manual(values = volcano_color)+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
     theme(text = element_text(size = 6), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
@@ -675,14 +667,14 @@ volcano_plot <- function(data, color_list, lfc_cutoff = log2(1.5), fdr_cutoff = 
     geom_hline(yintercept = -log10(fdr_cutoff), col = "gray", linetype = 'dashed')+
     geom_point(size = 2, alpha = 0.6)+
     geom_text_repel(hjust = "outward", max.overlaps = 10, size = 2, na.rm = TRUE, min.segment.length = 0.6)+
-    scale_color_manual(values = as.vector(color_list$Direction))+
+    scale_color_manual(values = volcano_color)+
     labs(x = "log2 Fold Change", y = "-log10(adjusted p-value)", title = "")+
     theme(axis.text.x = element_text(size = 6), axis.text.y = element_text(size = 6), axis.title = element_text(size = rel(1.25)), legend.position = "none")
   
  
   
   # Return the plots
-  return(list(A, B, C))
+  return(list(B, C))
 }
 
 
@@ -704,9 +696,9 @@ waterfall_plot <- function(data, color_list) {
   # Input data: data = df
   
   # Remove genes with duplicated gene ID
-  wf <- df[which(!(duplicated(df$Ensembl))),]
+  wf <- df[which(!(duplicated(df$Symbol))),]
   # Sort the data based on the log2 FC
-  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$log2FC, decreasing = FALSE)])
+  wf$Ensembl <- factor(wf$Symbol, levels = wf$Symbol[order(wf$log2FC, decreasing = FALSE)])
   
   ggplot(wf, aes(x = Ensembl, y = log2FC, fill = Direction)) +
     geom_bar(stat = "identity")+
@@ -733,14 +725,14 @@ waterfall_top <- function(data, color_list, top_genes = 30) {
   top <- top_genes/2 
   
   # Remove genes with duplicated gene ID
-  wf <- df[which(!(duplicated(df$Ensembl))),]
+  wf <- df[which(!(duplicated(df$Symbol))),]
   # Sort the data based on the log2 FC
-  wf$Ensembl <- factor(wf$Ensembl, levels = wf$Ensembl[order(wf$log2FC, decreasing = FALSE)])
+  wf$Symbol <- factor(wf$Symbol, levels = wf$Symbol[order(wf$log2FC, decreasing = FALSE)])
   
   # Select the top 30 genes 
   wf_sel <- rbind(wf[1:top,], wf[(dim(wf)[1]-top):dim(wf)[1],]) 
   
-  ggplot(wf_sel, aes(x = log2FC, y = Ensembl, fill = Direction)) +
+  ggplot(wf_sel, aes(x = log2FC, y = Symbol, fill = Direction)) +
     geom_bar( stat = "identity") +
     xlab("Log2 Fold Change") +
     ylab("Gene name") +
