@@ -238,7 +238,7 @@ dir_out <- paste(path, project, sep = "")
 dir_infiles <- paste(dir_out, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Log file directory
-dir_log <- paste(dit_out, "/log/", sep = "")
+dir_log <- paste(dir_out, "/log/", sep = "")
 
 # Load log file 
 logfile <- read.table(paste(dir_log, "0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
@@ -392,7 +392,7 @@ n <- ncol(raw_counts)
 
 # Filter genes with no counts based on the number of samples
 # This is a common filtering step for all the comparison levels
-raw_counts <-  raw_counts[(rowSums(raw_counts) != 0), ]
+raw_counts <-  raw_counts[which(rowSums(raw_counts) != 0), ]
 
 ## Statistical summary
 cat(paste("Total genes in raw count:", dim(raw_counts)[1]))
