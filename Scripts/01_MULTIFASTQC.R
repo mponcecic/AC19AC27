@@ -59,7 +59,7 @@ samples_names <- gsub("_fastqc.zip", "", samples)
 
 
 # Load libraries
-source(paste(path, project, "/utils/Libraries.R", sep = ""))
+source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 
 
 
