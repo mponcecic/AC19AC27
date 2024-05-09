@@ -50,15 +50,16 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "XXX"
+#project <- "AC64"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/user/"
+#path <- "W:/ulazcano/"
+
 
 # Date of the log file 5_DEG_qc_XXXX.log
-logdate <- "20231204"
+analysis_ID <- "20240208171414"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
@@ -68,19 +69,16 @@ source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
 
-# Load log file 
-logfile <- read.table(paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), header = TRUE)
-
-
-# Analysis ID for tracing of analysis
-analysis_ID <- log_data$analysis_ID
-
-
 # Output directory
-dir_out <- paste(path, project, "/05_DEG_ANALYSIS", sep = "")
+dir_out <- paste(path, project, "/05_DEG_ANALYSIS/", analysis_ID, sep = "")
 
 # Input directory. Raw gene counts  
-dir_infiles <- paste(dir_out, "/Results_",analysis_ID,"/", sep = "")
+dir_infiles <- paste(dir_out, "/Results", sep = "")
+
+
+# Load log file 
+dir_log <- paste(path, project, "/log/", sep = "")
+logfile <- read.table(paste(dir_log ,"5_DEG_qc_", analysis_ID, ".log", sep = ""), header = TRUE)
 
 
 # Experimental condition
@@ -102,8 +100,9 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-# var_exp <- NULL
-var_exp <-  unlist(strsplit(logfile$Varexp, split = ","))
+#var_exp <- NULL
+if(is.na(logfile$Varexp)){var_exp <- NULL} else {var_exp <- unlist(strsplit(logfile$Varexp, split = ","))}
+
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -113,10 +112,15 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 
 # Outliers 
 # Remove the samples considered outliers
-if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$Outliers, collapse = ",")}
+if(is.na(logfile$Outliers)){
+  outliers <- NULL
+} else {
+  outliers <-  paste(logfile$Outliers, collapse = ",")
+  project <- paste(project, paste(outliers, collapse = "_"), sep = "_")}
 
 
-# Filtering parameters 
+#Label of filtering
+filter_lab <- logfile$filter_lab
 
 # Minimum number of counts per gene
 min_total <- logfile$min_total
@@ -127,7 +131,8 @@ n_large <- logfile$n_large
 # Proportion
 min_prop <- logfile$min_prop
 
-
+### Covariates zscore transformation for DESeq2
+zscore <- logfile$zscore
 
 ### Threshold criteria 
 
@@ -138,6 +143,9 @@ fdr_cutoff <- logfile$fdr_cutoff
 ## Log2 fold change threshold
 # Default. log2(1.5)
 lfc_cutoff <- logfile$lfc_cutoff
+
+## Threshold label
+threshold <- paste("padj_", fdr_cutoff, "_log2FC_", round(lfc_cutoff, 2), sep ="")
 
 ## Multiple test correction
 # Options
@@ -166,7 +174,7 @@ specie <- logfile$Organism
 analysis <- "DESeq2"
 
 # Variance transformation method used 
-Variance_Stabilization_Type <- logfile$Variance
+vsd_type <- logfile$Variance
 
 # Summary of the different comparisons results for this analysis found in the 
 # 05_DEG_ANALYSIS/Result folder
@@ -179,7 +187,7 @@ sum_res <- data.frame()
 
 
 ## Load metadata file 
-sample_info <- read.table(paste(dir_infiles, "/Metadata_", project, ".txt", sep = ""))
+sample_info <- read.table(paste(dir_infiles, "/Metadata_", project, "_", analysis_ID, ".txt", sep = ""))
 
 ## Load annotation data
 # Genome annotation path
@@ -203,17 +211,16 @@ for (h in 1:2) {
     # FILTERED COUNTS
     analysis <- "DESeq2"
     # Load data
-    raw_counts <- read.table(file = paste(dir_infiles, "GeneCount_filter_mincount_", min_count, "_mintotal_", min_total, "_", project, ".txt", sep = ""))
+    raw_counts <- read.table(paste(dir_infiles, "/GeneCount_", vsd_type , "_blindFALSE_", project, "_",filter_lab,"_", analysis_ID, ".txt", sep = ""))
     
   } else {
     # RAW COUNTS
     analysis <- "DESeq2_NoFilter"
     # Load data
-    raw_counts <- read.table(file = paste(path, project,"/04_STAR/RawCounts_", project, ".txt", sep = ""), sep = "\t",  header = TRUE, stringsAsFactors = TRUE)  
-    vst_blindFALSE_counts <- read.table(file = paste(dir_infiles, "GeneCount_", Variance_Stabilization_Type, "_blindFALSE_", project, ".txt", sep = ""))
+    raw_counts <- read.table(paste(dir_infiles, "/GeneCount_", vsd_type , "_blindFALSE_", project, "_nofilter_", analysis_ID, ".txt", sep = ""))
   }
+  print(analysis)
   print(dim(raw_counts))
-  print(dim(vst_blindFALSE_counts))
   
   
   ################################################################################
@@ -231,21 +238,6 @@ for (h in 1:2) {
   print(dim(gene_names))
   
   
-  # Change name
-  raw_genes <- raw_counts
-  # Normalized counts
-  raw_norm <- log2(raw_genes+1)
-  # Generate column names
-  col_raw <- c(colnames(raw_genes), paste(Variance_Stabilization_Type, colnames(vst_blindFALSE_counts), sep = "_"), paste("Norm_", colnames(raw_norm), sep = ""))
-  
-  # Bind raw, vst/rlog and normalized counts
-  raw_genes <- cbind(raw_genes, vst_blindFALSE_counts, raw_norm)  
-  colnames(raw_genes) <- col_raw
-  
-  # Ensembl id column to merge with results
-  raw_genes$Ensembl <- rownames(raw_genes)
-  
-  
   
   ################################################################################
   #                             CREATE DATAFRAMES
@@ -257,6 +249,9 @@ for (h in 1:2) {
   # normalized counts, raw count
   exc <- createWorkbook()
   
+  # PCA data
+  exc_pca <- createWorkbook()
+  
   # Final results in *.txt
   # Data frame with all the comparison results, same as exc
   final_data <- data.frame()
@@ -267,11 +262,11 @@ for (h in 1:2) {
   ################################################################################
   
   for (i in 1:length(contrast)){
-  
+    
     # Contrast 
-    name <- paste(contrast[[i]][2], "vs", contrast[[i]][3], sep = "")
+    name <- paste(contrast[[i]][3], "vs", contrast[[i]][2], sep = "")
     print(name)
-  
+    
     # Contrast levels 
     control <- contrast[[i]][3]
     experimental <- contrast[[i]][2]
@@ -279,7 +274,11 @@ for (h in 1:2) {
     # Comparison levels
     comp_lvl <- c(control, experimental)
     
-  
+    # Select the contrast levels
+    color_l <- color_list
+    color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
+    
+    
     ##############################################################################
     #                         Create working directories
     ##############################################################################
@@ -288,18 +287,18 @@ for (h in 1:2) {
     # classified in Results and Figures. 
     
     # Load output directory
-    dir.create(file.path(dir_out , name), showWarnings = FALSE)
+    dir.create(file.path(dir_out, name), showWarnings = FALSE)
     dir_outfolder <- paste(dir_out, "/", name, sep='')
     setwd(dir_outfolder)
     
     # Save files with comparison results separate
     dir.create(file.path(dir_outfolder , "Results"), showWarnings = FALSE)
     dir_files <- paste(dir_outfolder, "/Results", sep='')
-
+    
     # Figures folder
     dir.create(file.path(dir_outfolder , analysis), showWarnings = FALSE)
     dir_fig <- paste(dir_outfolder ,"/", analysis, sep='')
-  
+    
     
     
     ##############################################################################
@@ -311,20 +310,16 @@ for (h in 1:2) {
     metadata <- sample_info[which(sample_info[[trt]] %in% comp_lvl),]
     metadata[,trt] <- factor(metadata[,trt], levels = c(comp_lvl))
     
+    
     # Gene count matrix per comparison
     gene_counts <- raw_counts[, metadata$Sample]
     
     # Transformed data per comparison
-    res_log2 <- vst_blindFALSE_counts[which(rownames(vst_blindFALSE_counts) %in% rownames(gene_counts)), metadata$Sample]
+    res_vst <- raw_counts[,which(colnames(raw_counts) %in% paste(vsd_type, metadata$Sample, sep = "_"))]
+    colnames(res_vst) <- gsub(pattern = "VST_", replacement = "", colnames(res_vst))
     
-    # Normalized counts: log2(x + 1)
-    # To add in the result table
-    res_norm <- log2(gene_counts+1)
-    colnames(res_norm) <- paste("Norm", colnames(res_norm), sep = "_")
-    
-    # Select the contrast levels
-    color_l <- color_list
-    color_l[[trt]] <- color_l[[trt]][which(names(color_l[[trt]]) %in% c(experimental, control))]
+    # Normalized counts
+    res_norm <- raw_counts[,which(colnames(raw_counts) %in% paste("Norm_", metadata$Sample, sep = ""))]
     
     # DESeq2 design formula
     # Used to estimate the variance stabilization (VST) method proposed in DESeq2
@@ -335,13 +330,12 @@ for (h in 1:2) {
     #   the model. If their values are equal the variable is not included in the 
     #   model.
     # 3. Create the design formula
-    design_cond <- design_condition("DESeq2", trt, var_exp, metadata)
+    design_cond <- design_condition("DESeq2", zscore, trt, var_exp, metadata)
     print(design_cond)
-    
     
     # Annotation for all the results 
     ref <- paste(analysis, "_", name, "_", project, sep = "")
-  
+    
     
     
     ##############################################################################
@@ -364,7 +358,7 @@ for (h in 1:2) {
                                   design = eval(parse(text = design_cond)),    # Design matrix
                                   tidy = FALSE,                                # Default; Option: TRUE = First column of count data is the row names for the count matrix
                                   ignoreRank = FALSE                           # Default: Reserved for DEXSeq developers
-                                  )
+    )
     
     
     # Step 2: Run DESeq
@@ -391,10 +385,10 @@ for (h in 1:2) {
                  # Parallelization
                  # parallel = FALSE,                                     # default; Not used
                  # BPPARAM = bpparam()                                   # default; Not used
-                 )
+    )
     
     # Fit of the dispersion estimates
-    pdf(file = paste(dir_fig, "/00_Dispersion_DESeq2_", project, ".pdf", sep = ""), width = 6, height = 5)
+    pdf(file = paste(dir_fig, "/00_Dispersion_DESeq2_", project, "_", analysis_ID, ".pdf", sep = ""), width = 6, height = 5)
     plotDispEsts(dds, genecol = "black", fitcol = "red", finalcol = "dodgerblue", legend = TRUE, log = "xy", cex = 0.45)
     dev.off()
     
@@ -471,23 +465,22 @@ for (h in 1:2) {
     # Results as data frame 
     res <- as.data.frame(resl)
     res <- res[match(rownames(gene_counts), rownames(res)),]
-
+    
     # Shrinkage log2 fold change 
-    lfcresl <- lfcShrink(dds, contrast = contrast[[i]], type = "ashr")
-    lfcres <- as.data.frame(lfcresl)
-    shrklog2FC <- lfcres$log2FoldChange 
+    res_lfcS <- as.data.frame(lfcShrink(dds, contrast = contrast[[i]], type = "ashr"))
+    shrklog2FC <- res_lfcS$log2FoldChange 
     res <- cbind(res, shrklog2FC)
     
     # Change columns names to plot data 
     colnames(res) <- c("MeanExp","log2FC", "lfcSE", "stat", "pvalue", "padj", "shrklog2FC")
     
     # MA plot 
-    pdf(paste(dir_fig, "/00_MA_plot_", ref,".pdf", sep = ""), height = 4, width = 5)
+    pdf(paste(dir_fig, "/00_MA_plot_", ref, "_", analysis_ID, ".pdf", sep = ""), height = 4, width = 5)
     MA_plot(res, analysis, fdr_cutoff)
     dev.off()
     
     # Plot with the number of adjusted pvalues rejected 
-    pdf(paste(dir_fig, "/00_Rejections_", ref,".pdf", sep = ""), height = 4, width = 4)
+    pdf(paste(dir_fig, "/00_Rejections_", ref, "_", analysis_ID, ".pdf", sep = ""), height = 4, width = 4)
     plot(metadata(resl)$filterNumRej, type="b", ylab="number of rejections", xlab="quantiles of filter")
     lines(metadata(resl)$lo.fit, col="red")
     abline(v=metadata(resl)$filterTheta)
@@ -497,15 +490,13 @@ for (h in 1:2) {
     ##############################################################################
     #                            Data Processing
     ##############################################################################
-  
+    
     
     ## Results as a data frame
     res_df <- res
     res_df$Ensembl <- rownames(res_df)
     print(dim(res_df))
     
-    ## Threshold label
-    threshold <- paste("padj_", fdr_cutoff, "_log2FC_", round(lfc_cutoff, 2), sep ="")
     
     ## Significative genes
     # Events with p-val NA are saved too
@@ -543,7 +534,7 @@ for (h in 1:2) {
     ## Transform matrix 
     # Select the differentially expressed genes that overcame the test
     # Used to plot the data 
-    m <- res_log2[which(rownames(res_log2) %in% df$Ensembl), ]
+    m <- res_vst[which(rownames(res_vst) %in% df$Ensembl),]
     
     if(identical(rownames(m), df$Ensembl) == FALSE){m <- m[match(rownames(m), df$Ensembl),]}
     
@@ -556,7 +547,7 @@ for (h in 1:2) {
     # Representation of the adjusted p-value and log2 fold-change for all and 
     # significant genes
     plot_hist <- hist_verif(res_df, df)
-    ggsave(filename = paste("01_Histogram_verif_", ref, ".pdf", sep = ""), plot = plot_hist, path = dir_fig, height = 4, width = 4, bg = "white")
+    ggsave(filename = paste("01_Histogram_verif_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_hist, path = dir_fig, height = 4, width = 4, bg = "white")
     
     
     ##  CORRELATION 
@@ -573,33 +564,37 @@ for (h in 1:2) {
                        cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = TRUE,
                        fontsize_row = 6, fontsize_col = 6, border_color = NA, treeheight_row = 0, treeheight_col = 0)
     
-    pdf(paste(dir_fig, "/Cor_pearson_", ref, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
+    pdf(paste(dir_fig, "/Cor_pearson_", ref, "_", analysis_ID, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
     print(plot_h)
     dev.off()
     
     ## PCA PLOTS
     plot_pcas <- pca_plot(m0, trt, metadata, color_l)
     
-    ggsave(filename = paste("PCA_params_", ref, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste("PCA_params_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+    addWorksheet(exc_pca, paste("Rotation", name, sep = "_"))
+    addWorksheet(exc_pca, paste("GenesPCs", name, sep = "_"))  
+    writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("Rotation", name, sep = "_"))
+    writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", name, sep = "_"))
+    
     
     ## HEATMAP
     plot_heatmap <- heatmap_plot(m0, metadata, trt, color_l)
     
-    pdf(paste(dir_fig, "/Heatmap_zscore_", ref, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
+    pdf(paste(dir_fig, "/Heatmap_zscore_", ref, "_", analysis_ID, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
     print(plot_heatmap)
     dev.off()
     
     
     ## VOLCANO
     
-    volcano <- volcano_plot(res_df, color_list = color_l, lfc_cutoff, fdr_cutoff)
+    volcano <- volcano_plot(res_df, color_list = color_l, lfc_cutoff, fdr_cutoff, trt)
     
-    ggsave(filename = paste("Volcano_", ref, ".pdf", sep = ""), plot = volcano[[1]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste("Volcano_color_", ref, ".pdf", sep = ""), plot = volcano[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste("Volcano_lablels_", ref, ".pdf", sep = ""), plot = volcano[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste("Volcano_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = volcano[[1]], path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste("Volcano_labels_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = volcano[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
     
     
     ## WATERFALL
@@ -607,8 +602,8 @@ for (h in 1:2) {
     waterfall_pl <- waterfall_plot(df, color_l)
     waterfall_plot_top <- waterfall_top(df, color_l)
     
-    ggsave(filename = paste("Waterfall_", ref, ".pdf", sep = ""), plot = waterfall_pl, path = dir_fig, height = 5, width = 6, bg = "white")
-    ggsave(filename = paste("Waterfall_top_genes_", ref, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste("Waterfall_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = waterfall_pl, path = dir_fig, height = 5, width = 6, bg = "white")
+    ggsave(filename = paste("Waterfall_top_genes_", ref, "_", analysis_ID, ".pdf", sep = ""), plot = waterfall_plot_top, path = dir_fig, height = 5, width = 6, bg = "white")
     
     
     
@@ -618,23 +613,23 @@ for (h in 1:2) {
     
     
     # Summary table
-    sum_line <- c(name, analysis, design_cond, Variance_Stabilization_Type, dim(gene_counts)[1], dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
+    sum_line <- c(name, analysis, design_cond, vsd_type, dim(gene_counts)[1], dim(res_df$DEG), sum(res_df$DEG == "YES"), sum(res_df$Direction == "Upregulated"), sum(res_df$Direction == "Downregulated"))
     sum_res <- rbind(sum_res, sum_line)
- 
+    
     
     # All results
-    colnames(res_log2) <- paste(Variance_Stabilization_Type, colnames(res_log2), sep = "_")
-    data <- cbind(result, res_log2)
+    colnames(res_vst) <- paste(vsd_type, colnames(res_vst), sep = "_")
+    data <- cbind(result, res_vst)
     data <- cbind(data, res_norm)
     data <- data %>% select(Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
-    write.table(data, paste(dir_files, "/", ref, ";All_", Variance_Stabilization_Type, "blindFALSE_", threshold,".txt", sep = ""), row.names = FALSE)
-
+    write.table(data, paste(dir_files, "/", ref, ";All_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".txt", sep = ""), row.names = FALSE)
+    
     # Save data in the workbook
     addWorksheet(exc, name)
     writeData(exc, data, sheet = name)
     
     # All comparisons results
-    result2 <- merge(x = res_df, y = raw_genes, by = "Ensembl")
+    result2 <- merge(x = res_df, y = raw_counts, by = "Ensembl")
     result2$Comparison <- name
     result2 <- result2 %>% select(Comparison, Name, Symbol, Ensembl, Biotype, DEG, Direction, log2FC, padj, shrklog2FC, MeanExp, lfcSE, stat, pvalue, everything())
     final_data <- rbind(final_data, result2)
@@ -642,16 +637,17 @@ for (h in 1:2) {
   }
   
   # Save Workbook
-  saveWorkbook(exc, file =  paste(dir_infiles, analysis, "_", project, ";All_", Variance_Stabilization_Type, "blindFALSE_", threshold, ".xlsx", sep = ""), overwrite = TRUE)
+  saveWorkbook(exc, file =  paste(dir_infiles, "/", analysis, "_", project, ";All_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
   
   # Save all comparisons 
-  colnames(final_data) <- c("Comparison", "Name", "Symbol", "Ensembl", "Biotype", "DEG", "Direction", "log2FC", "padj", "shrklog2FC", "MeanExp", "lfcSE", "stat", "pvalue", col_raw)
-  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";All_", Variance_Stabilization_Type, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  write.table(final_data, file = paste(dir_infiles, "/", analysis, "_", project, ";All_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
   # Save selected genes in all comparison
   final_data <- final_data[which(final_data$DEG == "YES"), ]
-  write.table(final_data, file = paste(dir_infiles, analysis, "_", project, ";Selected_", Variance_Stabilization_Type, "blindFALSE_", threshold, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
+  write.table(final_data, file = paste(dir_infiles, "/", analysis, "_", project, ";Selected_", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".txt", sep = ""), sep = " ", row.names = FALSE, col.names = TRUE)
   
+  # Save PCA data
+  saveWorkbook(exc_pca, file =  paste(dir_infiles, "/PCA_data_", analysis, "_", project, ";", vsd_type, "blindFALSE_", threshold, "_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
   
   
   ################################################################################
@@ -660,9 +656,9 @@ for (h in 1:2) {
   
   
   # Save log file information
-  logdate <- format(Sys.time(), "%Y%m%d")
   log_data <- c()
   log_data$Date <- Sys.time()
+  log_data$analysis_ID <- analysis_ID
   log_data$Directory <- dir_out
   log_data$Analysis <- analysis
   log_data$project_name <- project
@@ -671,28 +667,31 @@ for (h in 1:2) {
   log_data$condition_order <- paste0(lvl_ord, collapse =",")
   log_data$Outliers <- paste(outliers, collapse = ",") 
   log_data$Varexp <- paste(var_exp, collapse = ",") 
+  log_data$filter_lab<-filter_lab
   log_data$min_count <- logfile$min_count
   log_data$min_prop <- logfile$min_prop
   log_data$n_large <- logfile$n_large
-  log_data$min_total <- log_data$min_total
+  log_data$min_total <- logfile$min_total
+  log_data$zscore <- zscore
   log_data$fdr_cutoff <- fdr_cutoff
   log_data$lfc_cutoff <- lfc_cutoff
   log_data$correction <- correction
-  log_data$Variance <- Variance_Stabilization_Type
+  log_data$Variance <- vsd_type
+  log_data$zscore <- zscore
   log_data$contrast <- paste(unlist(contrast), collapse = ",")
   log_data$colortrt <- paste(color_list[[1]], collapse = ",")
   log_data$colorheat <- paste(color_list[[2]], collapse = ",")
   log_data$colordir<-  paste(color_list[[3]], collapse = ",")
   log_data$colorsh <- paste(color_list[[4]], collapse = ",")
   
-  write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_v2_", analysis, "_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+  write.table(as.data.frame(log_data), paste(dir_log, "5_DEG_v2_", analysis, "_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
   
-  }
+}
 
 
 # Save Summary table 
 colnames(sum_res) <- c("Comparison", "Analysis", "Design", "Transformation", "Genes", "DEGs", "Upregulated", "Downregulated")
-write.csv(sum_res, paste(dir_infiles, "/Summary_tab_DESeq2_", project, "_", threshold, ".csv", sep = ""), row.names = FALSE)
- 
+write.csv(sum_res, paste(dir_infiles, "/Summary_tab_DESeq2_", project, "_", threshold, "_", analysis_ID, ".csv", sep = ""), row.names = FALSE)
+
 
 

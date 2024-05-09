@@ -1,7 +1,6 @@
 ################################################################################
 #                 DIFFERENTIALLY EXPRESSED GENES SCRIPT
 ################################################################################
-#Prueba
 
 # Summary 
 #------------
@@ -11,7 +10,7 @@
 # 
 # This analysis is divided in different scripts. First, perform the quality 
 # control of the data (05_DEG_v1_qc). Second, perform the methods to estimate the 
-# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom 
+# DEGs which are DESeq2 (05_DEG_v2_DESeq2), EdgeR (05_DEG_v2_EdgeR), limma-voom  
 # (05_DEG_v2_limma-voom) and Wilcoxon rank-sum test (05_DEG_v2_wilcoxon). Third,
 # compare the results among the different methods used using 05_DEG_v3_Comparison 
 # script.
@@ -122,19 +121,15 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC65"
+project <- "AC58"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-path <- "W:/ulazcano/"
+path <- "W:/mponce/"
 
 # Date of the log file 0_Sample_info_XXXX.log
 logdate <- "20240103"
-
-#Analysis ID. Crated using a timestap to trace all de outputs belongin to a certain setup
-analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
-
 
 ### Pre-processing cutoffs
 
@@ -142,6 +137,16 @@ analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
 # Remove the samples considered outliers
 # outliers <- c("AC1", "AC2")
 outliers <- NULL
+
+
+### Z score transformation
+# 
+# The design formula contains one or more numeric variables that have mean or standard 
+# deviation larger than 5 (an arbitrary threshold to trigger this message).
+# 
+# Including numeric variables with large mean can induce collinearity with the intercept.  
+# Users should center and scale numeric variables in the design to improve GLM convergence.
+zscore <- FALSE
 
 
 # Filtering lowly expressed genes
@@ -176,6 +181,7 @@ n_large <- 30
 # Proportion
 min_prop <- 0.7
 
+
 ### Threshold criteria 
 
 ## Significance level
@@ -207,13 +213,12 @@ correction <- "BH"
 color_list <- list(Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
-# Option 2: Select your own colors
-color_list <- list(trt = c(Control = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"),
-                   Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
-                   Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
-                   Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
+# # Option 2: Select your own colors
+# color_list <- list(trt = c(`0` = "#A6DAB0", `4` = "#C18BB7", `24` = "#D7B0B0", `48` = "#8BABD3"),
+#                    Heatmap = rev(colorRampPalette(c("red4", "snow1", "royalblue4"))(50)),
+#                    Direction = c(Downregulated = "#4169E1", `Not significant` = "grey", Upregulated = "#DC143C"),
+#                    Shared = c("#87CEEB","#228B22" ,"#32CD32","#FFD700"))
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 # Load libraries
 source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
@@ -221,16 +226,23 @@ source(paste(path, project, "/utils/libraries_degs.R", sep = ""))
 # Load functions scripts
 source(paste(path, project, "/utils/functions_degs.R", sep = ""))
 
+# Analysis ID 
+# Created using a timestap to trace all de outputs belonging to a certain setup
+analysis_ID <- format(Sys.time(), "%Y%m%d%H%M%S")
 
-# Load log file 
-logfile <- read.table(paste(path, project, "/log/0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
-
-# Input directory. Raw gene counts  
-dir_infiles <- paste(path, project, "/04_STAR/RawCounts_", project,".txt", sep = "")
 
 # Output directory
-# dir_out <- paste(path, project, sep = "")   # Default option
 dir_out <- paste(path, project, sep = "")
+
+# Input directory. Raw gene counts  
+dir_infiles <- paste(dir_out, "/04_STAR/RawCounts_", project,".txt", sep = "")
+
+# Log file directory
+dir_log <- paste(dit_out, "/log/", sep = "")
+
+# Load log file 
+logfile <- read.table(paste(dir_log, "0_Sample_info_", logdate, ".log", sep = ""), header = TRUE)
+
 
 # Experimental condition
 # Choose only one condition per script
@@ -251,8 +263,7 @@ lvl_ord <- unlist(str_split(logfile$condition_order, pattern = ","))
 #
 # Options
 # var_exp <- c("Age", "dv200")
-# var_exp <- NULL
-var_exp <- unlist(strsplit(logfile$covariance, split = ","))
+if(!is.na(logfile$covariance)){var_exp <- unlist(strsplit(logfile$covariance, split = ","))}else{var_exp <- NULL}
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -272,6 +283,9 @@ theme_set(theme_DEGs)
 # Columns are Comparison, Method, Genes, Upregulated and Downregulated
 out_df <- data.frame()
 
+
+# Create a workbook for pca data
+exc_pca <- createWorkbook()
 
 
 ################################################################################
@@ -303,17 +317,21 @@ print(head(data_info))
 # classified in Results and Figures. 
 
 # Create output directory
-dir.create(file.path(dir_out,"05_DEG_ANALYSIS"))
+dir.create(file.path(dir_out,"05_DEG_ANALYSIS"), showWarnings = FALSE)
 dir_out <- paste(dir_out,"/05_DEG_ANALYSIS", sep='')
 setwd(dir_out)
 
+# Output directory with the ID
+dir.create(file.path(dir_out, analysis_ID))
+dir_ID <- paste(dir_out, "/", analysis_ID, sep = "")
+
 # Quality control figures folder
-dir.create(file.path(dir_out, "QC"), showWarnings = FALSE)
-dir_fig <- paste(dir_out, "/QC", sep='')
+dir.create(file.path(dir_ID, "QC"), showWarnings = FALSE)
+dir_fig <- paste(dir_ID, "/QC", sep='')
 
 # Results folder
-dir.create(file.path(paste(dir_out, "Results_",analysis_ID,sep='')), showWarnings = FALSE)
-dir_output <- paste(dir_out, "/Results_",analysis_ID, sep='')
+dir.create(file.path(dir_ID, "Results"), showWarnings = FALSE)
+dir_output <- paste(dir_ID, "/Results", sep='')
 
 
 ################################################################################
@@ -337,13 +355,16 @@ row.names(sample_info) <- sample_info$Sample
 #### Remove outliers #### 
 if(is.null(outliers) == FALSE){
   sample_info <- sample_info[-which(rownames(sample_info) %in% outliers),]
-  raw_counts <- raw_counts[,-which(rownames(raw_counts) %in% outliers)]
+  raw_counts <- raw_counts[,-which(colnames(raw_counts) %in% outliers)]
   print(paste("Remove outliers:", outliers, sep = " ")); print(ncol(raw_counts))
- project <- paste(project, outliers, sep = "_", collapse = "_")
+  project <- paste(project, outliers, sep = "_", collapse = "_")
 }else{print("No sample was considered an outlier.")}
 
 
 #### Add covariates effects #### 
+# Message from DESeq2 
+# standard deviation larger than 5 (an arbitrary threshold to trigger this message).
+# Including numeric variables with large mean can induce collinearity with the intercept.
 if(!is.null(var_exp)){
   # Normal for EdgeR and limma-voom
   sample_info[, var_exp] <- data_info[, which(colnames(data_info) %in% var_exp)]
@@ -363,7 +384,7 @@ if(sum(rownames(sample_info) == colnames(raw_counts)) != ncol(raw_counts)){
 }else{print("Samples in count matrix are ordered")
   raw_counts <- raw_counts[, match(sample_info$Sample, colnames(raw_counts))]
 }
-  
+
 
 #### Filter #### 
 # Number of samples
@@ -371,9 +392,6 @@ n <- ncol(raw_counts)
 
 # Filter genes with no counts based on the number of samples
 # This is a common filtering step for all the comparison levels
-#Disable first filter 2024/01/05 and add one that filters all NA only 
-#gene_counts <- gene_counts[which(rowSums(gene_counts) >= 10),]
-#label <- "filtering_10"
 raw_counts <-  raw_counts[(rowSums(raw_counts) != 0), ]
 
 ## Statistical summary
@@ -393,8 +411,7 @@ ggplot(bp, aes(x = factor(Samples, levels = sample_info$Sample), y = Values, fil
   labs(y = "Counts", x = "")+
   scale_fill_manual(values = color_list[[trt]])+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.01, hjust = 1, size = 5), legend.position = "none")
-ggsave(filename = paste("Barplot_genecounts_", project, ".pdf", sep =""), height = 4, width = 4, plot = last_plot(), path = dir_fig, bg = "white")
-
+ggsave(filename = paste("00_Barplot_rawcounts_", project, "_", analysis_ID, ".pdf", sep =""), height = 4, width = 4, plot = last_plot(), path = dir_fig, bg = "white")
 
 
 ################################################################################
@@ -411,307 +428,313 @@ ggsave(filename = paste("Barplot_genecounts_", project, ".pdf", sep =""), height
 #   the model. If their values are equal the variable is not included in the 
 #   model.
 # 3. Create the design formula
-design_cond <- design_condition("DESeq2", trt, var_exp, metadata = sample_info)
+design_cond <- design_condition("DESeq2", zscore, trt, var_exp, metadata = sample_info)
 print(design_cond)
 
-  
-  
-##############################################################################
-#                           DATA VERIFICATION 
-##############################################################################
-# Check data consistency 
-
-# Step 1: Create DESeq object
-# ----------------------------------------------------------------------------
-#
-# DESeqDataSetFromMatrix has all the information necessary to run DESeq. 
-# - Count matrix
-# - sample_info with the following columns: condition and covariates. Data 
-#     associated to the samples valuable to perform the contrast. The row names
-#     must be the samples names
-# - Design formula with the experimental conditions and the covariates 
-dds <- DESeqDataSetFromMatrix(countData = raw_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
-  
-  
-# Step 2: Variance stabilizing transformation
-# ----------------------------------------------------------------------------
-# 
-# Variance stabilization methods in log2 scale to interpret the data
-# 
-# Choose VST for samples size group smaller than 30. Why? 
-# 
-# if you have many samples (e.g. 100s), the rlog function might take too long, and so the vst function will be 
-# a faster choice. The rlog and VST have similar properties, but the rlog requires fitting a shrinkage term for 
-# each sample and each gene which takes time. See the DESeq2 paper for more discussion on the differences 
-# (Love, Huber, and Anders 2014). The rlog function is not as sensitive as vst to the size factors, which can be 
-# an issue when size factors vary widely.
-
-# Why blind = TRUE
-# 
-# blind, for whether the transformation should be blind to the sample information specified by the design formula. 
-# When blind equals TRUE (the default), the functions will re-estimate the dispersions using only an intercept. 
-# This setting should be used in order to compare samples in a manner wholly unbiased by the information about 
-# experimental groups, for example to perform sample quality assurance.
-
-# Output
-# - Columns are samples
-# - Rows are genes
-# 
-#                    N_3_E1    N_2_E4    N_2_E3   N_2_E2   H4_2_E4   H4_2_E3   H4_2_E2   H4_2_E1
-# ENSG00000000003 11.075692 10.993586 11.209109 11.03978 11.136152 11.147595 11.118555 11.125602
-# ENSG00000000419 11.959761 11.938768 12.033994 11.84389 11.846617 11.951190 11.951552 11.888236
-# ENSG00000000457 10.476816 10.557566 10.470185 10.47396 10.568444 10.488905 10.569326 10.394093
-  
-
-# Estimate the biggest group sample size
-group_n <- max(as.vector(tabulate(sample_info[[trt]])))
-
-if(group_n < 30){
-  raw_counts_blindTRUE <- as.data.frame(assay(vst(dds, blind = TRUE)))
-  #m <- as.data.frame(assay(vst(dds, blind = TRUE)))
-  Variance_Stabilization_Type <- "VST"
-}else{
-  raw_counts_blindTRUE <- as.data.frame(assay(rlog(dds, blind = TRUE)))
-  Variance_Stabilization_Type <- "RLOG"}
-
-# Step 3: Stack matrix
-# ----------------------------------------------------------------------------
-# 
-# Modify the matrix to easily plot it
-m_s <- stack(m)
-m_s_mod <- m_s
-m_s_mod[trt] <- rep(sample_info[[trt]], each = dim(raw_counts)[1])
 
 
-##############################################################################
-#                                 Plots 
-##############################################################################
-
-
-## COUNTS DISTRIBUTION PLOTS
-# Distribution of gene read counts per each sample
-ggplot(data = m_s, aes(x = values, fill = ind))+
-  geom_histogram(stat = "bin", bins = 200, position="identity", alpha = 0.3, show.legend = FALSE)+
-  labs(x = "Counts", y = "Genes", title = "Gene Counts Expression")
-ggsave(filename = paste("00_Dist_genecounts_samples_", project, ".pdf", sep=""), height = 4, width = 4, plot = last_plot(), path = dir_fig, bg = "white")
-
-# Distribution of gene read counts with grid per each sample
-ggplot(data = m_s, aes(x = values, fill = ind))+
-  geom_histogram(stat = "bin", bins = 200, show.legend = FALSE)+
-  facet_wrap(~ ind, ncol = 4)+
-  labs(x = "Counts", y = "Genes", title = "Gene Counts Expression")+
-  theme(strip.background = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.01, hjust = 1))
-ggsave(filename = paste("00_Dist_genecounts_samples_grid_", project, ".pdf", sep=""), height = 8, width = 6, plot = last_plot(), path = dir_fig, bg = "white")
-
-
-## BOXPLOT
-ggplot(data = m_s_mod, aes(x = ind, y = values, fill = !!as.name(trt)))+
-  geom_boxplot(linewidth = 0.09, outlier.size = 0.5)+
-  labs(x = "", y = "Log2(Counts)")+
-  scale_fill_manual(values = color_list[[trt]])+
-  theme(legend.position = "none", text = element_text(size = 5), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5), panel.grid = element_blank())
-ggsave(filename = paste("01_Distribution_boxp_genecounts_", project,".pdf", sep = ""), path = dir_fig, height = 4, width = 6, plot = last_plot(), bg = "white")
-
-## DENSITY PLOT
-# A few things to note about this figure is that there is a huge peak at exactly
-# -3.321928 which can be ignored because this is value is calculated from log2(0.1)
-# explained in the box above. This peak consists of all 0-values (inactive genes)
-# which isn’t very important to us now.
-
-pdf(paste(dir_fig, "/02_Density_genecounts_", project,".pdf", sep = ""), height = 5, width = 5, bg = "white")
-plotDensity(m, col = rep(color_list[[trt]], each = 4), xlab = "Log2(Counts)", ylab = "Density", main = "Expression Distribution")
-dev.off()
-
-
-## MODELING COUNT DATA
-# Perform with raw gene gene counts 
-model_m <- data.frame(Mean = apply(gene_counts, 1, mean), Variance = apply(gene_counts, 1, var))
-head(model_m)
-
-ggplot(data = model_m, aes(x = Mean, y = Variance))+
-  geom_point(alpha = 0.20, colour = "#696969")+
-  geom_line(aes(x = Mean, y = Mean), color = "red", show.legend = FALSE)+
-  scale_y_log10()+
-  scale_x_log10()+
-  labs(x = "Mean gene expression level (log10 scale)", y = " Gene-level variance (log10 scale)", title = "")
-ggsave(filename = paste("03_NB_fit_data_genecounts_", project, ".pdf", sep=""), height = 4, width = 4, plot = last_plot(), path = dir_fig, bg = "white")
-  
-  
-##  CORRELATION 
-#
-# Execute a Pearson correlation which accept possible NAs.
-# The acceptance of the NA should be valuable in the future in case, we accept
-# comparisons when a sample is missing a PSI value.
-#
-# The results of the correlation matrix must be aligned with the results
-# in the heatmap and PCA.
-pem <- cor(m, method = "pearson", use = "na.or.complete")
-plot_h <- pheatmap(pem, color = colorRampPalette(brewer.pal(9, "Blues"))(255),
-                   cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = TRUE,
-                   fontsize_row = 6, fontsize_col = 6, border_color = NA, treeheight_row = 0, treeheight_col = 0)
-
-pdf(paste(dir_fig, "/05_Cor_pearson_genecounts_", project, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
-print(plot_h)
-dev.off()
-
-  
-## PCA PLOTS
-plot_pcas <- pca_plot(m, trt, sample_info, color_list)
-
-ggsave(filename = paste("PCA_params_genecounts_", project, "_scree.pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
-ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_genecounts_", project, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
-ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_genecounts_", project, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
-ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_genecounts_", project, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
-
-
-## HEATMAP
-plot_heatmap <- heatmap_plot(m, sample_info, trt, color_list)
-  
-pdf(paste(dir_fig, "/Heatmap_zscore_genecounts_", project, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
-print(plot_heatmap)
-dev.off()
-
-
-
-##############################################################################
-#                   GENE COUNT FILTERING AND NORMALIZATION
-##############################################################################
-
-##############################################################################
+################################################################################
 #                           Data transformation
-##############################################################################
-# Two analysis paths. On the one and we have the DESeq2 analysis with NO FILERED data to
-# try to maximize DESeq2 potential. On the other hand FILTERED data for DESeq2, EdgeR and limmavoom (Wilcoxon)
-# Normalized and filtered gene counts for the DEG analysis are performed in following steps. This
-# transformation is different based on the method used to perform the analysis.
-# The methods used are DESeq2, EdgeR, limma-voom and Wilcoxon test
-# In all the cases blind=FALSE 
-
-##############################################################################
-#                             NO FILTERED
-##############################################################################
-# DESeq2: Raw counts
-# ----------------------------------------------------------------------------
-
-# 1. Create DESeq object
-dds <- DESeqDataSetFromMatrix(countData = raw_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
-
-# 2. Estimate size factor
-dds <- estimateSizeFactors(dds)
-
-# 3. Variance stabilization methods in log2 scale to interpret the data
-# 
-# blind set FALSE, because we want the method to know to which group each sample 
-# belongs to. 
-# Options: VST for samples size group smaller than 30. 
-
-if(group_n < 30){
-  raw_counts_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
-}else{
-  raw_counts_blindFALSE <- as.data.frame(assay(rlog(dds, blind = FALSE)))}
-
-# 4. Normalization
-# 
-# Normalized counts with log2 transformation
-##################### AÑADIR NORMALIZACION CON FILRADO SY NO FILRADOS
-norm_counts <- as.data.frame(log2(counts(dds, normalized = TRUE)+1))
-
-
-# DESeq2
-# ----------------------------------------------------------------------------
-
-
-##############################################################################
-#                               Filtering
-##############################################################################
-
-## Filter gene count matrix per each comparison
-#
-# This data will be used when running DESeq2, EdgeR, limma-voom and Wilcoxon to
-# perform the test for the differentially expressed genes
-keep <- filter_genecounts(raw_counts, sample_info, trt, min_count = min_count, min_prop = min_prop, n_large = n_large, min_total = min_total)
-filtered_counts <- raw_counts[keep,]
-
-# 1. Create DESeq object
-dds <- DESeqDataSetFromMatrix(countData = filtered_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
-  
-# 2. Variance stabilization methods in log2 scale to interpret the data
-# blind set FALSE, because we want the method to know to which group each sample 
-# belongs to. 
-# Options: VST for samples size group smaller than 30. 
-  
-if(group_n < 30){
-  filtered_counts_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
-  Variance_Stabilization_Type <- "VST"
-}else{
-  filtered_counts_blindFALSE <- as.data.frame(assay(rlog(dds, blind = FALSE)))
-  Variance_Stabilization_Type <- "RLOG"}
-  
-  
-# EdgeR/limma-voom
-# ----------------------------------------------------------------------------
-  
-# 1. Create DGEList object
-deg <- DGEList(counts = filtered_counts, group = sample_info[,trt])
-if(!is.null(var_exp)){deg$samples[var_exp] <- sample_info[,var_exp]}
-  
-  
-# 2. Normalization
-# 
-# This step is common between EdgeR and limma-voom 
-# 
-# Minimized the logFC between samples for most genes using weighted Trimmed Mean of M-values 
-# between each pair of samples (TMM method) to normalized the gene counts based 
-# on the library size.
-# Corrects for sequencing detph, RNA composition and gene length
-# Can be used to perform DE analysis and within sampe analysis
-# 
-# All the parameters used are the default options
-deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, sumTrim = 0.05, doWeighting = TRUE, Acutoff = -1e10, p = 0.75)
-  
-# 3. Counts per million normalization method 
-logcpm <- cpm(deg, log = TRUE, normalized.lib.sizes = TRUE)
-logcpm <- as.data.frame(logcpm)
-  
-
-  
 ################################################################################
-#                               SAVE DATA           
-################################################################################
+# 
+# The methods for the differentially expressed genes used are DESeq2, EdgeR, 
+# limma-voom and Wilcoxon test
+# 
+# Two analysis paths. 
+#   1. DESeq2 analysis with NO FILERED data to try to maximize DESeq2 potential.
+#   2. FILTERED data for DESeq2, EdgeR and limmavoom (Wilcoxon)
+# 
+# Normalized and filtered gene counts for the DEG analysis are performed in 
+# following steps. 
+
+
+for (i in 1:2){
+  if(i == 1){
+    filter_lab <- "nofilter"
+    gene_counts <- raw_counts
+  }else{
+    # Filter gene count matrix per each comparison
+    #
+    # This data will be used when running DESeq2, EdgeR, limma-voom and Wilcoxon to
+    # perform the test for the differentially expressed genes
+    keep <- filter_genecounts(raw_counts, sample_info, trt, min_count = min_count, min_prop = min_prop, n_large = n_large, min_total = min_total)
+    gene_counts <- raw_counts[keep,]
+    filter_lab <- "filtered"
+  }
+  
+  print(filter_lab)
+  print(dim(gene_counts))
+  
+  # Final output
+  df <- gene_counts
+  df$Ensembl <- rownames(df)
   
   
+  ##############################################################################
+  #                                 DESeq2
+  ##############################################################################
+  
+  
+  # Step 1: Create DESeq object
+  # ----------------------------------------------------------------------------
+  #
+  # DESeqDataSetFromMatrix has all the information necessary to run DESeq. 
+  # - Count matrix
+  # - sample_info with the following columns: condition and covariates. Data 
+  #     associated to the samples valuable to perform the contrast. The row names
+  #     must be the samples names
+  # - Design formula with the experimental conditions and the covariates 
+  dds <- DESeqDataSetFromMatrix(countData = gene_counts, colData = sample_info, design =  eval(parse(text = design_cond)))
+  
+  
+  # Step 2: Estimate size factor
+  # ----------------------------------------------------------------------------
+  dds <- estimateSizeFactors(dds)
+  
+  
+  # Step 3: Variance stabilizing transformation
+  # ----------------------------------------------------------------------------
+  # 
+  # Variance stabilization methods in log2 scale to interpret the data
+  # 
+  # Choose VST for samples size group smaller than 30. Why? 
+  # 
+  # if you have many samples (e.g. 100s), the rlog function might take too long, and so the vst function will be 
+  # a faster choice. The rlog and VST have similar properties, but the rlog requires fitting a shrinkage term for 
+  # each sample and each gene which takes time. See the DESeq2 paper for more discussion on the differences 
+  # (Love, Huber, and Anders 2014). The rlog function is not as sensitive as vst to the size factors, which can be 
+  # an issue when size factors vary widely.
+  
+  # Why blind = TRUE
+  # 
+  # blind, for whether the transformation should be blind to the sample information specified by the design formula. 
+  # When blind equals TRUE (the default), the functions will re-estimate the dispersions using only an intercept. 
+  # This setting should be used in order to compare samples in a manner wholly unbiased by the information about 
+  # experimental groups, for example to perform sample quality assurance.
+  
+  # Output
+  # - Columns are samples
+  # - Rows are genes
+  # 
+  #                    N_3_E1    N_2_E4    N_2_E3   N_2_E2   H4_2_E4   H4_2_E3   H4_2_E2   H4_2_E1
+  # ENSG00000000003 11.075692 10.993586 11.209109 11.03978 11.136152 11.147595 11.118555 11.125602
+  # ENSG00000000419 11.959761 11.938768 12.033994 11.84389 11.846617 11.951190 11.951552 11.888236
+  # ENSG00000000457 10.476816 10.557566 10.470185 10.47396 10.568444 10.488905 10.569326 10.394093
+  
+  # Why VST or RLOG?
+  # 
+  # There are two different methods to stabilize the variance in DESeq2, vst and rlog. 
+  #   The variance stabilization transformation (vst)
+  #   The regularized log transformation (rlog) inherently accounts for differences in sequencing depth.
+  # 
+  # We decided to exclusively use VST, because the reason is given is due to computing time as you can see
+  # Note on running time: if you have many samples (e.g. 100s), the rlog function might take too long, and so the vst
+  # function will be a faster choice. The rlog and VST have similar properties, but the rlog requires fitting a shrinkage
+  # term for each sample and each gene which takes time. See the DESeq2 paper for more discussion on the differences
+  # (Love, Huber, and Anders 2014).
+  # 
+  # The point of these two transformations, the VST and the rlog is to remove the dependence of the variance on the mean, 
+  # particularly the high variance of the logarithm of count data when the mean is low. Both VST and rlog use the 
+  # experiment-wide trend of variance over mean, in order to transform the data to remove the experiment-wide trend. 
+  # Note that we do not require or desire that all the genes have exactly the same variance after transformation. Indeed, 
+  # in a figure below, you will see that after the transformations the genes with the same mean do not have exactly the 
+  # same standard deviations, but that the experiment-wide trend has flattened. It is those genes with row variance 
+  # above the trend which will allow us to cluster samples into interesting groups.
+  
+  # Estimate the biggest group sample size
+  group_n <- max(as.vector(tabulate(sample_info[[trt]])))
+  
+  m_blindTRUE <- as.data.frame(assay(vst(dds, blind = TRUE)))
+  m_blindFALSE <- as.data.frame(assay(vst(dds, blind = FALSE)))
+  vsd_type <- "VST"
+  
+  
+  # Step 4: Normalization
+  # ----------------------------------------------------------------------------
+  # 
+  # The normalization method is DESeq2's median of ratios in which counts divided 
+  # by sample-specific size factors determined by median ratio of gene counts 
+  # relative to geometric mean per gene. 
+  # 
+  # Accounting for sequencing depth and RNA composition
+  norm_counts <- as.data.frame(counts(dds, normalized = TRUE))
+  
+  
+  # Step 5: Stack matrix
+  # ----------------------------------------------------------------------------
+  # Matrix to plot the data
+  m_blindTRUE_s <- stack(m_blindTRUE)
+  m_blindTRUE_s_mod <- m_blindTRUE_s
+  m_blindTRUE_s_mod[trt] <- rep(sample_info[[trt]], each = dim(gene_counts)[1])
+
+
+  ##############################################################################
+  #                               QC Plots 
+  ##############################################################################
+  
+  
+  ## COUNTS DISTRIBUTION PLOTS
+  # Distribution of gene read counts per each sample
+  ggplot(data = m_blindTRUE_s, aes(x = values, fill = ind))+
+    geom_histogram(stat = "bin", bins = 200, position="identity", alpha = 0.3, show.legend = FALSE)+
+    labs(x = "Counts", y = "Genes", title = "Gene Counts Expression")
+  ggsave(filename = paste("00_Dist_genecounts_samples_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep=""), height = 4, width = 4, plot = last_plot(), path = dir_fig, bg = "white")
+  
+  # Distribution of gene read counts with grid per each sample
+  ggplot(data = m_blindTRUE_s, aes(x = values, fill = ind))+
+    geom_histogram(stat = "bin", bins = 200, show.legend = FALSE)+
+    facet_wrap(~ ind, ncol = 4)+
+    labs(x = "Counts", y = "Genes", title = "Gene Counts Expression")+
+    theme(strip.background = element_blank(), axis.text.x = element_text(angle = 90, vjust = 0.01, hjust = 1))
+  ggsave(filename = paste("00_Dist_genecounts_samples_grid_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep=""), height = 8, width = 6, plot = last_plot(), path = dir_fig, bg = "white")
+  
+  
+  ## BOXPLOT
+  ggplot(data = m_blindTRUE_s_mod, aes(x = ind, y = values, fill = !!as.name(trt)))+
+    geom_boxplot(linewidth = 0.09, outlier.size = 0.5)+
+    labs(x = "", y = "Log2(Counts)")+
+    scale_fill_manual(values = color_list[[trt]])+
+    theme(legend.position = "none", text = element_text(size = 5), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5), panel.grid = element_blank())
+  ggsave(filename = paste("01_Distribution_boxp_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), path = dir_fig, height = 4, width = 6, plot = last_plot(), bg = "white")
+  
+  ## DENSITY PLOT
+  # A few things to note about this figure is that there is a huge peak at exactly
+  # -3.321928 which can be ignored because this is value is calculated from log2(0.1)
+  # explained in the box above. This peak consists of all 0-values (inactive genes)
+  # which isn’t very important to us now.
+  pdf(paste(dir_fig, "/02_Density_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), height = 5, width = 5, bg = "white")
+  plotDensity(m_blindTRUE, col = rep(color_list[[trt]], each = 4), xlab = "Log2(Counts)", ylab = "Density", main = "Expression Distribution")
+  dev.off()
+  
+  
+  ## MODELING COUNT DATA
+  # Perform with raw gene gene counts 
+  model_m <- data.frame(Mean = apply(gene_counts, 1, mean), Variance = apply(gene_counts, 1, var))
+  head(model_m)
+  
+  ggplot(data = model_m, aes(x = Mean, y = Variance))+
+    geom_point(alpha = 0.20, colour = "#696969")+
+    geom_line(aes(x = Mean, y = Mean), color = "red", show.legend = FALSE)+
+    scale_y_log10()+
+    scale_x_log10()+
+    labs(x = "Mean gene expression level (log10 scale)", y = " Gene-level variance (log10 scale)", title = "")
+  ggsave(filename = paste("03_NB_fit_data_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep=""), height = 4, width = 4, plot = last_plot(), path = dir_fig, bg = "white")
+  
+  
+  ##  CORRELATION 
+  #
+  # Execute a Pearson correlation which accept possible NAs.
+  # The acceptance of the NA should be valuable in the future in case, we accept
+  # comparisons when a sample is missing a PSI value.
+  #
+  # The results of the correlation matrix must be aligned with the results
+  # in the heatmap and PCA.
+  pem <- cor(m_blindTRUE, method = "pearson", use = "na.or.complete")
+  plot_h <- pheatmap(pem, color = colorRampPalette(brewer.pal(9, "Blues"))(255),
+                     cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = TRUE,
+                     fontsize_row = 6, fontsize_col = 6, border_color = NA, treeheight_row = 0, treeheight_col = 0)
+  
+  pdf(paste(dir_fig, "/05_Cor_pearson_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
+  print(plot_h)
+  dev.off()
+  
+  
+  ## PCA PLOTS
+  plot_pcas <- pca_plot(m_blindTRUE, trt, sample_info, color_list)
+  
+  ggsave(filename = paste("PCA_params_genecounts_", project, "_", filter_lab, "_scree", "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[1]], path = dir_fig, height = 4, width = 4, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs2)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[2]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs3)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[3]], path = dir_fig, height = 5, width = 6, bg = "white")
+  ggsave(filename = paste(deparse(substitute(pca_1vs4)), "_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), plot = plot_pcas[[4]], path = dir_fig, height = 5, width = 6, bg = "white")
+  addWorksheet(exc_pca, paste("R", filter_lab, sep = "_"))
+  addWorksheet(exc_pca, paste("GenesPCs", filter_lab, sep = "_"))
+  writeData(exc_pca, as.data.frame(plot_pcas[[5]]), sheet = paste("R", filter_lab, sep = "_"))
+  writeData(exc_pca, as.data.frame(plot_pcas[[6]]), sheet = paste("GenesPCs", filter_lab, sep = "_"))
+  
+  
+  ## HEATMAP
+  plot_heatmap <- heatmap_plot(m_blindTRUE, sample_info, trt, color_list)
+  
+  pdf(paste(dir_fig, "/Heatmap_zscore_genecounts_", project, "_", filter_lab, "_", analysis_ID, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
+  print(plot_heatmap)
+  dev.off()
+  
+  
+  ##############################################################################
+  #                               EdgeR/limma-voom
+  ##############################################################################
+  
+  if(i == 2){
+    
+    # Step 1: Create DGEList object
+    # ----------------------------------------------------------------------------
+    deg <- DGEList(counts = gene_counts, group = sample_info[,trt])
+    if(!is.null(var_exp)){deg$samples[var_exp] <- sample_info[,var_exp]}
+    
+    
+    # Step 2: Normalization
+    # ----------------------------------------------------------------------------
+    # 
+    # This step is common between EdgeR and limma-voom 
+    # 
+    # Minimized the logFC between samples for most genes using weighted Trimmed Mean of M-values 
+    # between each pair of samples (TMM method) to normalized the gene counts based 
+    # on the library size.
+    # Corrects for sequencing detph, RNA composition and gene length
+    # Can be used to perform DE analysis and within sampe analysis
+    # 
+    # All the parameters used are the default options
+    deg <- normLibSizes(deg, method = "TMM", refColumn = NULL, logratioTrim = .3, sumTrim = 0.05, doWeighting = TRUE, Acutoff = -1e10, p = 0.75)
+    
+    
+    # Step 3: Counts per million normalization method 
+    # ----------------------------------------------------------------------------
+    # 
+    # In the counts per million method, counts are scaled by total number of reads
+    # 
+    # Accounting for sequencing depth
+    cpm_counts <- cpm(deg, log = FALSE, normalized.lib.sizes = TRUE)
+    cpm_counts <- as.data.frame(cpm_counts)
+    
+    
+    
+    ################################################################################
+    #                               OUTPUT DATA           
+    ################################################################################
+    
+    
+    colnames(cpm_counts) <- paste("CPM_", colnames(cpm_counts), sep = "")
+    df_cpm <- cbind(df, cpm_counts)
+    }
+  
+  colnames(m_blindTRUE) <- paste("VST_", colnames(m_blindTRUE), sep = "")
+  colnames(m_blindFALSE) <- paste("VST_", colnames(m_blindFALSE), sep = "")
+  colnames(norm_counts) <- paste("Norm_", colnames(norm_counts), sep = "")
+  
+  counts_blindTRUE <- cbind(df, m_blindTRUE)
+  counts_blindFALSE <- cbind(df, m_blindFALSE)
+  
+  counts_blindTRUE <- cbind(counts_blindTRUE, norm_counts)
+  counts_blindFALSE <- cbind(counts_blindFALSE, norm_counts)
+  
+  
+  ################################################################################
+  #                               SAVE DATA           
+  ################################################################################
+  
+  # Save DESeq
+  write.table(counts_blindTRUE, paste(dir_output,"/GeneCount_", vsd_type , "_blindTRUE_", project, "_", filter_lab, "_", analysis_ID, ".txt", sep = ""))
+  write.table(counts_blindFALSE, paste(dir_output,"/GeneCount_", vsd_type , "_blindFALSE_", project, "_", filter_lab, "_", analysis_ID, ".txt", sep = ""))
+}
+
+# Save EdgeR/limma-voom
+write.table(df_cpm, paste(dir_output,"/GeneCount_CPM_", project, "_", filter_lab, "_", analysis_ID, ".txt", sep = ""))
+
 # Save metadata information
-write.table(sample_info, paste(dir_output, "/Metadata_", project,analysis_ID,".txt", sep = ""))
-  
-# Save gene counts
-write.table(raw_counts, paste(dir_output,"/GeneCount_", label ,"_", project,analysis_ID,".txt", sep = ""))
-  
-# Save transform data with blind = TRUE
-write.table(raw_counts_blindTRUE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type , "_blindTRUE_", project, analysis_ID,".txt", sep = ""))
-  
-# Save filtered data with blind = FALSE
-write.table(filtered_counts, paste(dir_output,"/GeneCount_filtered", "_", project, analysis_ID,".txt", sep = ""))
-  
-# Save transform data with blind = FALSE
-write.table(raw_counts_blindFALSE, paste(dir_output,"/GeneCount_", Variance_Stabilization_Type, "_blindFALSE_", project, analysis_ID,".txt", sep = ""))
-write.table(filtered_counts_blindFALSE, paste(dir_output,"/GeneCount_filtered_", Variance_Stabilization_Type, "_blindFALSE_", project, analysis_ID,".txt", sep = ""))
-  
-# Save normalized counts
-write.table(logcpm, paste(dir_output,"/GeneCount_filter_CPM_", project, analysis_ID,".txt", sep = ""))
-############################AÑADIR NORMALIZADO FILRADO Y NO FILTRADO
-write.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, analysis_ID,".txt", sep = ""))
-write.table(norm_counts, paste(dir_output, "/GeneCount_norm_", project, analysis_ID,".txt", sep = ""))
-  
-# Save QC file information
-logdate <- format(Sys.time(), "%Y%m%d")
-sum_contrast <- c()
-sum_contrast$Date <- Sys.time()
-sum_contrast$Genes <- dim(gene_counts)[1]
-sum_contrast$GenesFiltered <- dim(df)[1] 
-sum_contrast$design <- design_cond
-sum_contrast$Transformation <- Variance_Stabilization_Type
-write.table(sum_contrast, paste(dir_output, "/QC_result_", project,analysis_ID,".txt", sep = ""), row.names = FALSE, eol = "\r")
-  
+write.table(sample_info, paste(dir_output, "/Metadata_", project, "_", analysis_ID, ".txt", sep = ""))
+
+# Save PCA data
+saveWorkbook(exc_pca, file =  paste(dir_output, "/PCA_data_QC_", project, ";", vsd_type, "blindTRUE_", analysis_ID, ".xlsx", sep = ""), overwrite = TRUE)
 
 
 ################################################################################
@@ -720,7 +743,6 @@ write.table(sum_contrast, paste(dir_output, "/QC_result_", project,analysis_ID,"
 
 
 # Save log file information
-logdate <- format(Sys.time(), "%Y%m%d")
 log_data <- c()
 log_data$analysis_ID <- analysis_ID
 log_data$Date <- Sys.time()
@@ -731,14 +753,16 @@ log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_ord, collapse =",")
 log_data$Outliers <- paste(outliers, collapse = ",") 
 log_data$Varexp <- paste(var_exp, collapse = ",") 
+log_data$filter_lab<-filter_lab
 log_data$min_count <- min_count
 log_data$min_total <- min_total
 log_data$n_large <- n_large
 log_data$min_prop <- min_prop
+log_data$zscore <- zscore
 log_data$fdr_cutoff <- fdr_cutoff
 log_data$lfc_cutoff <- lfc_cutoff
 log_data$correction <- correction
-log_data$Variance <- Variance_Stabilization_Type
+log_data$Variance <- vsd_type
 log_data$contrast <- logfile$contrast
 log_data$colortrt <- paste(color_list[[trt]], collapse = ",")
 log_data$colorheat <- paste(color_list[["Heatmap"]], collapse = ",")
@@ -746,20 +770,22 @@ log_data$colordir<-  paste(color_list[["Direction"]], collapse = ",")
 log_data$colorsh <- paste(color_list[["Shared"]], collapse = ",")
 
 
-write.table(as.data.frame(log_data), paste(path, project, "/log/5_DEG_qc_", logdate, ".log", sep = ""), row.names = FALSE, eol = "\r")
+write.table(as.data.frame(log_data), paste(dir_log, "5_DEG_qc_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
+
+print("DEG Analysis ID")
+print(analysis_ID)
 
 
+print("Quality Control Analysis completed!")
 
 ################################################################################
 #                             FOLLOW THE ANALYSIS           
 ################################################################################
 
-
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# source(paste(path, project, "/Scripts/06_DEG_v2_DESeq2.R", sep = ""))
-# source(paste(path, project, "/Scripts/06_DEG_v2_EdgeR.R", sep = ""))
-# source(paste(path, project, "/Scripts/06_DEG_v2_limma.R", sep = ""))
-# source(paste(path, project, "/Script/06_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS
+source(paste(dir_out, "/Scripts/05_DEG_v2_DESeq2_20240212.R", sep = ""))
+# source(paste(path, project, "/Scripts/05_DEG_v2_EdgeR.R", sep = ""))
+# source(paste(path, project, "/Scripts/05_DEG_v2_limma.R", sep = ""))
+# source(paste(path, project, "/Script/05_DEG_v2_wilcoxon.R", sep = ""))          #ONLY WITH BIG DATA SETS
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
