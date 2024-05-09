@@ -196,7 +196,7 @@ for (i in 1:length(samples)) {
   
   if(seq_library == "normal"){
     # Cutadapt command
-    command <- paste("cutadapt -a", a,"-A", A,"-j 0 -q", q, min_length, " --pair-filter=any -o", output1,"-p", output2, input1, input2, sep=" ")
+    command <- paste("cutadapt -a", a,"-A", A,"-j 0 -q", q, "-m", min_length, " --pair-filter=any -o", output1,"-p", output2, input1, input2, sep=" ")
     
     # SBATCH File
     filename <- paste(job_name,".sh",sep='');
@@ -225,7 +225,7 @@ for (i in 1:length(samples)) {
     
     # Cutadapt command
     command <- paste("cutadapt -a", a,"-A", A,"--pair-filter=any -o", outputm1,"-p", outputm2, input1, input2, sep = " ")
-    command2 <- paste("cutadapt -u", u,"-U", U,"-j 0 -q", q, min_length, " --pair-filter=any -o", output1,"-p", output2, outputm1, outputm2, sep = " ")
+    command2 <- paste("cutadapt -u", u,"-U", U,"-j 0 -q", q, "-m", min_length, " --pair-filter=any -o", output1,"-p", output2, outputm1, outputm2, sep = " ")
     
     # SBATCH File
     filename <- paste(job_name,".sh",sep='');
