@@ -23,18 +23,11 @@ project_name <- "XXX"
 
 # File path
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+path <- "W:/user/"
 # -----------------------------------------------------------------------------------------------------------------
 
 # Input directory
 input_dir <- paste(path, project_name,"/04_STAR", sep = "")
-
-# Output directory
-dir.create(file.path(paste(path, project_name, sep = ""),"VERIFICATION"))
-output_dir <- paste(path, project_name,"/VERIFICATION", sep ="")
-
-
-# Set working directory
 setwd(input_dir)
 
 # List fastq.zip files
@@ -88,13 +81,13 @@ for (i in 1:length(samples_names)){
 
 
 #Load trimming check
-if(trimming == TRUE){trim_file <- read.csv(file = paste(output_dir, "/", project_name,"_Trimming_check.csv", sep = ""), header = TRUE)
+if(trimming == TRUE){trim_file <- read.csv(file = paste(input_dir, "/", project_name,"_Trimming_check.csv", sep = ""), header = TRUE)
 colnames(trim_file) <- gsub("\\.", " ", colnames(trim_file))
 colnames(trim_file) <- gsub("   ", " < ", colnames(trim_file))
 
 # Save together the results of the trimming and the alignment
 final_check <- merge(trim_file,def_file, by = "Sample")
-write.csv(final_check, file = paste(output_dir,"/", project_name,"_Trimmed_STAR_check.csv", sep = ""), row.names=FALSE)
+write.csv(final_check, file = paste(input_dir,"/", project_name,"_Trimmed_STAR_check.csv", sep = ""), row.names=FALSE)
 
 } else {final_check <- def_file}
 
@@ -107,7 +100,7 @@ write.csv(final_check, file = paste(output_dir,"/", project_name,"_Trimmed_STAR_
 ################################################################################
 
 
-write.csv(def_file, file = paste(output_dir ,"/", project_name,"_STAR_check.csv", sep = ""), row.names=FALSE)
+write.csv(def_file, file = paste(input_dir ,"/", project_name,"_STAR_check.csv", sep = ""), row.names=FALSE)
 
 
 

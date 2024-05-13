@@ -27,9 +27,6 @@ path <- "W:/mponce/"
 
 # Output and input directories SSH 
 input_dir <- paste(path, project_name, "/02_TRIMMED", sep = "" )
-output_dir <- paste(path, project_name, "/VERIFICATION", sep = "")
-
-# Set working directory
 setwd(input_dir)
 
 # List fastq.zip files
@@ -90,4 +87,4 @@ for (i in 1:length(samples_names)){
 ################################################################################
 
 
-write.csv(def_file,file = paste(output_dir ,"/02_Trimmed_Fastq_file.csv", sep = ""), row.names=FALSE)
+write.csv(def_file,file = paste(input_dir ,"/02_Trimmed_Fastq_file.csv", sep = ""), row.names=FALSE)

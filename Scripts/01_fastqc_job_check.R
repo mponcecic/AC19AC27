@@ -22,14 +22,11 @@ project_name <- "XXX"
 
 # File path
 # path <- "/vols/GPArkaitz_bigdata/mponce/"
-path <- "W:/mponce/"
+path <- "W:/user/"
 # -----------------------------------------------------------------------------------------------------------------
   
 # Output and input directories SSH 
 input_dir <- paste(path, project_name, "/01_FASTQC", sep = "" )
-output_dir <- paste(path, project_name, "/VERIFICATION", sep = "")
-
-# Set working directory
 setwd(input_dir)
 
 # List fastq.zip files
@@ -95,4 +92,4 @@ for (i in 1:length(samples_names)){
 ################################################################################
 
 
-write.csv(def_file,file = paste(output_dir ,"/01_Fastq_QC_file.csv", sep = ""), row.names = FALSE)
+write.csv(def_file,file = paste(input_dir ,"/01_Fastq_QC_file.csv", sep = ""), row.names = FALSE)
