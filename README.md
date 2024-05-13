@@ -47,7 +47,7 @@ All the scripts must be modified to adjust the pipeline to your project. The par
 
 Furthermore, the following scripts can be directly run in Rocky login node without the need to ask for an interactive session: `01_FASTQC.R`, `01_MULTIFASTQC.R`, `02_TRIMMING.R`, `03_FASTQC.R`, `03_MULTIFASTQC.R` and 
 
-In addition, each step is followed by a verification file. These verification files can check if any job failed but also can generate a summary of the results that gives a general overview of how the step went. The verification files are described in more detail in a [later section](#verification-scripts)
+In addition, each step is followed by a verification file. These verification files can check if any job failed but also can generate a summary of the results that gives a general overview of how the step went. The verification files are described in more detail in a [later section](#verification-scripts).
 
 There are only two verification files that must be run one is the `00_fastq_file_check.R` and `04_STAR_result_check.R`. The first file gives information about the size of the files that can be used to estimate data requirements when running jobs in the cluster. The second one shows the results of the alignment, which is a key step for the analysis. If something goes wrong this file should be an alarm for you.  
 
@@ -174,6 +174,9 @@ As a result, of running this part of the pipeline you will obtain the following 
 ![Fig7](/Schematics/05_DEG_folder.png)
 
 # :open_file_folder: Verification scripts
+
+> **THIS FOLDER NO LONGER EXISTS. THE FILES ARE SAVED IN THE FOLDER OF THE FILES.**
+
 
 In the script folder, you can find the following scripts 
 `00_fastq_file.R`, `01_fastqc_job_check.R`, `02_trimmed_fastq_job_check.R`, `02_trimmed_fastq_result_check.R`, `03_fastqc_job_check.R`, `04_STAR_job_check.R` and `04_STAR_result_check.R`. 
