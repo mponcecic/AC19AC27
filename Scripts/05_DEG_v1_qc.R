@@ -369,10 +369,13 @@ if(is.null(outliers) == FALSE){
 if(!is.null(var_exp)){
   # Normal for EdgeR and limma-voom
   sample_info[, var_exp] <- data_info[, which(colnames(data_info) %in% var_exp)]
-  # Z_score for DESeq2
+  if(zscore == TRUE){
+    # Z_score for DESeq2
   for (k in 1:length(var_exp)){
     if(length(unique(sample_info[, var_exp[k]]))>1){
       sample_info[, paste(var_exp[k], "_zscore", sep = "")] <- as.vector(scale(data_info[[var_exp[k]]], center = TRUE, scale = TRUE))}}
+  }else{print("Z-score not needed.")}
+  
 } else{print("No variation correction")}
 
 
