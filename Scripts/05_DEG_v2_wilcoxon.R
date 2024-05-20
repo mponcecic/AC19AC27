@@ -108,7 +108,10 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 
 # Outliers 
 # Remove the samples considered outliers
-if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$Outliers, collapse = ",")}
+if(is.na(logfile$Outliers)){outliers <- NULL} else {
+  outliers <-  unlist(str_split(logfile$Outliers, ","))
+  project <- paste(project, paste(outliers, collapse = "_"), sep = "_")
+}
 
 
 # Filtering parameters 
