@@ -347,6 +347,7 @@ dir_output <- paste(dir_ID, "/Results", sep='')
 # - Covariates variables adjusted with z-scores
 sample_info <- data.frame(Sample = data_info$Sample)
 sample_info[, trt] <- factor(data_info[[trt]], levels = lvl_ord)
+sample_info[, var_exp] <- data_info[, var_exp]
 
 # Row names as the sample name
 row.names(sample_info) <- sample_info$Sample
@@ -357,7 +358,7 @@ if(is.null(outliers) == FALSE){
   sample_info <- sample_info[-which(rownames(sample_info) %in% outliers),]
   raw_counts <- raw_counts[,-which(colnames(raw_counts) %in% outliers)]
   print(paste("Remove outliers:", outliers, sep = " ")); print(ncol(raw_counts))
-  project <- paste(project, outliers, sep = "_", collapse = "_")
+  project <- paste(project, paste(outliers, collapse = "_"), sep = "_")
 }else{print("No sample was considered an outlier.")}
 
 

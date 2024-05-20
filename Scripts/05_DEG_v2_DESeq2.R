@@ -115,7 +115,7 @@ contrast <- split(contrast, rep(1:(length(contrast)/3), each = 3))
 if(is.na(logfile$Outliers)){
   outliers <- NULL
 } else {
-  outliers <-  paste(logfile$Outliers, collapse = ",")
+  outliers <-  unlist(str_split(logfile$Outliers, ","))
   project <- paste(project, paste(outliers, collapse = "_"), sep = "_")}
 
 
