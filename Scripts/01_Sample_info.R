@@ -52,8 +52,8 @@ local_dir <- paste("C:/Users/mponce/CIC bioGUNE/Arkaitz group - Maria Ponce/Proj
 # Input directory
 # Must be the folder where the library preparation pdf is found and folder 
 # with the fastq are included 
-files_rocky <- c("/vols/GPArkaitz_bigdata/DATA_shared/AC-XX_TotalRNAseq/", "")
-files <- c("W:/DATA_shared/AC-XX_TotalRNAseq/", "")
+files_rocky <- c("/vols/GPArkaitz_bigdata/DATA_shared/AC-19_mRNAseq/", "/vols/GPArkaitz_bigdata/DATA_shared/AC-27_mRNAseq/")
+files <- c("W:/DATA_shared/AC-19_mRNAseq/", "W:/DATA_shared/AC-27_mRNAseq/")
 # Select input directory
 dir_in <- files
 
@@ -61,14 +61,14 @@ dir_in <- files
 trt <- "Condition"
 
 # Contrast level order 
-lvl_order <- c("nDOX", "DOX24H", "DOX42H")
+lvl_order <- c("noDOX", "DOX24H", "DOX42H")
 
 # Organism
 # org <- "Mouse"
 org <- "Human"
 
 # Read length
-read <- c(101, 151)
+read <- paste(101, 151, sep = ", ")
 
 # Contrast
 # If contrast set NULL the different contrasts will be created based on the 
@@ -225,8 +225,8 @@ log_data$condition <- trt
 log_data$condition_order <- paste0(lvl_order, collapse =",")
 log_data$covariance <- paste(var_exp, collapse = ",") 
 log_data$path <- dir_out
-log_data$filedir <- dir_in
-log_data$filedirRocky <- files_rocky
+log_data$filedir <- paste(dir_in, collapse =",")
+log_data$filedirRocky <- paste(files_rocky, collapse =",")
 log_data$local_dir <- local_dir
 log_data$Organism <- org
 log_data$read <- read
