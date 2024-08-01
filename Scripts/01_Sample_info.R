@@ -61,7 +61,7 @@ dir_in <- files
 trt <- "Condition"
 
 # Contrast level order 
-lvl_order <- c("nDOX", "DOX24H", "DOX48H")
+lvl_order <- c("nDOX", "DOX24H", "DOX42H")
 
 # Organism
 # org <- "Mouse"
