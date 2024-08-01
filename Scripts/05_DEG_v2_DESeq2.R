@@ -50,16 +50,16 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-#project <- "AC64"
+project <- "AC19AC27"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
 # path <- "/vols/GPArkaitz_bigdata/user/"
-#path <- "W:/ulazcano/"
+path <- "W:/mponce/"
 
 
 # Date of the log file 5_DEG_qc_XXXX.log
-analysis_ID <- "20240208171414"
+analysis_ID <- "20240801092404"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Load libraries
