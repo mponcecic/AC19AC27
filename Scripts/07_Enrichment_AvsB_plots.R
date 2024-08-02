@@ -20,6 +20,7 @@ analysis <- "DESeq2"
 
 # Comparison
 comparison <- "noDOXvsDOX24H"
+comparison <- "noDOXvsDOX42H"
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -105,14 +106,40 @@ print(dim(data))
 
 # select only significative pathways
 data <- data[data$significant == TRUE, ]
+print(dim(data))
 
 ################################################################################
 #                               PLOT 
 ################################################################################
 
+
+# # Select the firs 15 pathways
+# data <- data[order(data$p_value, decreasing = TRUE),]
+# dt <- data # noDOXvsDOX24H
+# path_order <- dt$term_name
+# 
+# # Dotplot Precision 
+# ggplot(data = dt, aes(x = p_value, y = factor(term_name, levels = path_order), color = p_value, size = precision))+
+#   geom_point()+
+#   scale_color_gradient(name = "p-value", high = "blue", low = "red")+
+#   scale_size(name = "Precision")+ 
+#   labs(x = "", y = "")
+# ggsave(filename = paste("00_Dotplot_", project, "_", comparison, "_", threshold, ".pdf", sep = ""), height = 4, width = 4.5, plot = last_plot())
+# 
+# 
+# # Dotplot Intersection size
+# ggplot(data = dt, aes(x = p_value, y = factor(term_name, levels = path_order), color = p_value, size = intersection_size))+
+#   geom_point()+
+#   scale_color_gradient(name = "p-value", high = "blue", low = "red")+
+#   scale_size(name = "Intersection size")+ 
+#   labs(x = "", y = "")
+# ggsave(filename = paste("01_Dotplot_", project, "_", comparison, "_", threshold, ".pdf", sep = ""), height = 4, width = 4.5, plot = last_plot())
+
+
+
 # Select the firs 15 pathways
 data <- data[order(data$p_value, decreasing = TRUE),]
-dt <- data
+dt <- data[1:15,]
 path_order <- dt$term_name
 
 # Dotplot Precision 
@@ -121,7 +148,7 @@ ggplot(data = dt, aes(x = p_value, y = factor(term_name, levels = path_order), c
   scale_color_gradient(name = "p-value", high = "blue", low = "red")+
   scale_size(name = "Precision")+ 
   labs(x = "", y = "")
-ggsave(filename = paste("00_Dotplot_", project, "_", comparison, "_", threshold, ".pdf", sep = ""), height = 4, width = 4.5, plot = last_plot())
+ggsave(filename = paste("00_Dotplot_", project, "_", comparison, "_", threshold, ".pdf", sep = ""), height = 5, width = 6.5, plot = last_plot())
 
 
 # Dotplot Intersection size
@@ -130,6 +157,5 @@ ggplot(data = dt, aes(x = p_value, y = factor(term_name, levels = path_order), c
   scale_color_gradient(name = "p-value", high = "blue", low = "red")+
   scale_size(name = "Intersection size")+ 
   labs(x = "", y = "")
-ggsave(filename = paste("01_Dotplot_", project, "_", comparison, "_", threshold, ".pdf", sep = ""), height = 4, width = 4.5, plot = last_plot())
-
+ggsave(filename = paste("01_Dotplot_", project, "_", comparison, "_", threshold, ".pdf", sep = ""),  height = 5, width = 6.5, plot = last_plot())
 
