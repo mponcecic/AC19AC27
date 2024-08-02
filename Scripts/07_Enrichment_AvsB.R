@@ -181,6 +181,13 @@ dir.create(file.path(dir_outfolder , "Figures"), showWarnings = FALSE)
 dir_fig <- paste(dir_outfolder ,"/Figures", sep='')
 
 
+# Save files with comparison results separate
+dir.create(file.path(dir_outfolder , "GSEA"), showWarnings = FALSE)
+dir_gsea <- paste(dir_outfolder, "/GSEA", sep='')
+
+
+
+
 ################################################################################
 #                          
 ################################################################################
@@ -199,15 +206,14 @@ for (i in 1:length(contrast)) {
   name <- paste(contrast[[i]][3], "vs", contrast[[i]][2], sep = "")
   print(name)
   
-  # Select the genes
+  # Select the DEGs
   genes <- bg[which(bg$Comparison == name & bg$DEG == "YES"), "Ensembl"]
   print(length(genes))
   
-  
   # Enrichment analysis
-  enrich_dt <- gost(genes, 
+  enrich_dt <- gost(genes,
                     organism = assembly,  # Organism
-                    evcodes = TRUE ,      # Save gene names           
+                    evcodes = TRUE ,      # Save gene names
                     ordered_query = FALSE,
                     significant = TRUE,                      # All results not only statistically significant
                     measure_underrepresentation = FALSE,     # Over-representation or under-representation (TRUE)
@@ -215,19 +221,19 @@ for (i in 1:length(contrast)) {
                     correction_method = "fdr",               # Multi-testing correction, options "bonferroni" or "fdr"
                     domain_scope = "custom",                 # Domain/background set; Genes with at least one annotation
                     custom_bg = universe,
-                    numeric_ns = "", 
-                    sources = NULL, 
+                    numeric_ns = "",
+                    sources = NULL,
                     as_short_link = FALSE,
                     highlight = FALSE,
-                    multi_query = FALSE   
+                    multi_query = FALSE
   )
-  
+
   # Manhattan plot
   plot_gs <- gostplot(enrich_dt, interactive = FALSE, capped = FALSE)
 
   results <- enrich_dt$result[order(enrich_dt$result$p_value),]
   results <- results %>% select(term_name, source, term_id, p_value, significant, query, query_size, intersection_size, term_size, effective_domain_size, intersection, precision, recall, source_order, parents)
-  
+
 
   addWorksheet(exc, name)
   writeData(exc, name, results)
@@ -268,5 +274,11 @@ log_data$zscore <- logfile$zscore
 
 write.table(as.data.frame(log_data), paste(path, project, "/log/7_Enrichment_", analysis, "_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
 
+
+
+
+#####################################################################################################
+#                               GSEA DATA PREPARATION
+#####################################################################################################
 
 
