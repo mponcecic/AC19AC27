@@ -239,7 +239,7 @@ for (i in 1:length(contrast)) {
   writeData(exc, name, results)
 }
 
-saveWorkbook(exc, file = paste(dir_res, "/", load_file, "_Annotated_", analysis_ID,".xlsx", sep = ""))
+saveWorkbook(exc, file = paste(dir_res, "/", load_file, "_Annotated_", analysis_ID,".xlsx", sep = ""), overwrite = TRUE)
 
 
 ################################################################################

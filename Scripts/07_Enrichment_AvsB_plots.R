@@ -104,7 +104,7 @@ data <- read.xlsx(paste(dir_files, list.files(dir_files), sep = ""), sheet = com
 print(dim(data))
 
 # select only significative pathways
-data <- data[data$si == TRUE, ]
+data <- data[data$significant == TRUE, ]
 
 ################################################################################
 #                               PLOT 
