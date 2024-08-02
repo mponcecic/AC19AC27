@@ -215,7 +215,7 @@ for (i in 1:length(contrast)) {
                     organism = assembly,  # Organism
                     evcodes = TRUE ,      # Save gene names
                     ordered_query = FALSE,
-                    significant = TRUE,                      # All results not only statistically significant
+                    significant = FALSE,                     # All results not only statistically significant
                     measure_underrepresentation = FALSE,     # Over-representation or under-representation (TRUE)
                     user_threshold = 0.05,                   # Significance level
                     correction_method = "fdr",               # Multi-testing correction, options "bonferroni" or "fdr"
