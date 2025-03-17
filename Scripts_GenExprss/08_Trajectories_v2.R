@@ -31,7 +31,7 @@
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Project name
-project <- "AC58"
+project <- "AC19AC27"
 
 # Pathway to the folders and files
 # Select one option depending if you are running the script in Rocky or local
@@ -39,15 +39,15 @@ project <- "AC58"
 path <- "W:/mponce/"
 
 # Date of the log file 5_DEG_qc_/4_AS_qc_XXXX.log
-analysis_ID <- "20240201"
+analysis_ID <- "20240801092404"
 
 # Clustering methods
-# clustering <- c("Mfuzz", "k-means")
+clustering <- c("Mfuzz", "k-means")
 # clustering <- "Mfuzz"
 clustering <- "k-means"
 
-# Options: "Splicing", "DEG"
-analysis <- "Splicing"
+# Options: "Splicing", "DESeq2", "DESeq2_Nofilter"
+analysis <- "DESeq2"
 
 # Cluster centroids
 # This parameters must be selected carefully 
@@ -56,7 +56,13 @@ sec_c <- seq(2, 17, 1)
 
 # Select the number of clusters in which you want the results
 # If set NULL, the results will be only performed in the optimal number of clusters
-n_clusters <- 3:12
+n_clusters <- 3:9
+
+# Level order must be numeric
+# In AC19AC27, the comparison were made using noDOX, DOX24H, DOX42H so we need to change 
+# it to a numeric version manually
+lvl_ord <- c(0, 24, 42)
+metadata_condition <- c(rep(lvl_ord, each = 4))
 
 
 # Set the seed

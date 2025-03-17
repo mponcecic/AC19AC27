@@ -28,12 +28,12 @@ if(is.na(logfile$Outliers)){outliers <- NULL} else {outliers <-  paste(logfile$O
 # The name should be the same as in the metadata file or sample information file
 trt <- logfile$condition
 
-# Contrast levels
-# The order is important because it will be used to order the data, as well as, 
-# to create the contrast matrix, reference of the order, plot data, ...
-# 
-# The first must be the reference level
-lvl_ord <- as.numeric(unlist(str_split(logfile$condition_order, pattern = ",")))
+# # Contrast levels
+# # The order is important because it will be used to order the data, as well as, 
+# # to create the contrast matrix, reference of the order, plot data, ...
+# # 
+# # The first must be the reference level
+# lvl_ord <- as.numeric(unlist(str_split(logfile$condition_order, pattern = ",")))
 
 # Contrast
 contrast <- unlist(str_split(logfile$contrast, ","))
@@ -68,13 +68,22 @@ theme_set(theme_DEGs)
 #                               Load data 
 ################################################################################
 
+# /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Date: Mon Mar 17 15:28:29 2025
+# Author: Maria Ponce
+
+# Level order must be numeric
+# In AC19AC27, the comparison were made using noDOX, DOX24H, DOX42H so we need to change 
+# it to a numeric version manually
 
 # Load sample information 
 sample_info <- read.table(file = paste(dir_in, "Metadata_", project, "_",  analysis_ID2, ".txt", sep = ""), header = TRUE)
 rownames(sample_info) <- sample_info$Sample
-sample_info <- sample_info[, c("Sample", trt)]
+sample_info[[trt]] <- metadata_condition
 sample_info[[trt]] <- factor(sample_info[[trt]], levels = lvl_ord)
 
+# /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # Phenotypical data
 pheno <- data.frame(trt = unique(sample_info[[trt]]))
@@ -109,9 +118,11 @@ if(analysis == "DESeq2" | analysis == "DESeq2_NoFilter"){
   data <- read.delim(file = paste(dir_in, analysis, "_", project, ";Selected_CPM_", threshold, "_", analysis_ID2, ".txt", sep = ""), header = TRUE, sep = " ")
 }
 
+
 # Remove column with the comparison name
 df <- data %>% distinct(Name, .keep_all = TRUE) %>% select(-1)
 df <- df[, -which(colnames(df) %in% c("DEG", "Direction", "logFC", "padj", "shrklogFC", "log2FC", "shrklog2FC", "MeanExp", "lfcSE", "stat", "pvalue"))]
+
 
 ################################################################################
 #                             Process data 
