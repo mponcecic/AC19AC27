@@ -42,7 +42,7 @@ path <- "W:/mponce/"
 analysis_ID <- "20240801092404"
 
 # Clustering methods
-clustering <- c("Mfuzz", "k-means")
+# clustering <- c("Mfuzz", "k-means")
 # clustering <- "Mfuzz"
 clustering <- "k-means"
 
@@ -447,14 +447,18 @@ for (j in 1:length(clustering)) {
     # Elbow plot
     plot_elbow <- wss_res[[2]]
     ggsave(file = paste("Select_cluster_number_c_", c_opt, "_", analysis_ID, ".pdf", sep = ""), path = dir_fig, height = 3, width = 3, plot = plot_elbow, bg = "white")
-    # Elbow plot
+    # WSS plot
     plot_wss <- fviz_nbclust(norm_counts_av, kmeans, method = "wss", k.max = 25)
     ggsave(filename = paste("00_Select_cluster_number_WSS_", analysis_ID, ".pdf" , sep = ""), height = 6, width = 6, plot = plot_wss, path = dir_fig, bg = "white")
     # Silhouette plot
     plot_sil <- fviz_nbclust(norm_counts_av, kmeans, method = "silhouette", k.max = 25)
     ggsave(filename = paste("00_Select_cluster_number_Silhouette_", analysis_ID, ".pdf" , sep = ""), height = 6, width = 6, plot = plot_sil, path = dir_fig, bg = "white")
+    # Calinski-Harabasz plot
+    plot_elbow <- wss_res[[4]]
+    ggsave(file = paste("Select_cluster_number_CHIndex_", analysis_ID, ".pdf", sep = ""), path = dir_fig, height = 3, width = 3, plot = plot_elbow, bg = "white")
     
-    
+
+
     # Data from with the results of kmeans
     comp <- data.frame()
         
@@ -690,7 +694,7 @@ if(analysis != "Splicing"){
 }
 log_data$colortrt <- paste(color_list[[trt]], collapse = ",")
 log_data$colorheat <- paste(color_list[["Heatmap"]], collapse = ",")
-log_data$colormem <- paste(col, sep = ",")
+# log_data$colormem <- paste(col, sep = ",")
 
 write.table(as.data.frame(log_data), paste(dir_wd, "/log/6_trajectories_", analysis, "_", analysis_ID, ".log", sep = ""), row.names = FALSE, eol = "\r")
 

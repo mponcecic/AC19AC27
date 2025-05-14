@@ -236,27 +236,45 @@ elbow_plot <- function(sec_c, c, c_min = 0){
 
 # Elbow plot for K-means
 wss_plot <- function(data, sec_c, seed, method){
+  # Set seed 
+  set.seed(seed = seed)
+  
+  # Max number clusters
   nc <- max(sec_c)
-  wss <- (nrow(data)-1)*sum(apply(data,2,var))
-  for(i in 2:nc){
-    set.seed(seed = seed)
-    wss[i] <- sum(kmeans(data, centers = i, iter.max = 100, nstart = 100, algorithm = "Hartigan-Wong")$withinss)
-  }
+
+  # Estimate Within the sum of squares for different K
+  wss <- c(c(nrow(norm_counts_av)-1)*sum(apply(norm_counts_av,2,var)), 
+           sapply(2:nc, function(i) {
+             sum(kmeans(norm_counts_av, centers = i, iter.max = 100, nstart = 100, algorithm = "Hartigan-Wong")$withinss)
+             }))
+  
+  # Estimate Calinski-Harabasz index values for different k
+  ch_indices <- sapply(sec_c, function(k) {
+    kmeans_results <- kmeans(norm_counts_av, centers = k)
+    fpc::cluster.stats(norm_counts_av, kmeans_results$cluster)$ch
+    })
+
   
   # Data frame
-  df <- data.frame(x = 1:nc, y = wss)
+  df <- data.frame(x = 1:nc, WSS_index = wss, CH_index = c(NA,ch_indices))
   
   # Estimate the optimal number of clusters
   c_opt <- estimate_c(wss, method)
   
+  
   # Elbow plot
-  B <- ggplot(df, aes(x = x, y = y))+
+  B <- ggplot(df, aes(x = x, y = WSS_index))+
     geom_line()+
     geom_point()+
     geom_vline(xintercept = c_opt, linetype = "dashed", color = "red", size = 0.5)+
     labs(x = "Cluster number", y = "Within groups sum of square")+
     theme_bw()
- return(list(c_opt, B, df))
+  C <- ggplot(df, aes(x = x, y = CH_index))+
+    geom_line()+
+    geom_point()+
+    labs(x = "Cluster number", y = "Calinski-Harabasz index")+
+    theme_bw()
+ return(list(c_opt, B, df, C))
  }
 
 
