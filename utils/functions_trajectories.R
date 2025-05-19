@@ -374,6 +374,8 @@ boxplot_tm <- function(s_data, trt, analysis){
 
 
 
+
+
 # Trajectory plot
 trajectory_plot <- function(s_data, trt, k, lvl_order, n_sel, col, analysis){
   
@@ -385,14 +387,12 @@ trajectory_plot <- function(s_data, trt, k, lvl_order, n_sel, col, analysis){
   # Labels based on the data 
   labs = ifelse(analysis=="Splicing", "Scaled PSI", "Scaled log2 Norm. counts")
   
-  lvl_labels <- as.numeric(lvl_order)
-  
   # Trajectory plot adjusted to time points
   A <- ggplot(data = s_data, aes(x = ind, y = values, group = reorder(Name, Membership), color = Membership))+
     geom_line(lwd = 0.5)+
     labs(y = labs, x = "", title = paste("Cluster ", k, sep = ""), subtitle = paste("n = ", n_sel, sep = ""))+
-    scale_x_continuous(limits = c(min(lvl_labels), max(lvl_labels)), 
-                       breaks = lvl_labels, 
+    scale_x_continuous(limits = c(min(lvl_order), max(lvl_order)), 
+                       breaks = lvl_order, 
                        expand = c(0.03,0.03))+
     scale_colour_gradientn(colors = col, limits = c(0, 1))+
     theme(text = element_text(color = "black", size = 8), plot.title = element_text(face = "bold", hjust = 0.5, size = 10), plot.subtitle = element_text(hjust = 0.5), 
@@ -406,15 +406,16 @@ trajectory_plot <- function(s_data, trt, k, lvl_order, n_sel, col, analysis){
     geom_line(lwd = 0.5)+
     stat_summary(fun.y=mean, colour = "#DC143C", geom = "line", aes(group = 1), size = 0.8)+
     labs(y = labs, x = "", title = paste("Cluster ", k, sep = ""), subtitle = paste("n = ", n_sel, sep = ""))+
-    scale_x_continuous(limits = c(min(lvl_labels), max(lvl_labels)), 
-                       breaks = lvl_labels, 
+    scale_x_continuous(limits = c(min(lvl_order), max(lvl_order)), 
+                       breaks = lvl_order, 
                        expand = c(0.03,0.03))+
     theme(text = element_text(color = "black", size = 8), plot.title = element_text(face = "bold", hjust = 0.5, size = 10), plot.subtitle = element_text(hjust = 0.5), 
           axis.line = element_line(linewidth = 0.03), axis.ticks = element_line(linewidth = 0.03), legend.position = "none")
   
   return(list(A, B, C))
 }
-     
+
+
 
 
 
