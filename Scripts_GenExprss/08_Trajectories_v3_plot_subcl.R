@@ -1,9 +1,18 @@
+################################################################################
+#                   TRAJECTORIES SUBLUSTERING PLOTS 
+################################################################################
 
+# Date: Mon May 19 15:49:03 2025
+# Author: Maria Ponce
 
+# Summary
+# ---------------------
 
+# Subdivided the different clusters into subgroups using hierchical clustering. 
+# Indeed, we plot the data with dendrograms and heatmaps.
 
-
-
+# Input folder: W:/mponce/project/06_TRAJECTORIES/analysis_ID/Analysis/Algorithm/Results
+# Output folder: W:/mponce/project/06_TRAJECTORIES/analysis_ID/Analysis/Algorithm/padj_0.05_log2FC_0.58_c_5/Subclustering_k
 
 
 
@@ -207,9 +216,9 @@ for (i in 1:c) {
   # Scale data by row
   m_scaled <- t(scale(t(m)))
   
-  # Column cluster order
-  col_dend <- pheat$tree_col  # Column clustering
-  
+  # # Column cluster order
+  # col_dend <- pheat$tree_col  # Column clustering
+  # 
   
   # Sample colors
   col_met <- data.frame(Condition = factor(metadata[[trt]]))
@@ -228,22 +237,23 @@ for (i in 1:c) {
   # library(circlize)
   # 
   
-  pdf(filename = paste(dir_fig, "/Heatmap_n", nrow(m), "_cl_", sheet, "_", project, "_", analysis_ID_traj, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
-  ComplexHeatmap::Heatmap(m_scaled, 
+  fixed_order <- colnames(m_scaled)
+  
+  pdf(paste(dir_fig, "/Heatmap_n", nrow(m), "_cl_", sheet, "_", project, "_", analysis_ID_traj, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
+  print(ComplexHeatmap::Heatmap(m_scaled, 
           name = "mat",
           cluster_rows = row_dend, 
-          cluster_columns = col_dend, 
+          column_order = fixed_order,
           show_row_names = FALSE, 
           top_annotation = annotation_col,
           col = color_list$Heatmap,
-          column_names_gp = gpar(fontsize = 4),
+          column_names_gp = gpar(fontsize = 6),
           row_dend_gp = gpar(lwd = 0.5),  # Change row dendrogram line width
           column_dend_gp = gpar(lwd = 0.5), # Change column dendrogram line width
           heatmap_legend_param = list(title_gp = gpar(fontsize = 5),  # Title size
                                       labels_gp = gpar(fontsize = 4), # Label size
-                                      legend_width = unit(5, "mm")
-          )
-  )
+                                      legend_width = unit(5, "mm"))
+  ))
   dev.off()
 
     
@@ -259,14 +269,13 @@ for (i in 1:c) {
   m$Subgroup <- clust_ord
   Cluster <- m[, c(ncol(m)-1,ncol(m))]
   head(Cluster)
-  
-  # Order rows based on heatmap order
-  Cluster <- Cluster[pheat$tree_row$order, ]
-  head(Cluster)
-  
+
   # Prepare results data
   res <- merge(Cluster, data, by = "Name")
-  res <- res[,-which(colnames(res) %in% c("Name", "Symbol", "Ensembl", "Biotype", "Cluster", "Subgroup", "Dist_Centroid"))]
+  res <- res %>% select(Name, Symbol, Ensembl, Biotype, Cluster, Subgroup, Dist_Centroid, everything())
+  
+  # Order rows based on heatmap order
+  res <- res[pheat$tree_row$order,]
   
   addWorksheet(exc, sheet)
   writeData(exc, sheet, res)
