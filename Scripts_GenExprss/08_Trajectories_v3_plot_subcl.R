@@ -152,7 +152,8 @@ for (i in 1:c) {
   
   sheet <- i
   data <- read.xlsx(paste(dir_input, "/", load_file, ".xlsx", sep = ""), sheet = sheet)
-  
+  print(sheet)
+  print(table(data$Biotype))
   # 1. Select normalized counts
   # ----------------------------------------------------
   m <- data[, paste("Norm_", metadata$Sample, sep = "")]
@@ -162,7 +163,7 @@ for (i in 1:c) {
   # 2. Transform data (log2)
   # ----------------------------------------------------
   m <- log2(m+1)
-  
+
   # 3. Plot heatmap
   # ----------------------------------------------------
   pheat <- pheatmap(mat = m,
@@ -178,22 +179,22 @@ for (i in 1:c) {
                     fontsize_row = 1,
                     show_rownames = FALSE,
                     border_color = NA,
-                    clustering_method = "ward.D2", 
+                    clustering_method = "ward.D2",
                     clustering_callback = function(hc, ...){dendsort(hc, isReverse = FALSE, type = "average")}
-                    
+
   )
-  
-  
+
+
   # 4. Plot dendrogram
   # ----------------------------------------------------
-  
+
   # Hierarchical clustering
   hc <- pheat$tree_row
-  
+
   # Subclustering groups
   clust <- dendextend:::cutree(hc, k = k, order_clusters_as_data = FALSE)
   branch_colors <- colorspace::rainbow_hcl(n = k)
-  
+
   # Plot subclustering
   pdf(paste(dir_fig, "/Dendrogram_n", nrow(m), "_cl_",sheet, "_", project, "_", analysis_ID_traj, ".pdf", sep = ""), height = 5, width = 7, bg = "white")
   plot(as.dendrogram(hc) %>% dendextend::color_branches(k = k), lwd = 2, cex = 0.01, leaflab = "none", main = paste("Cluster", sheet, sep = " "))
@@ -202,49 +203,49 @@ for (i in 1:c) {
   legend("topleft", legend = legend_data$Cluster, fill = legend_data$Color, title = "Clusters", xpd = TRUE)
   dev.off()
 
-  
-  
-  
+
+
+
   # Heatmap with dendrogam colored
-  # 
+  #
   # Link: https://jokergoo.github.io/ComplexHeatmap-reference/book/a-single-heatmap.html
-  # 
+  #
   # BiocManager::install("ComplexHeatmap")
   row_dend = as.dendrogram(hc)
   row_dend = dendextend::color_branches(row_dend, k = k) # `color_branches()` returns a dendrogram object
-  
+
   # Scale data by row
   m_scaled <- t(scale(t(m)))
-  
+
   # # Column cluster order
   # col_dend <- pheat$tree_col  # Column clustering
-  # 
-  
+  #
+
   # Sample colors
   col_met <- data.frame(Condition = factor(metadata[[trt]]))
   rownames(col_met) <- metadata$Sample
-  
-  # 
+
+  #
   annotation_col <- ComplexHeatmap::HeatmapAnnotation(
-    Condition = metadata[[trt]], 
-    col = list(Condition = color_list[[trt]]), 
-    show_legend = FALSE, 
-    show_annotation_name = FALSE, 
-    simple_anno_size = unit(2, "mm"), 
+    Condition = metadata[[trt]],
+    col = list(Condition = color_list[[trt]]),
+    show_legend = FALSE,
+    show_annotation_name = FALSE,
+    simple_anno_size = unit(2, "mm"),
     annotation_name_gp = gpar(fontsize = 2))
-  # 
+  #
   # library(ComplexHeatmap)
   # library(circlize)
-  # 
-  
+  #
+
   fixed_order <- colnames(m_scaled)
-  
+
   pdf(paste(dir_fig, "/Heatmap_n", nrow(m), "_cl_", sheet, "_", project, "_", analysis_ID_traj, ".pdf", sep = ""), height = 4, width = 4, bg = "white")
-  print(ComplexHeatmap::Heatmap(m_scaled, 
+  print(ComplexHeatmap::Heatmap(m_scaled,
           name = "mat",
-          cluster_rows = row_dend, 
+          cluster_rows = row_dend,
           column_order = fixed_order,
-          show_row_names = FALSE, 
+          show_row_names = FALSE,
           top_annotation = annotation_col,
           col = color_list$Heatmap,
           column_names_gp = gpar(fontsize = 6),
@@ -256,27 +257,29 @@ for (i in 1:c) {
   ))
   dev.off()
 
-    
+
   # 5. Process results data
   # ----------------------------------------------------
-  
+
   # Sort genes to add the column
-  it <- match(rownames(m), names(clust))
-  clust_ord <- as.vector(clust[it])
-  
+  it <- match(names(clust),rownames(m))
+  mat <- m[it,]
+
   # Add column to the output
-  m$Name <- rownames(m)
-  m$Subgroup <- clust_ord
-  Cluster <- m[, c(ncol(m)-1,ncol(m))]
+  mat$Name <- rownames(mat)
+  mat$Subgroup <- clust
+  Cluster <- mat[, c(ncol(mat)-1,ncol(mat))]
   head(Cluster)
 
   # Prepare results data
   res <- merge(Cluster, data, by = "Name")
   res <- res %>% select(Name, Symbol, Ensembl, Biotype, Cluster, Subgroup, Dist_Centroid, everything())
-  
+
+
   # Order rows based on heatmap order
-  res <- res[pheat$tree_row$order,]
-  
+  idx <- match(Cluster$Name, res$Name)
+  res <- res[idx,]
+
   addWorksheet(exc, sheet)
   writeData(exc, sheet, res)
 }
